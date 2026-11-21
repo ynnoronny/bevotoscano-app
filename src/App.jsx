@@ -71,9 +71,9 @@ function Home() {
   return (
     <>
       <section className="hero">
-        <p className="eyebrow">Vino, territori, persone vere</p>
-        <h1>La Toscana del vino, <em>da vicino</em>.</h1>
-        <p>Raccontiamo le piccole cantine toscane che non trovi su Google, e ti portiamo a conoscerle.</p>
+        <p className="eyebrow">Scopriamo le radici vitivinicole toscane</p>
+        <h1>Il vino <em>da vivere</em>.</h1>
+        <p>Eventi di vino, territori, persone. Le piccole cantine toscane che non trovi su Google, e il modo per andarle a trovare.</p>
       </section>
 
       <button className="card card--game card--eventi" onClick={() => go("eventi")}>
@@ -113,6 +113,15 @@ function Home() {
         <span className="quote">“Qual è il vino più toscano che hai?”</span>
         <small>Lo chiediamo a cantine, baristi ed enoteche. Guarda le risposte su Instagram →</small>
       </a>
+
+      <section className="card chi-siamo" id="chi-siamo">
+        <p className="eyebrow">Chi siamo</p>
+        <strong className="chi-title">Partiamo da Terricciola</strong>
+        <p className="muted">Una Città del Vino sulle colline pisane: più di venti aziende agricole per poco più di 4.500 abitanti. Un posto spesso attraversato, a volte scelto per dormire, raramente vissuto davvero.</p>
+        <p className="muted">Bevotoscano nasce da una domanda: può il vino diventare la chiave per scoprire una Toscana meno battuta? Siamo un ponte tra il mondo del turismo e quello del vino, dalla parte dei piccoli produttori.</p>
+        <p className="muted"><b>Ronny Bellagotti</b>, digital e territorio · <b>Marianna Dimeo</b>, sommelier FISAR</p>
+        <small>Progetto nato nella pre-incubazione della Call for Tourism di Murate Idea Park.</small>
+      </section>
 
       <section className="card">
         <strong>Organizzi un evento del vino?</strong>
