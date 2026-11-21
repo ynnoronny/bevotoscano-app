@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { posta } from "./api.js";
 
-// La casella info@bevotoscano.com dentro #/admin. Legge e invia passando dalla funzione
+// La casella info@bevotoscano.com dentro /admin. Legge e invia passando dalla funzione
 // Supabase "posta": la password di Aruba non arriva mai nel browser.
 
 const quando = (iso) => {

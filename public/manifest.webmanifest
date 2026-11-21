@@ -1,9 +1,24 @@
 {
-  "name": "Bevotoscano",
+  "id": "/",
+  "name": "Bevotoscano · Il vino da vivere",
   "short_name": "Bevotoscano",
+  "description": "Eventi del vino in Toscana, anche senza auto, le piccole cantine e i giochi sul vino toscano.",
+  "lang": "it",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#F5F0E8",
+  "orientation": "portrait",
+  "background_color": "#F6F2F5",
   "theme_color": "#432543",
-  "icons": [{ "src": "/logo.svg", "sizes": "any", "type": "image/svg+xml" }]
+  "categories": ["food", "travel", "lifestyle"],
+  "icons": [
+    { "src": "/icone/icona-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icone/icona-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icone/icona-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/logo.svg", "sizes": "any", "type": "image/svg+xml" }
+  ],
+  "shortcuts": [
+    { "name": "Eventi", "url": "/eventi", "icons": [{ "src": "/icone/icona-192.png", "sizes": "192x192" }] },
+    { "name": "Gioca", "url": "/gioca", "icons": [{ "src": "/icone/icona-192.png", "sizes": "192x192" }] }
+  ]
 }

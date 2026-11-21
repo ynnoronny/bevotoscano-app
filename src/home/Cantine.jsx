@@ -4,6 +4,7 @@ import "leaflet/dist/leaflet.css";
 import { CANTINE, CONTACT_EMAIL } from "../data.js";
 import { eventiPubblici } from "../eventi/api.js";
 import { go } from "../nav.js";
+import { eventoPercorso } from "../seo.js";
 
 // Posizione indicativa per comune o frazione (la cantina è nei dintorni).
 // Per una cantina nuova: aggiungi qui il suo comune, oppure metti lat/lng direttamente in data.js.
@@ -99,7 +100,7 @@ export default function Cantine() {
                 ? <p className="cantina-wine">Il suo vino più toscano: <b>{c.vinoPiuToscano}</b></p>
                 : <p className="tiny">Il suo vino più toscano? Glielo chiediamo presto.</p>}
               {ev.length > 0 && (
-                <button className="badge badge--gold" onClick={(x) => { x.stopPropagation(); go(`eventi/${ev[0].id}`); }}>
+                <button className="badge badge--gold" onClick={(x) => { x.stopPropagation(); go(eventoPercorso(ev[0])); }}>
                   📅 {ev.length === 1 ? "1 evento in arrivo" : `${ev.length} eventi in arrivo`} →
                 </button>
               )}

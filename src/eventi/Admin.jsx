@@ -5,7 +5,7 @@ import { TIPI_ORG, fmtData, senzaAuto } from "./shared.js";
 import { CampiEvento, Campo } from "./Segnala.jsx";
 import Posta from "./Posta.jsx";
 
-// Backend di moderazione: bevotoscano.com/#/admin (non è nel menu).
+// Backend di moderazione: bevotoscano.com/admin (non è nel menu).
 const toInput = (iso) => {
   if (!iso) return "";
   const d = new Date(iso);
