@@ -29,6 +29,12 @@ Per attivare l'admin vero, dopo aver eseguito `supabase.sql`:
 
 Nel database: tabella `eventi` (con i dati privati dell'organizzatore), tabella `pickup_point` (fermate riutilizzabili), vista `eventi_pubblici` (solo eventi approvati e non ancora passati, senza email e telefono: è l'unica cosa che il sito pubblico legge).
 
+## Posta info@bevotoscano.com nell'admin
+
+In `#/admin` c'è la scheda **Posta info@**: leggi la casella Aruba, apri gli allegati, rispondi, inoltri e scrivi mail nuove come info@bevotoscano.com. Le risposte finiscono anche in "Inviate", quindi le ritrovi pure in webmail e sul telefono.
+
+Come funziona: il sito chiede la posta alla funzione Supabase `posta` (`supabase/functions/posta`), che si collega ad Aruba (IMAP `imaps.aruba.it:993`, SMTP `smtps.aruba.it:465`). Risponde solo a chi è loggato ed è nella tabella `admin`. La password della casella sta **solo** in Supabase → Edge Functions → **Secrets** come `ARUBA_PASSWORD`: non è nel codice e non arriva mai nel browser. Se cambi la password su Aruba, aggiornala lì.
+
 ## Dove si cambiano i contenuti
 
 - `src/data.js`: cantine, esperienze, testi della cassa, lista dei giochi, link Instagram e mail
