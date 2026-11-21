@@ -76,11 +76,11 @@ export default function Oroscopo({ onExit }) {
           <p className="result-fact">💡 {segno.curiosita}</p>
 
           {delMese && (
-            <section className="mese">
+            <section className="oro-mese">
               <span className="eyebrow">Il tuo mese · {MESE.edizione}</span>
-              <strong className="mese-titolo">{delMese.titolo}</strong>
+              <strong className="oro-mese-titolo">{delMese.titolo}</strong>
               <p>{delMese.testo}</p>
-              <p className="mese-vino">🍷 {delMese.vino}</p>
+              <p className="oro-mese-vino">🍷 {delMese.vino}</p>
               <small>Dal {dataBreve(MESE.dal)} al {dataBreve(MESE.al)} · Calcolato sulle posizioni reali dei pianeti.</small>
             </section>
           )}
