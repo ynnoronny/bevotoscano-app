@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { SEGNI, segnoDa } from "./oroscopoData.js";
-import { shareStory } from "./storyImage.js";
+import ShareButton from "./ShareButton.jsx";
+import MESE from "./oroscopoMese.json";
 import { saveLead, isEmail } from "../leads.js";
 
 const MESI = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"];
 const GIORNI_MESE = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+const dataBreve = (iso) => new Date(`${iso}T12:00:00`).toLocaleDateString("it-IT", { day: "numeric", month: "long" });
 
 // "L'oroscopo del vino": scegli il giorno di nascita, scopri il tuo vitigno.
 export default function Oroscopo({ onExit }) {
@@ -13,7 +16,6 @@ export default function Oroscopo({ onExit }) {
   const [segno, setSegno] = useState(null);
   const [email, setEmail] = useState("");
   const [emailState, setEmailState] = useState("");
-  const [sharing, setSharing] = useState(false);
 
   const scopri = () => {
     const s = segnoDa(Number(mese), Number(giorno));
@@ -22,26 +24,14 @@ export default function Oroscopo({ onExit }) {
     setSegno(s);
   };
 
-  const share = async () => {
-    setSharing(true);
-    try {
-      await shareStory(
-        { gradient: segno.gradient, eyebrow: `${segno.simbolo} ${segno.segno} · il mio vitigno`, emoji: segno.emoji, title: segno.vitigno, tagline: segno.tagline, body: segno.curiosita },
-        `bevotoscano-${segno.id}`,
-        `Sono ${segno.segno}, quindi sono ${segno.vitigno} 🍷 Scopri il tuo su bevotoscano.com`,
-      );
-    } catch {
-      alert("Non sono riuscito a creare l'immagine. Fai uno screenshot 🍷");
-    }
-    setSharing(false);
-  };
-
   const iscrivi = (e) => {
     e.preventDefault();
     if (!isEmail(email)) return setEmailState("err");
     saveLead("oroscopo-email", { email, segno: segno.segno, vitigno: segno.vitigno });
     setEmailState("ok");
   };
+
+  const delMese = segno && MESE.testi?.[segno.id];
 
   const maxGiorno = mese ? GIORNI_MESE[Number(mese) - 1] : 31;
 
@@ -61,7 +51,7 @@ export default function Oroscopo({ onExit }) {
             <b>🍇</b>
           </div>
           <h1 className="game-title">L'oroscopo <em>del vino</em></h1>
-          <p className="muted">12 segni, 12 vitigni autoctoni toscani. Dimmi quando sei nato e ti dico che vino sei.</p>
+          <p className="muted">12 segni, 12 vitigni autoctoni toscani. Dimmi quando sei nato: ti dico che vino sei e com'è il tuo mese.</p>
           <div className="date-row">
             <select className="input" value={giorno} onChange={(e) => setGiorno(e.target.value)} aria-label="Giorno">
               <option value="">Giorno</option>
@@ -84,7 +74,21 @@ export default function Oroscopo({ onExit }) {
           <p className="result-tagline">{segno.tagline}</p>
           <p className="result-desc">{segno.descrizione}</p>
           <p className="result-fact">💡 {segno.curiosita}</p>
-          <button className="btn btn--gold" onClick={share} disabled={sharing}>{sharing ? "Preparo l'immagine…" : "Condividi nelle stories ✨"}</button>
+
+          {delMese && (
+            <section className="mese">
+              <span className="eyebrow">Il tuo mese · {MESE.edizione}</span>
+              <strong className="mese-titolo">{delMese.titolo}</strong>
+              <p>{delMese.testo}</p>
+              <p className="mese-vino">🍷 {delMese.vino}</p>
+              <small>Dal {dataBreve(MESE.dal)} al {dataBreve(MESE.al)} · Calcolato sulle posizioni reali dei pianeti.</small>
+            </section>
+          )}
+
+          <ShareButton
+            filename={`bevotoscano-${segno.id}`}
+            card={{ gradient: segno.gradient, eyebrow: `${segno.simbolo} ${segno.segno} · il mio vitigno`, emoji: segno.emoji, title: segno.vitigno, tagline: delMese ? delMese.titolo : segno.tagline, body: delMese ? delMese.vino : segno.curiosita }}
+          />
 
           {emailState === "ok" ? (
             <p className="result-fact">Fatto! Ti mandiamo le storie dei vini del tuo segno 🍷</p>

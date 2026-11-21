@@ -38,6 +38,9 @@ export default function App() {
   if (section === "gioca" && sub === "quiz") {
     return <QuizToscana onExit={() => go("gioca")} />;
   }
+  if (section === "gioca" && sub === "classifica") {
+    return <QuizToscana iniziale="classifica" onExit={() => go("gioca")} />;
+  }
 
   return (
     <div className="app">

@@ -7,8 +7,14 @@ const online = supabaseAttivo;
 
 export const isOnline = online;
 
-export async function inviaPunteggio({ nome, paese, punti, corrette }) {
-  const riga = { nome: nome.trim().slice(0, 20), paese, punti, corrette, creato: new Date().toISOString() };
+// Modalità: "classica" (10 domande, punti per velocità) e "alltime" (a oltranza, punti = risposte giuste).
+export const MODALITA = {
+  classica: { nome: "Sfida da 10", unita: "pt" },
+  alltime: { nome: "All Time", unita: "risposte" },
+};
+
+export async function inviaPunteggio({ nome, paese, punti, corrette, modalita = "classica" }) {
+  const riga = { nome: nome.trim().slice(0, 20), paese, punti, corrette, modalita, creato: new Date().toISOString() };
   if (online()) {
     const { creato, ...body } = riga;
     await supabase("punteggi", { method: "POST", prefer: "return=minimal", body });
@@ -21,12 +27,15 @@ export async function inviaPunteggio({ nome, paese, punti, corrette }) {
   } catch { /* niente storage */ }
 }
 
-export async function leggiClassifica(limite = 20) {
+export async function leggiClassifica(modalita = "classica", limite = 20) {
   if (online()) {
-    return supabase(`punteggi?select=nome,paese,punti,corrette&order=punti.desc&limit=${limite}`);
+    return supabase(`punteggi?select=nome,paese,punti,corrette&modalita=eq.${modalita}&order=punti.desc,creato.asc&limit=${limite}`);
   }
   try {
-    return JSON.parse(localStorage.getItem(LOCAL_KEY) || "[]").sort((a, b) => b.punti - a.punti).slice(0, limite);
+    return JSON.parse(localStorage.getItem(LOCAL_KEY) || "[]")
+      .filter((r) => (r.modalita || "classica") === modalita)
+      .sort((a, b) => b.punti - a.punti)
+      .slice(0, limite);
   } catch {
     return [];
   }

@@ -131,3 +131,18 @@ create or replace view eventi_pubblici as
   from eventi
   where stato = 'pubblicato' and coalesce(fine, inizio) > now() - interval '1 day';
 grant select on eventi_pubblici to anon, authenticated;
+
+
+-- ===================== GIOCHI: modalità All Time (novembre 2026) =====================
+-- Aggiunge la modalità di gioco alla classifica. Si può rieseguire senza problemi.
+alter table punteggi add column if not exists modalita text not null default 'classica';
+alter table punteggi drop constraint if exists punteggi_modalita_check;
+alter table punteggi add constraint punteggi_modalita_check check (modalita in ('classica', 'alltime'));
+alter table punteggi drop constraint if exists punteggi_corrette_check;
+alter table punteggi add constraint punteggi_corrette_check check (corrette between 0 and 1000);
+alter table punteggi drop constraint if exists punteggi_coerenza_check;
+alter table punteggi add constraint punteggi_coerenza_check check (
+  (modalita = 'classica' and corrette <= 10 and punti between 0 and 2000)
+  or (modalita = 'alltime' and punti = corrette)
+);
+create index if not exists punteggi_classifica on punteggi (modalita, punti desc);

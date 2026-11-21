@@ -173,3 +173,25 @@ textarea.input { resize: vertical; font: inherit; font-size: 16px; }
 .pk-extra { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px; padding: 0 0 8px; border-bottom: 1px dashed var(--line); }
 .trappola { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
 .clamp { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* Gaming: modalità, condivisione, oroscopo del mese */
+.modes { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 400px; text-align: left; }
+.mode { display: flex; gap: 14px; align-items: flex-start; padding: 16px; border-radius: 14px; background: var(--paper); border: 1.5px solid var(--line); }
+.mode:hover { border-color: var(--plum); }
+.mode strong { font-family: var(--serif); font-size: 20px; color: var(--plum); display: block; }
+.mode small { display: block; color: var(--muted); font-size: 13.5px; line-height: 1.45; margin-top: 2px; }
+.mode-emoji { font-size: 30px; line-height: 1; }
+.lives { font-size: 20px; letter-spacing: 2px; }
+.last-chance { font-size: 14px; color: #C75B39; letter-spacing: 0; }
+.result-unit { font-size: 0.45em; font-weight: 600; }
+.share { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; max-width: 380px; }
+.share-tip { font-size: 12.5px; color: rgba(245, 240, 232, 0.75); }
+.share-help { display: flex; flex-direction: column; gap: 8px; align-items: center; text-align: center; background: rgba(245, 240, 232, 0.12); border-radius: 14px; padding: 14px; color: var(--cream); font-size: 14px; width: 100%; }
+.mese { width: 100%; max-width: 400px; text-align: left; background: rgba(245, 240, 232, 0.94); color: var(--text); border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 8px; }
+.mese .eyebrow { color: var(--wine); }
+.mese-titolo { font-family: var(--serif); font-size: 22px; color: var(--plum); line-height: 1.2; }
+.mese p { font-size: 15px; line-height: 1.6; }
+.mese-vino { font-weight: 600; color: var(--plum); }
+.mese small { color: var(--muted); font-size: 12px; }
+.board-pts small { font-family: var(--sans); font-weight: 400; font-size: 11px; color: var(--muted); }
+.classifiche { display: flex; flex-direction: column; gap: 10px; }
