@@ -1,21 +1,30 @@
 // Crea un'immagine 1080x1920 (formato stories) e la condivide o la scarica.
-
-export async function shareStory(card, filename, shareText) {
+// Restituisce "condivisa", "annullata" o "scaricata".
+// Nota: si condivide SOLO il file. Se insieme all'immagine passi anche del testo,
+// su iPhone Instagram sparisce dal menu o apre il post invece della storia.
+export async function shareStory(card, filename) {
   const blob = await renderStory(card);
   const file = new File([blob], `${filename}.png`, { type: "image/png" });
   if (navigator.canShare && navigator.canShare({ files: [file] })) {
     try {
-      await navigator.share({ files: [file], text: shareText });
+      await navigator.share({ files: [file] });
+      return "condivisa";
     } catch (e) {
-      if (e?.name !== "AbortError") throw e;
+      if (e?.name === "AbortError") return "annullata";
+      // alcuni browser rifiutano la condivisione: si passa al download
     }
-    return;
   }
   const url = URL.createObjectURL(blob);
   const a = Object.assign(document.createElement("a"), { href: url, download: file.name });
+  document.body.appendChild(a);
   a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 2000);
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+  return "scaricata";
 }
+
+// Apre la fotocamera delle storie di Instagram (solo da telefono con l'app installata).
+export const INSTAGRAM_STORIES = "instagram://story-camera";
 
 // card: { gradient, eyebrow, emoji, title, tagline, body, footer }
 export async function renderStory(card) {
