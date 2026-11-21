@@ -1,0 +1,9 @@
+{
+  "name": "Bevotoscano",
+  "short_name": "Bevotoscano",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F5F0E8",
+  "theme_color": "#432543",
+  "icons": [{ "src": "/logo.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

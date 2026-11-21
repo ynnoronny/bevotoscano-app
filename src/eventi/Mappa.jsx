@@ -1,0 +1,46 @@
+import { useEffect, useRef } from "react";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+
+// Mappa OpenStreetMap: pallini vino = dove si tiene l'evento, pallini oro = punti di raccolta.
+export default function Mappa({ eventi, centro, onApri }) {
+  const box = useRef(null);
+  const map = useRef(null);
+  const layer = useRef(null);
+
+  useEffect(() => {
+    map.current = L.map(box.current, { zoomControl: true, attributionControl: true }).setView([43.45, 11.1], 8);
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 18,
+      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    }).addTo(map.current);
+    layer.current = L.layerGroup().addTo(map.current);
+    return () => map.current.remove();
+  }, []);
+
+  useEffect(() => {
+    const g = layer.current;
+    g.clearLayers();
+    const punti = [];
+    if (centro) {
+      L.circleMarker([centro.lat, centro.lng], { radius: 7, color: "#2F5D7C", fillColor: "#2F5D7C", fillOpacity: 1 }).bindTooltip(centro.nome).addTo(g);
+      punti.push([centro.lat, centro.lng]);
+    }
+    eventi.forEach((e) => {
+      (e.pickup || []).forEach((p) => {
+        if (p.lat == null) return;
+        L.circleMarker([p.lat, p.lng], { radius: 6, color: "#8a6d3b", fillColor: "#C9A96E", fillOpacity: 1, weight: 2 })
+          .bindTooltip(`🚌 ${p.nome}${p.orario ? ` · ${p.orario}` : ""}`).addTo(g);
+        if (e.lat != null) L.polyline([[p.lat, p.lng], [e.lat, e.lng]], { color: "#C9A96E", weight: 2, dashArray: "4 6" }).addTo(g);
+        punti.push([p.lat, p.lng]);
+      });
+      if (e.lat == null) return;
+      L.circleMarker([e.lat, e.lng], { radius: 9, color: "#432543", fillColor: "#722F37", fillOpacity: 1, weight: 2 })
+        .bindTooltip(e.titolo).on("click", () => onApri(e)).addTo(g);
+      punti.push([e.lat, e.lng]);
+    });
+    if (punti.length) map.current.fitBounds(punti, { padding: [30, 30], maxZoom: 11 });
+  }, [eventi, centro]);
+
+  return <div ref={box} className="mappa" />;
+}

@@ -1,0 +1,133 @@
+-- Bevotoscano: database. Incolla tutto in Supabase → SQL Editor → Run.
+
+-- Classifica del quiz: tutti leggono, tutti possono aggiungere un punteggio valido.
+create table if not exists punteggi (
+  id bigint generated always as identity primary key,
+  nome text not null check (char_length(nome) between 1 and 20),
+  paese text not null default 'XX' check (char_length(paese) = 2),
+  punti int not null check (punti between 0 and 2000),
+  corrette int not null check (corrette between 0 and 10),
+  creato timestamptz not null default now()
+);
+alter table punteggi enable row level security;
+drop policy if exists "classifica pubblica" on punteggi;
+create policy "classifica pubblica" on punteggi for select using (true);
+drop policy if exists "nuovo punteggio" on punteggi;
+create policy "nuovo punteggio" on punteggi for insert with check (true);
+
+-- Contatti (email da giochi, cassa, esperienze): il sito può solo scrivere,
+-- nessuno può leggerli dal sito. Li vedi tu in Supabase → Table Editor → contatti.
+create table if not exists contatti (
+  id bigint generated always as identity primary key,
+  tipo text not null check (char_length(tipo) <= 40),
+  email text not null check (char_length(email) <= 200 and email like '%@%'),
+  nome text check (char_length(nome) <= 80),
+  dati jsonb,
+  creato timestamptz not null default now()
+);
+alter table contatti enable row level security;
+drop policy if exists "nuovo contatto" on contatti;
+create policy "nuovo contatto" on contatti for insert with check (true);
+
+-- ===================== EVENTI DEL VINO =====================
+-- Gli eventi arrivano dal form "Segnala un evento" in stato "in_attesa".
+-- Li vede e li approva solo chi è nella tabella admin (pagina #/admin dell'app).
+-- Il pubblico vede solo la vista eventi_pubblici: eventi approvati e non ancora passati,
+-- senza email e telefono dell'organizzatore.
+
+-- Chi può moderare: aggiungi qui la tua email (la stessa con cui crei l'utente in
+-- Supabase → Authentication → Users → Add user, con password).
+create table if not exists admin (
+  email text primary key
+);
+alter table admin enable row level security;
+-- insert into admin (email) values ('tua@email.it');
+
+create or replace function is_admin() returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from admin where email = (auth.jwt() ->> 'email'));
+$$;
+
+-- Punti di raccolta riutilizzabili (fermate dei bus, stazioni, piazzali).
+create table if not exists pickup_point (
+  id bigint generated always as identity primary key,
+  nome text not null check (char_length(nome) <= 120),
+  comune text check (char_length(comune) <= 80),
+  lat double precision not null,
+  lng double precision not null,
+  creato timestamptz not null default now()
+);
+alter table pickup_point enable row level security;
+drop policy if exists "pickup pubblici" on pickup_point;
+create policy "pickup pubblici" on pickup_point for select using (true);
+drop policy if exists "pickup admin" on pickup_point;
+create policy "pickup admin" on pickup_point for all to authenticated using (is_admin()) with check (is_admin());
+
+create table if not exists eventi (
+  id bigint generated always as identity primary key,
+  stato text not null default 'in_attesa' check (stato in ('in_attesa','pubblicato','rifiutato')),
+  fonte text not null default 'form' check (fonte in ('form','admin')),
+  -- l'evento
+  titolo text not null check (char_length(titolo) between 3 and 120),
+  descrizione text check (char_length(descrizione) <= 1500),
+  inizio timestamptz not null,
+  fine timestamptz,
+  altre_date text check (char_length(altre_date) <= 300),
+  luogo_nome text not null check (char_length(luogo_nome) <= 120),
+  indirizzo text check (char_length(indirizzo) <= 200),
+  comune text not null check (char_length(comune) <= 80),
+  lat double precision,
+  lng double precision,
+  vini text check (char_length(vini) <= 300),
+  guidato boolean not null default false,
+  -- come ci si arriva: auto, bus (navetta/bus con pickup), treno (mezzi pubblici), piedi
+  accesso text[] not null default '{auto}',
+  -- [{ "nome": "Firenze, piazzale Montelungo", "lat": 43.77, "lng": 11.24, "orario": "09:30" }]
+  pickup jsonb not null default '[]',
+  prezzo text check (char_length(prezzo) <= 80),
+  link text check (char_length(link) <= 300),
+  immagine text check (char_length(immagine) <= 300),
+  -- i tre criteri Bevotoscano, dichiarati da chi segnala
+  criteri_ok boolean not null default false,
+  -- chi organizza (email e telefono non sono mai pubblici)
+  org_tipo text check (org_tipo in ('cantina','enoteca','bus','ente','altro')),
+  org_nome text not null check (char_length(org_nome) <= 120),
+  org_referente text check (char_length(org_referente) <= 80),
+  org_email text not null check (char_length(org_email) <= 200 and org_email like '%@%'),
+  org_telefono text check (char_length(org_telefono) <= 40),
+  org_social text check (char_length(org_social) <= 200),
+  note_admin text,
+  creato timestamptz not null default now(),
+  approvato timestamptz
+);
+alter table eventi enable row level security;
+
+-- Il sito può solo proporre eventi nuovi, sempre in attesa, mai pubblicati direttamente.
+drop policy if exists "segnala evento" on eventi;
+create policy "segnala evento" on eventi for insert to anon
+  with check (stato = 'in_attesa' and fonte = 'form' and approvato is null and note_admin is null);
+drop policy if exists "eventi admin" on eventi;
+create policy "eventi admin" on eventi for all to authenticated using (is_admin()) with check (is_admin());
+
+-- Anti-spam lato database: massimo 5 segnalazioni al giorno per email e 30 in tutto all'ora.
+create or replace function limita_segnalazioni() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if new.fonte = 'form' then
+    if (select count(*) from eventi where org_email = new.org_email and creato > now() - interval '1 day') >= 5
+       or (select count(*) from eventi where fonte = 'form' and creato > now() - interval '1 hour') >= 30 then
+      raise exception 'troppe segnalazioni, riprova più tardi';
+    end if;
+  end if;
+  return new;
+end $$;
+drop trigger if exists limita_segnalazioni on eventi;
+create trigger limita_segnalazioni before insert on eventi for each row execute function limita_segnalazioni();
+
+-- Quello che vede il pubblico. Gli eventi spariscono da soli il giorno dopo la fine.
+create or replace view eventi_pubblici as
+  select id, titolo, descrizione, inizio, fine, altre_date, luogo_nome, indirizzo, comune, lat, lng,
+         vini, guidato, accesso, pickup, prezzo, link, immagine, org_tipo, org_nome, org_social
+  from eventi
+  where stato = 'pubblicato' and coalesce(fine, inizio) > now() - interval '1 day';
+grant select on eventi_pubblici to anon, authenticated;
