@@ -71,7 +71,7 @@ export default function Home() {
           <span className="card-emoji">⏱️</span>
           <span>
             <strong>Quanto ne sai di vino toscano?</strong>
-            <small>Quiz a tempo, punteggio e classifica mondiale.</small>
+            <small>Quiz a tempo e classifica All Time.</small>
           </span>
           <span className="chev">→</span>
         </button>
