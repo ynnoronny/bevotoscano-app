@@ -3,6 +3,8 @@ import { CANTINE, INSTAGRAM_URL } from "../data.js";
 import { eventiPubblici } from "../eventi/api.js";
 import { senzaAuto } from "../eventi/shared.js";
 import { go } from "../nav.js";
+import Link from "../Link.jsx";
+import { eventoPercorso } from "../seo.js";
 
 const giorno = (iso) => new Date(iso).toLocaleDateString("it-IT", { day: "numeric" });
 const mese = (iso) => new Date(iso).toLocaleDateString("it-IT", { month: "short" }).replace(".", "");
@@ -34,13 +36,13 @@ export default function Home() {
       <section className="blocco">
         <div className="blocco-head">
           <h2 className="section-title">Prossimi eventi</h2>
-          <button className="link" onClick={() => go("eventi")}>Tutti gli eventi →</button>
+          <Link className="link" to="eventi">Tutti gli eventi →</Link>
         </div>
         {!eventi && <p className="muted">Carico…</p>}
         {eventi && prossimi.length === 0 && <p className="muted">Ancora nessun evento in calendario. Torna presto, o segnalacene uno.</p>}
         <div className="carosello">
           {prossimi.map((e) => (
-            <button key={e.id} className="ev-mini" onClick={() => go(`eventi/${e.id}`)}>
+            <Link key={e.id} className="ev-mini" to={eventoPercorso(e)}>
               <span className="ev-data">
                 <small>{giornoSett(e.inizio)}</small>
                 <b>{giorno(e.inizio)}</b>
@@ -54,45 +56,45 @@ export default function Home() {
                   {e.esempio && <span className="badge badge--demo">Esempio</span>}
                 </span>
               </span>
-            </button>
+            </Link>
           ))}
           {eventi && eventi.length > 0 && (
-            <button className="ev-mini ev-mini--tutti" onClick={() => go("eventi")}>
+            <Link className="ev-mini ev-mini--tutti" to="eventi">
               <strong>Vedi tutti</strong>
               <small>{eventi.length} eventi in Toscana</small>
-            </button>
+            </Link>
           )}
         </div>
       </section>
 
       <section className="blocco">
         <h2 className="section-title">Gioca con il vino toscano</h2>
-        <button className="card card--game" onClick={() => go("gioca/quiz")}>
+        <Link className="card card--game" to="gioca/quiz">
           <span className="card-emoji">⏱️</span>
           <span>
             <strong>Quanto ne sai di vino toscano?</strong>
             <small>Quiz a tempo e classifica All Time.</small>
           </span>
           <span className="chev">→</span>
-        </button>
-        <button className="card card--game card--game-alt" onClick={() => go("gioca/oroscopo")}>
+        </Link>
+        <Link className="card card--game card--game-alt" to="gioca/oroscopo">
           <span className="card-emoji">♌</span>
           <span>
             <strong>L'oroscopo del vino</strong>
             <small>Il tuo segno, il tuo vitigno toscano.</small>
           </span>
           <span className="chev">→</span>
-        </button>
+        </Link>
       </section>
 
-      <button className="cantine-teaser" onClick={() => go("cantine")}>
+      <Link className="cantine-teaser" to="cantine">
         <img src="/img/strada-bianca.jpg" alt="" />
         <span>
           <small className="eyebrow">Le cantine</small>
           <strong>{CANTINE.length} piccoli produttori, scelti uno a uno</strong>
           <small>Si parte dalle colline pisane →</small>
         </span>
-      </button>
+      </Link>
 
       <a className="card card--quote" href={INSTAGRAM_URL} target="_blank" rel="noopener">
         <span className="quote">“Qual è il vino più toscano che hai?”</span>

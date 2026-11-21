@@ -4,7 +4,9 @@ import { km, fmtKm, cercaLuogo, posizioneAttuale, CITTA } from "./geo.js";
 import { ACCESSI, senzaAuto, fmtData } from "./shared.js";
 import Mappa from "./Mappa.jsx";
 
-const go = (path) => { window.location.hash = `/${path}`; };
+import { go } from "../nav.js";
+import Link from "../Link.jsx";
+import { eventoPercorso, idDaPercorso, eventoMeta, eventoJsonLd, applicaMeta } from "../seo.js";
 const POS_KEY = "bevotoscano-posizione";
 
 const QUANDO = [
@@ -45,7 +47,7 @@ const PRESET = {
 };
 
 export default function Eventi({ apri: sub }) {
-  // #/eventi/weekend, #/eventi/senza-auto, #/eventi/vicino sono scorciatoie dalla Home; il resto è l'id di un evento.
+  // /eventi/weekend, /eventi/senza-auto, /eventi/vicino sono scorciatoie dalla Home; il resto è l'id di un evento.
   const preset = PRESET[sub] || {};
   const apri = sub && !PRESET[sub] && sub !== "vicino" ? sub : null;
   const [eventi, setEventi] = useState(null);
@@ -70,7 +72,7 @@ export default function Eventi({ apri: sub }) {
   const set = (k, v) => setF((x) => ({ ...x, [k]: v }));
 
   if (apri) {
-    const e = eventi && eventi.find((x) => String(x.id) === apri);
+    const e = eventi && eventi.find((x) => String(x.id) === idDaPercorso(apri));
     if (!eventi) return <p className="muted">Carico…</p>;
     if (!e) return <><p className="muted">Evento non trovato o già passato.</p><button className="link" onClick={() => go("eventi")}>← Tutti gli eventi</button></>;
     return <Dettaglio e={conDistanze(e, centro)} centro={centro} />;
@@ -104,7 +106,7 @@ export default function Eventi({ apri: sub }) {
       {errore && <p className="error">{errore}</p>}
       {!eventi && !errore && <p className="muted">Carico gli eventi…</p>}
 
-      {eventi && vista === "mappa" && <Mappa eventi={lista} centro={centro} onApri={(e) => go(`eventi/${e.id}`)} />}
+      {eventi && vista === "mappa" && <Mappa eventi={lista} centro={centro} onApri={(e) => go(eventoPercorso(e))} />}
 
       {eventi && (
         <div className="list">
@@ -201,20 +203,28 @@ function Viaggio({ e, centro }) {
 
 function Scheda({ e, centro }) {
   return (
-    <button className="card evento" onClick={() => go(`eventi/${e.id}`)}>
+    <Link className="card evento" to={eventoPercorso(e)}>
       <small className="evento-data">{fmtData(e.inizio)}</small>
       <strong className="evento-titolo">{e.titolo}</strong>
       <Viaggio e={e} centro={centro} />
       <Badges e={e} />
-    </button>
+    </Link>
   );
 }
 
 function Dettaglio({ e, centro }) {
+  // Titolo, anteprima e dati strutturati (schema.org/Event) per Google.
+  useEffect(() => {
+    applicaMeta(eventoMeta(e), eventoJsonLd(e));
+    if (idDaPercorso(window.location.pathname.split("/")[2]) && !window.location.pathname.endsWith(eventoPercorso(e))) {
+      window.history.replaceState(null, "", `/${eventoPercorso(e)}`);
+    }
+    return () => applicaMeta(null);
+  }, [e.id]);
   const maps = e.lat != null ? `https://www.openstreetmap.org/?mlat=${e.lat}&mlon=${e.lng}#map=14/${e.lat}/${e.lng}` : null;
   return (
     <>
-      <button className="link" onClick={() => go("eventi")}>← Tutti gli eventi</button>
+      <Link className="link" to="eventi">← Tutti gli eventi</Link>
       <p className="eyebrow">{fmtData(e.inizio)}{e.fine ? ` → ${new Date(e.fine).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}` : ""}</p>
       <h1 className="page-title">{e.titolo}</h1>
       <Badges e={e} />

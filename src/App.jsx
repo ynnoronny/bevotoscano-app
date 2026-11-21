@@ -8,20 +8,17 @@ import Segnala from "./eventi/Segnala.jsx";
 import Admin from "./eventi/Admin.jsx";
 import Home from "./home/Home.jsx";
 import Cantine from "./home/Cantine.jsx";
+import Link from "./Link.jsx";
+import { go, percorsoAttuale, suCambioPercorso } from "./nav.js";
+import { metaPercorso, applicaMeta } from "./seo.js";
 
-// Navigazione con l'hash, così ogni sezione ha il suo link condivisibile:
-// bevotoscano.com/#/gioca/quiz porta dritto al quiz.
+// Indirizzi veri per ogni sezione: bevotoscano.com/gioca/quiz porta dritto al quiz.
 function useRoute() {
-  const read = () => (window.location.hash.replace(/^#\/?/, "") || "home").split("/");
+  const read = () => percorsoAttuale().split("/");
   const [route, setRoute] = useState(read);
-  useEffect(() => {
-    const on = () => { setRoute(read()); window.scrollTo(0, 0); };
-    window.addEventListener("hashchange", on);
-    return () => window.removeEventListener("hashchange", on);
-  }, []);
+  useEffect(() => suCambioPercorso(() => setRoute(read())), []);
   return route;
 }
-const go = (path) => { window.location.hash = `/${path}`; };
 
 const TABS = [
   { id: "home", label: "Scopri", icon: "🏡" },
@@ -32,6 +29,12 @@ const TABS = [
 
 export default function App() {
   const [section, sub] = useRoute();
+
+  // Titolo e descrizione della pagina (la scheda di un evento imposta i suoi).
+  useEffect(() => {
+    const m = metaPercorso([section, sub].filter(Boolean).join("/"));
+    if (m) applicaMeta(m);
+  }, [section, sub]);
 
   // Un minigioco aperto prende tutto lo schermo.
   if (section === "gioca" && (sub === "oroscopo" || sub === "vitigno")) {
@@ -47,7 +50,7 @@ export default function App() {
   return (
     <div className="app">
       <header className="topbar">
-        <button className="logo" onClick={() => go("home")}>Bevotoscano</button>
+        <Link className="logo" to="home">Bevotoscano</Link>
         <span className="logo-claim">Il vino da vivere</span>
       </header>
       <main className="page fade" key={section}>
@@ -63,10 +66,10 @@ export default function App() {
       </main>
       <nav className="tabbar">
         {TABS.map((t) => (
-          <button key={t.id} className={`tab ${section === t.id ? "tab--on" : ""}`} onClick={() => go(t.id)}>
+          <Link key={t.id} className={`tab ${section === t.id ? "tab--on" : ""}`} to={t.id}>
             <span className="tab-icon">{t.icon}</span>
             <span>{t.label}</span>
-          </button>
+          </Link>
         ))}
       </nav>
     </div>
@@ -139,16 +142,21 @@ function Giochi() {
       <h1 className="page-title">Gioca</h1>
       <p className="muted">La parte gaming di Bevotoscano: impari il vino toscano giocando, e sfidi il mondo.</p>
       <div className="list">
-        {GIOCHI.map((g) => (
-          <button key={g.id} className={`card card--game ${g.pronto ? "" : "card--soon"}`} onClick={() => g.pronto && go(`gioca/${g.id}`)} disabled={!g.pronto}>
-            <span className="card-emoji">{g.emoji}</span>
-            <span>
-              <strong>{g.titolo}</strong>
-              <small>{g.pronto ? g.sottotitolo : "Prossimamente"}</small>
-            </span>
-            <span className="chev">{g.pronto ? "→" : "🔒"}</span>
-          </button>
-        ))}
+        {GIOCHI.map((g) => {
+          const dentro = (
+            <>
+              <span className="card-emoji">{g.emoji}</span>
+              <span>
+                <strong>{g.titolo}</strong>
+                <small>{g.pronto ? g.sottotitolo : "Prossimamente"}</small>
+              </span>
+              <span className="chev">{g.pronto ? "→" : "🔒"}</span>
+            </>
+          );
+          return g.pronto
+            ? <Link key={g.id} className="card card--game" to={`gioca/${g.id}`}>{dentro}</Link>
+            : <button key={g.id} className="card card--game card--soon" disabled>{dentro}</button>;
+        })}
       </div>
     </>
   );
