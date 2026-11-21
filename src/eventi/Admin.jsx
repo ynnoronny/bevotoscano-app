@@ -3,6 +3,7 @@ import { online, accedi, esci, sessione, tuttiGliEventi, salvaEvento, eliminaEve
 import { cercaLuogo } from "./geo.js";
 import { TIPI_ORG, fmtData, senzaAuto } from "./shared.js";
 import { CampiEvento, Campo } from "./Segnala.jsx";
+import Posta from "./Posta.jsx";
 
 // Backend di moderazione: bevotoscano.com/#/admin (non è nel menu).
 const toInput = (iso) => {
@@ -20,8 +21,18 @@ const NUOVO = {
 
 export default function Admin() {
   const [s, setS] = useState(sessione);
+  const [area, setArea] = useState("eventi");
   if (online() && !s) return <Login onOk={setS} />;
-  return <Moderazione email={s?.email} onEsci={() => { esci(); setS(null); }} />;
+  const fuori = () => { esci(); setS(null); };
+  return (
+    <>
+      <div className="chips">
+        <button className={`chip ${area === "eventi" ? "chip--on" : ""}`} onClick={() => setArea("eventi")}>Eventi</button>
+        <button className={`chip ${area === "posta" ? "chip--on" : ""}`} onClick={() => setArea("posta")}>Posta info@</button>
+      </div>
+      {area === "eventi" ? <Moderazione email={s?.email} onEsci={fuori} /> : <Posta onSessione={fuori} />}
+    </>
+  );
 }
 
 function Login({ onOk }) {

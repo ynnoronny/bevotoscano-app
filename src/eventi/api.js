@@ -117,3 +117,17 @@ export async function salvaPickup(p) {
   const list = await pickupPoints();
   localStorage.setItem(LOCAL_PICKUP, JSON.stringify([...list, { ...p, id: Date.now() }]));
 }
+
+// ---------- casella info@ (Supabase Edge Function "posta") ----------
+export async function posta(azione, dati = {}) {
+  if (!online()) throw new Error("La posta funziona solo con il database collegato.");
+  const r = await fetch(`${SUPABASE_URL}/functions/v1/posta`, {
+    method: "POST",
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${await token()}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ azione, ...dati }),
+  });
+  const j = await r.json().catch(() => ({}));
+  if (r.status === 401) throw new Error("sessione");
+  if (!r.ok) throw new Error(j.errore || `Errore ${r.status}`);
+  return j;
+}
