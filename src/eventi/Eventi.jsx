@@ -39,11 +39,20 @@ function conDistanze(e, centro) {
   return { ...e, dDest, pickupVicino: best, vicino: Number.isFinite(vicino) ? vicino : null };
 }
 
-export default function Eventi({ apri }) {
+const PRESET = {
+  weekend: { quando: "weekend" },
+  "senza-auto": { senzaAuto: true },
+};
+
+export default function Eventi({ apri: sub }) {
+  // #/eventi/weekend, #/eventi/senza-auto, #/eventi/vicino sono scorciatoie dalla Home; il resto è l'id di un evento.
+  const preset = PRESET[sub] || {};
+  const apri = sub && !PRESET[sub] && sub !== "vicino" ? sub : null;
   const [eventi, setEventi] = useState(null);
   const [errore, setErrore] = useState("");
   const [centro, setCentro] = useState(() => { try { return JSON.parse(localStorage.getItem(POS_KEY)); } catch { return null; } });
-  const [f, setF] = useState({ senzaAuto: false, guidato: false, quando: "tutte", raggio: "0" });
+  const [f, setF] = useState({ senzaAuto: false, guidato: false, quando: "tutte", raggio: "0", ...preset });
+  useEffect(() => { if (PRESET[sub]) setF((x) => ({ ...x, ...PRESET[sub] })); }, [sub]);
   const [vista, setVista] = useState("lista");
 
   useEffect(() => { eventiPubblici().then(setEventi).catch(() => setErrore("Non riesco a caricare gli eventi.")); }, []);
@@ -70,9 +79,9 @@ export default function Eventi({ apri }) {
   return (
     <>
       <h1 className="page-title">Eventi del vino</h1>
-      <p className="muted">Gli eventi del vino toscano, con chi il vino lo fa. Scegli da dove parti: ti mostriamo i punti di raccolta più vicini.</p>
+      <p className="muted">Gli eventi del vino toscano, con chi il vino lo fa. Curiosa tra tutti, oppure cerca vicino a te: ti mostriamo anche i punti di raccolta dei bus.</p>
 
-      <Partenza centro={centro} setCentro={setCentro} />
+      <Partenza centro={centro} setCentro={setCentro} subito={sub === "vicino"} />
 
       <div className="chips">
         <button className={`chip ${f.senzaAuto ? "chip--on" : ""}`} onClick={() => set("senzaAuto", !f.senzaAuto)}>🚌 Senza auto</button>
@@ -100,7 +109,16 @@ export default function Eventi({ apri }) {
       {eventi && (
         <div className="list">
           {lista.length === 0 && <p className="muted">Nessun evento con questi filtri. Prova ad allargare la distanza o le date.</p>}
-          {lista.map((e) => <Scheda key={e.id} e={e} centro={centro} />)}
+          {lista.map((e, i) => {
+            const m = meseAnno(e.inizio);
+            const nuovoMese = !centro && (i === 0 || meseAnno(lista[i - 1].inizio) !== m);
+            return (
+              <div key={e.id} className="stack">
+                {nuovoMese && <h3 className="mese">{m}</h3>}
+                <Scheda e={e} centro={centro} />
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -113,37 +131,44 @@ export default function Eventi({ apri }) {
   );
 }
 
-function Partenza({ centro, setCentro }) {
+const meseAnno = (iso) => new Date(iso).toLocaleDateString("it-IT", { month: "long", year: "numeric" });
+
+function Partenza({ centro, setCentro, subito }) {
+  const [aperto, setAperto] = useState(false);
   const [q, setQ] = useState("");
   const [ris, setRis] = useState([]);
   const [msg, setMsg] = useState("");
   const vicinoAMe = async () => {
     setMsg("Cerco la tua posizione…");
-    try { setCentro(await posizioneAttuale()); setMsg(""); } catch (e) { setMsg(e.message); }
+    try { setCentro(await posizioneAttuale()); setMsg(""); setAperto(false); } catch (e) { setMsg(e.message); setAperto(true); }
   };
+  useEffect(() => { if (subito && !centro) vicinoAMe(); }, [subito]);
   const cerca = async (ev) => {
     ev.preventDefault();
     if (q.trim().length < 3) return;
     setMsg("Cerco…");
     try { const r = await cercaLuogo(q); setRis(r); setMsg(r.length ? "" : "Nessun risultato"); } catch (e) { setMsg(e.message); }
   };
+  const scegli = (c) => { setCentro(c); setAperto(false); };
   return (
     <section className="card partenza">
       <div className="row between">
-        <strong>📍 {centro ? `Parti da: ${centro.nome}` : "Da dove parti?"}</strong>
-        {centro && <button className="link" onClick={() => setCentro(null)}>Cambia</button>}
+        <strong>📍 {centro ? `Vicino a: ${centro.nome}` : "Tutta la Toscana"}</strong>
+        {centro
+          ? <button className="link" onClick={() => setCentro(null)}>Mostra tutti</button>
+          : !aperto && <button className="link" onClick={() => setAperto(true)}>Cerca vicino a te</button>}
       </div>
-      {!centro && (
+      {!centro && aperto && (
         <>
           <button className="btn btn--primary" onClick={vicinoAMe}>Usa la mia posizione</button>
           <div className="chips">
-            {CITTA.map((c) => <button key={c.nome} className="chip" onClick={() => setCentro(c)}>{c.nome}</button>)}
+            {CITTA.map((c) => <button key={c.nome} className="chip" onClick={() => scegli(c)}>{c.nome}</button>)}
           </div>
           <form className="row nowrap" onSubmit={cerca}>
             <input className="input" placeholder="Oppure scrivi un comune o un indirizzo" value={q} onChange={(e) => setQ(e.target.value)} />
             <button className="btn btn--outline" type="submit">Cerca</button>
           </form>
-          {ris.map((r) => <button key={`${r.lat},${r.lng}`} className="link" onClick={() => { setCentro(r); setRis([]); setQ(""); }}>{r.nome}</button>)}
+          {ris.map((r) => <button key={`${r.lat},${r.lng}`} className="link" onClick={() => { scegli(r); setRis([]); setQ(""); }}>{r.nome}</button>)}
         </>
       )}
       {msg && <small>{msg}</small>}
