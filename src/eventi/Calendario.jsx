@@ -62,8 +62,9 @@ export function Indicazioni({ e, className = "" }) {
   const url = indicazioniUrl(e);
   if (!url) return null;
   return (
-    <a className={`ev-vai ${className}`} href={url} target="_blank" rel="noopener" aria-label="Indicazioni per arrivarci">
+    <a className={`ev-vai ${className}`} href={url} target="_blank" rel="noopener" aria-label="Indicazioni stradali per arrivarci">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden="true"><path d="M3 11l18-8-8 18-2-8-8-2z" /></svg>
+      <span>Vai</span>
     </a>
   );
 }

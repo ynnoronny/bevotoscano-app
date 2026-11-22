@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { INSTAGRAM_URL, RYB_URL } from "../data.js";
 import { eventiPubblici } from "../eventi/api.js";
 import { senzaAuto } from "../eventi/shared.js";
-import Eventi, { nelPeriodo } from "../eventi/Eventi.jsx";
+import Eventi from "../eventi/Eventi.jsx";
 import Mappa from "../eventi/Mappa.jsx";
 import { km, fmtKm, posizioneAttuale, CITTA } from "../eventi/geo.js";
 import Cantine from "./Cantine.jsx";
@@ -92,21 +92,28 @@ const leggi = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d;
 const scrivi = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* niente */ } };
 const g = (iso) => new Date(iso);
 const stessoGiorno = (a, b) => a.toDateString() === b.toDateString();
-const giornoMese = (d, conGiorno) => d.toLocaleDateString("it-IT", { ...(conGiorno ? { weekday: "short" } : {}), day: "numeric", month: "short" }).replace(/\./g, "").toUpperCase();
-const ora = (d) => d.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
-// "SAB 5 DIC · 09:30" oppure "19 NOV → 23 NOV" per gli eventi di più giorni
+const MESI_L = ["gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno", "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre"];
+const GIORNI_L = ["domenica", "lunedì", "martedì", "mercoledì", "giovedì", "venerdì", "sabato"];
+const hm = (d) => `${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`;
+// Date scritte per intero: "sabato 5 dicembre · 9:30–18:30", "19–23 novembre · dalle 10:00"
 function quandoEv(e) {
   const a = g(e.inizio), b = e.fine ? g(e.fine) : null;
-  if (!b || stessoGiorno(a, b)) return `${giornoMese(a, true)} · ${ora(a)}`;
-  return `${giornoMese(a)} → ${giornoMese(b)}`;
+  if (inCorso(e) && b && !stessoGiorno(a, b)) return `In corso · fino al ${b.getDate()} ${MESI_L[b.getMonth()]}`;
+  if (!b || stessoGiorno(a, b)) return `${GIORNI_L[a.getDay()]} ${a.getDate()} ${MESI_L[a.getMonth()]} · ${hm(a)}${b ? `–${hm(b)}` : ""}`;
+  const giorni = a.getMonth() === b.getMonth()
+    ? `${a.getDate()}–${b.getDate()} ${MESI_L[b.getMonth()]}`
+    : `${a.getDate()} ${MESI_L[a.getMonth()]} – ${b.getDate()} ${MESI_L[b.getMonth()]}`;
+  return `${giorni} · dalle ${hm(a)}`;
 }
-// Il prezzo è l'informazione che conta di più: "Gratis" in evidenza, altrimenti la cifra.
+// Il prezzo è l'informazione che conta di più: "Gratis" in evidenza, "da 20 €" se ci sono più prezzi.
 function prezzoEv(e) {
   const p = (e.prezzo || "").trim();
-  if (!p) return null;
+  if (!p) return { testo: "Prezzo sul sito", vuoto: true };
   if (/grat|libero|free|offerta/i.test(p)) return { testo: "Gratis", gratis: true };
-  const cifra = p.match(/(da\s*)?(\d+([.,]\d+)?\s*€|€\s*\d+([.,]\d+)?)/i);
-  return { testo: cifra ? cifra[0].replace(/\s+/g, " ") : "A pagamento", gratis: false };
+  const cifre = [...p.matchAll(/\d+(?:[.,]\d+)?/g)].map((m) => parseFloat(m[0].replace(",", ".")));
+  if (!cifre.length) return { testo: "A pagamento" };
+  const min = Math.min(...cifre);
+  return { testo: `${cifre.length > 1 || /\bda\b/i.test(p) ? "da " : ""}${String(min).replace(".", ",")} €` };
 }
 const inCorso = (e) => g(e.inizio) <= new Date() && (!e.fine || g(e.fine) >= new Date());
 function comeArrivi(e, centro) {
@@ -124,7 +131,22 @@ async function condividi(titolo, percorso) {
   } catch { /* annullato */ }
 }
 
-const QUANDO = [["tutte", "Sempre"], ["weekend", "Weekend"], ["7", "7 giorni"], ["30", "Un mese"]];
+const QUANDO = [["tutte", "Tutte le date"], ["oggi", "Oggi"], ["weekend", "Questo weekend"], ["7", "Prossimi 7 giorni"], ["30", "Prossimi 30 giorni"]];
+// Un evento è "nel periodo" se si svolge anche solo in parte in quei giorni (vale anche per quelli in corso).
+function nelQuando(e, q) {
+  if (q === "tutte") return true;
+  const ini = g(e.inizio), fin = e.fine ? g(e.fine) : new Date(ini.getTime() + 3 * 3600000);
+  const oggi = new Date(); oggi.setHours(0, 0, 0, 0);
+  let da = new Date(oggi), a = new Date(oggi);
+  if (q === "oggi") a.setDate(a.getDate() + 1);
+  else if (q === "weekend") {
+    const dow = oggi.getDay(); // 0 dom … 6 sab
+    if (dow === 0) { da.setDate(da.getDate() - 2); a.setDate(a.getDate() + 1); }
+    else if (dow === 6) { da.setDate(da.getDate() - 1); a.setDate(a.getDate() + 2); }
+    else { da.setDate(da.getDate() + (5 - dow)); a = new Date(da); a.setDate(a.getDate() + 3); }
+  } else a.setDate(a.getDate() + +q);
+  return ini < a && fin >= da;
+}
 
 function FeedEventi({ filtro }) {
   const [eventi, setEventi] = useState(null);
@@ -132,6 +154,7 @@ function FeedEventi({ filtro }) {
   const [quando, setQuando] = useState(filtro === "weekend" ? "weekend" : "tutte");
   const [noAuto, setNoAuto] = useState(filtro === "senza-auto");
   const [mappa, setMappa] = useState(false);
+  const quantiSenzaAuto = (eventi || []).filter((e) => senzaAuto(e) && nelQuando(e, quando)).length;
   useEffect(() => { eventiPubblici().then(setEventi).catch(() => setEventi([])); }, []);
   useEffect(() => { scrivi(POS_KEY, centro); }, [centro]);
   useEffect(() => {
@@ -141,7 +164,7 @@ function FeedEventi({ filtro }) {
   }, [filtro]);
 
   const lista = useMemo(() => (eventi || [])
-    .filter((e) => (!noAuto || senzaAuto(e)) && nelPeriodo(e, quando))
+    .filter((e) => (!noAuto || senzaAuto(e)) && nelQuando(e, quando))
     .map((e) => ({ ...e, d: km(centro, e) }))
     .sort((a, b) => (centro && a.d != null && b.d != null ? a.d - b.d : a.inizio.localeCompare(b.inizio))),
   [eventi, quando, noAuto, centro]);
@@ -150,23 +173,26 @@ function FeedEventi({ filtro }) {
     <div className="feed">
       <Filtri>
         <Riga etichetta="Quando"><Scelta opzioni={QUANDO} valore={quando} onCambia={setQuando} /></Riga>
-        <Riga etichetta="Come">
+        <Riga etichetta="Dove">
           <Partenza centro={centro} setCentro={setCentro} />
-          <Interruttore on={noAuto} onCambia={setNoAuto}>🚌 Senza auto</Interruttore>
-          <Interruttore on={mappa} onCambia={setMappa}>🗺️ Mappa</Interruttore>
+          <Interruttore on={noAuto} onCambia={setNoAuto}>🚌 Solo senza auto ({quantiSenzaAuto})</Interruttore>
         </Riga>
       </Filtri>
+      <div className="feed-vista">
+        <span>{eventi ? (lista.length === 1 ? "1 evento" : `${lista.length} eventi`) : ""}</span>
+        <Scelta opzioni={[["lista", "Lista"], ["mappa", "Mappa"]]} valore={mappa ? "mappa" : "lista"} onCambia={(v) => setMappa(v === "mappa")} />
+      </div>
       {mappa && eventi && <div className="feed-mappa"><Mappa eventi={lista} centro={centro} onApri={(e) => go(eventoPercorso(e))} /></div>}
       {!eventi && <p className="feed-vuoto">Carico gli eventi…</p>}
-      {eventi && lista.length === 0 && <p className="feed-vuoto">Nessun evento con questi filtri, per ora. Prova a toglierne uno, o segnalacene uno tu.</p>}
-      <div className="feed-griglia">
+      {eventi && lista.length === 0 && <p className="feed-vuoto">{noAuto ? "Per ora nessun evento di questo periodo ha un bus o un treno, o si raggiunge a piedi. Togli \"Solo senza auto\" per vederli tutti." : "Nessun evento in questo periodo, per ora. Prova un'altra data, o segnalacene uno tu."}</p>}
+      {!mappa && <div className="feed-griglia">
         {lista.map((e, i) => {
           const arrivo = comeArrivi(e, centro);
           return (
             <article key={e.id} className={`ev ev--${["viola", "vino", "sole"][i % 3]}`}>
               <div className="ev-su">
-                <span className="ev-quando">{inCorso(e) && <b className="ev-ora">In corso · </b>}{quandoEv(e)}</span>
-                {prezzoEv(e) && <span className={`ev-prezzo ${prezzoEv(e).gratis ? "ev-prezzo--gratis" : ""}`}>{prezzoEv(e).testo}</span>}
+                <span className="ev-quando">{quandoEv(e)}</span>
+                <span className={`ev-prezzo ${prezzoEv(e).gratis ? "ev-prezzo--gratis" : ""} ${prezzoEv(e).vuoto ? "ev-prezzo--vuoto" : ""}`}>{prezzoEv(e).testo}</span>
               </div>
               <Link to={eventoPercorso(e)} className="ev-titolo">{e.titolo}</Link>
               <small className="ev-meta">
@@ -185,7 +211,7 @@ function FeedEventi({ filtro }) {
             </article>
           );
         })}
-      </div>
+      </div>}
       <FineFeed />
     </div>
   );
@@ -201,10 +227,10 @@ function Partenza({ centro, setCentro }) {
   return (
     <label className={`filtri-sel ${centro ? "on" : ""}`}>
       <span>📍</span>
-      <select value={valore} onChange={(e) => scegli(e.target.value)} aria-label="Parto da">
-        <option value="">Parto da: ovunque</option>
-        <option value="qui">Parto da: dove sono</option>
-        {CITTA.map((c) => <option key={c.nome} value={c.nome}>Parto da: {c.nome}</option>)}
+      <select value={valore} onChange={(e) => scegli(e.target.value)} aria-label="Da dove parti">
+        <option value="">Tutta la Toscana</option>
+        <option value="qui">Vicino a me</option>
+        {CITTA.map((c) => <option key={c.nome} value={c.nome}>Vicino a {c.nome}</option>)}
       </select>
     </label>
   );

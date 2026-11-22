@@ -351,7 +351,7 @@ html, body { height: 100%; }
 .ev-meta { display: flex; flex-wrap: wrap; column-gap: 12px; row-gap: 2px; font-size: 13.5px; color: var(--muted); min-width: 0; }
 .ev-bus { font-size: 12.5px; font-weight: 700; color: var(--plum); }
 .ev-azioni { display: flex; gap: 6px; flex: none; }
-.ev-vai, .ev-share { flex: none; width: 38px; height: 38px; border-radius: 50%; color: var(--plum); background: var(--cream); display: flex; align-items: center; justify-content: center; }
+.ev-share { flex: none; width: 38px; height: 38px; border-radius: 50%; color: var(--plum); background: var(--cream); display: flex; align-items: center; justify-content: center; }
 .cal--mini { flex: none; }
 .cal-mini { height: 38px; padding: 0 12px 0 10px; border-radius: 999px; background: var(--cream); color: var(--plum); display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; }
 .cal--mini .cal-menu { left: auto; right: 0; width: 210px; bottom: 46px; }
@@ -571,3 +571,10 @@ html, body { height: 100%; }
 
 .ev { box-shadow: 0 6px 18px rgba(67, 37, 67, 0.07), inset 0 0 0 1px rgba(67, 37, 67, 0.06); }
 .cal-mini:active, .ev-vai:active { transform: scale(0.97); }
+.ev-vai { flex: none; height: 38px; padding: 0 12px 0 10px; border-radius: 999px; background: var(--cream); color: var(--plum); display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; }
+.ev-quando { letter-spacing: 0.2px; font-size: 13.5px; }
+.ev-quando::first-letter { text-transform: uppercase; }
+.ev-prezzo--vuoto { background: transparent; color: var(--t); box-shadow: inset 0 0 0 1.5px currentColor; font-weight: 700; opacity: 0.85; }
+.feed-vista { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.feed-vista > span { font-size: 13.5px; font-weight: 700; color: var(--muted); }
+.feed-vista .filtri-scelta { background: var(--paper); box-shadow: inset 0 0 0 1px var(--line); }
