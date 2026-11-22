@@ -2,7 +2,7 @@
 // titolo, descrizione, anteprima per WhatsApp/Facebook e dati strutturati schema.org/Event
 // sono già nell'HTML, quindi Google li legge subito. Poi parte l'app come sempre.
 import { leggiEventi } from "../scripts/eventi-db.mjs";
-import { eventoMeta, eventoJsonLd, eventoCorpo, headHtml, inserisci, idDaPercorso, eventoPercorso, metaPercorso } from "../src/seo.js";
+import { eventoMeta, eventoJsonLd, briciole, eventoCorpo, headHtml, inserisci, idDaPercorso, eventoPercorso, metaPercorso } from "../src/seo.js";
 
 async function modello(req) {
   const host = req.headers["x-forwarded-host"] || req.headers.host;
@@ -54,5 +54,5 @@ export default async function handler(req, res) {
   }
 
   res.setHeader("Cache-Control", "public, s-maxage=600, stale-while-revalidate=86400");
-  return res.status(200).send(inserisci(html, headHtml(eventoMeta(e), [eventoJsonLd(e)]), eventoCorpo(e)));
+  return res.status(200).send(inserisci(html, headHtml(eventoMeta(e), [eventoJsonLd(e), briciole([["Eventi", "eventi"], [e.titolo, eventoPercorso(e)]])]), eventoCorpo(e)));
 }

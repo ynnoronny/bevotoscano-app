@@ -55,7 +55,7 @@ export default function App() {
       </header>
       <main className="page fade" key={section}>
         {section === "home" && <Home />}
-        {section === "cantine" && <Cantine />}
+        {section === "cantine" && <Cantine apri={sub} />}
         {section === "esperienze" && <Esperienze />}
         {section === "cassa" && <Cassa />}
         {section === "gioca" && <Giochi />}

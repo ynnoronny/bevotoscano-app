@@ -6,7 +6,7 @@ import Mappa from "./Mappa.jsx";
 
 import { go } from "../nav.js";
 import Link from "../Link.jsx";
-import { eventoPercorso, idDaPercorso, eventoMeta, eventoJsonLd, applicaMeta } from "../seo.js";
+import { eventoPercorso, idDaPercorso, eventoMeta, eventoJsonLd, briciole, applicaMeta } from "../seo.js";
 const POS_KEY = "bevotoscano-posizione";
 
 const QUANDO = [
@@ -215,7 +215,7 @@ function Scheda({ e, centro }) {
 function Dettaglio({ e, centro }) {
   // Titolo, anteprima e dati strutturati (schema.org/Event) per Google.
   useEffect(() => {
-    applicaMeta(eventoMeta(e), eventoJsonLd(e));
+    applicaMeta(eventoMeta(e), [eventoJsonLd(e), briciole([["Eventi", "eventi"], [e.titolo, eventoPercorso(e)]])]);
     if (idDaPercorso(window.location.pathname.split("/")[2]) && !window.location.pathname.endsWith(eventoPercorso(e))) {
       window.history.replaceState(null, "", `/${eventoPercorso(e)}`);
     }
