@@ -95,7 +95,11 @@ function Moderazione({ email, onEsci }) {
       <div className="list">
         {lista.map((e) => (
           <article key={e.id} className="card">
-            <small className="evento-data">{fmtData(e.inizio)} · {e.comune}{e.fonte === "form" ? " · dal form" : ""}</small>
+            <div className="admin-testa">
+              <Origine fonte={e.fonte} />
+              <small className="evento-data">{fmtData(e.inizio)} · {e.comune}</small>
+              {e.fonte_url && <a className="link" href={e.fonte_url} target="_blank" rel="noopener"><small>dove l'ha trovato ↗</small></a>}
+            </div>
             <strong className="evento-titolo">{e.titolo}</strong>
             <small>{TIPI_ORG[e.org_tipo] || e.org_tipo}: <b>{e.org_nome}</b>{e.org_referente ? ` (${e.org_referente})` : ""}</small>
             <small>
@@ -256,4 +260,15 @@ function Proposte({ onEsci }) {
       </div>
     </>
   );
+}
+
+// Da dove arriva l'evento: trovato dall'agente di ricerca, proposto col modulo Segnala, o inserito a mano.
+const ORIGINI = {
+  scanner: ["🤖 Trovato dall'IA", "admin-origine--ia"],
+  form: ["✍️ Dal modulo Segnala", "admin-origine--form"],
+  admin: ["Inserito da te", "admin-origine--admin"],
+};
+function Origine({ fonte }) {
+  const [testo, cls] = ORIGINI[fonte] || [fonte || "Origine sconosciuta", ""];
+  return <span className={`admin-origine ${cls}`}>{testo}</span>;
 }
