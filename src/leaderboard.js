@@ -7,13 +7,15 @@ const online = supabaseAttivo;
 
 export const isOnline = online;
 
-// Modalità: "classica" (10 domande, punti per velocità) e "alltime" (a oltranza, punti = risposte giuste).
+// Il quiz ha una sola modalità: domande infinite a vite. Nel database si chiama "alltime"
+// e i punti sono le risposte giuste. Le partite vecchie restano salvate ma non contano:
+// la classifica mostra solo quelle dal giorno in cui l'abbiamo azzerata.
 export const MODALITA = {
-  classica: { nome: "Sfida da 10", unita: "pt" },
-  alltime: { nome: "All Time", unita: "risposte" },
+  alltime: { nome: "Quiz infinito", unita: "giuste" },
 };
+export const AZZERATA_IL = "2026-11-22";
 
-export async function inviaPunteggio({ nome, paese, punti, corrette, modalita = "classica" }) {
+export async function inviaPunteggio({ nome, paese, punti, corrette, modalita = "alltime" }) {
   const riga = { nome: nome.trim().slice(0, 20), paese, punti, corrette, modalita, creato: new Date().toISOString() };
   if (online()) {
     const { creato, ...body } = riga;
@@ -27,13 +29,13 @@ export async function inviaPunteggio({ nome, paese, punti, corrette, modalita = 
   } catch { /* niente storage */ }
 }
 
-export async function leggiClassifica(modalita = "classica", limite = 20) {
+export async function leggiClassifica(modalita = "alltime", limite = 20) {
   if (online()) {
-    return supabase(`punteggi?select=nome,paese,punti,corrette&modalita=eq.${modalita}&order=punti.desc,creato.asc&limit=${limite}`);
+    return supabase(`punteggi?select=nome,paese,punti,corrette&modalita=eq.${modalita}&creato=gte.${AZZERATA_IL}&order=punti.desc,creato.asc&limit=${limite}`);
   }
   try {
     return JSON.parse(localStorage.getItem(LOCAL_KEY) || "[]")
-      .filter((r) => (r.modalita || "classica") === modalita)
+      .filter((r) => (r.modalita || "classica") === modalita && (r.creato || "") >= AZZERATA_IL)
       .sort((a, b) => b.punti - a.punti)
       .slice(0, limite);
   } catch {

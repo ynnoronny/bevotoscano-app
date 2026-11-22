@@ -3,6 +3,8 @@
 // momento della pubblicazione (scripts/prerender.mjs) e le funzioni Vercel in api/.
 // Per cambiare titolo o descrizione di una pagina, modifica PAGINE qui sotto.
 
+import { ARTICOLI } from "./blog.js";
+
 export const SITO = "https://bevotoscano.com";
 export const IMMAGINE = `${SITO}/og.jpg`; // anteprima quando si condivide un link
 const NOME = "Bevotoscano";
@@ -23,11 +25,11 @@ export const PAGINE = {
   },
   gioca: {
     title: "Giochi sul vino toscano: quiz e oroscopo | Bevotoscano",
-    description: "Impara il vino toscano giocando: il quiz a tempo con la classifica All Time e l'oroscopo del vino con il tuo vitigno toscano.",
+    description: "La classifica del quiz infinito sul vino toscano: ogni 3 risposte giuste una vita, sbagli senza vite e sei fuori. Più l'oroscopo del vino con il tuo vitigno.",
   },
   "gioca/quiz": {
     title: "Quiz: quanto ne sai di vino toscano? | Bevotoscano",
-    description: "Il quiz a tempo sul vino toscano: vitigni, denominazioni, territori. Gioca la Sfida da 10 o l'All Time a oltranza e scala la classifica.",
+    description: "Il quiz infinito sul vino toscano: vitigni, denominazioni, territori. Ogni 3 risposte giuste guadagni una vita: quante ne fai prima di cadere?",
   },
   "gioca/oroscopo": {
     title: "L'oroscopo del vino: quale vitigno toscano sei? | Bevotoscano",
@@ -35,8 +37,13 @@ export const PAGINE = {
   },
   "gioca/classifica": {
     title: "Classifica del quiz sul vino toscano | Bevotoscano",
-    description: "Chi ne sa di più di vino toscano? La classifica All Time e quella della Sfida da 10 del quiz Bevotoscano.",
+    description: "Chi ne sa di più di vino toscano? La classifica del quiz infinito Bevotoscano: conta quante risposte giuste fai prima di cadere.",
   },
+  blog: {
+    title: "Blog: storie di vino toscano e piccole cantine | Bevotoscano",
+    description: "Storie di vino toscano: vitigni rari, piccole cantine, Terricciola e la domanda che facciamo a tutti, qual è il vino più toscano che hai?",
+  },
+  ...Object.fromEntries(ARTICOLI.map((a) => [`blog/${a.id}`, { title: `${a.titolo} | Bevotoscano`, description: a.sottotitolo }])),
   esperienze: {
     title: "Esperienze del vino in Toscana | Bevotoscano",
     description: "Cantina Diffusa, visite e degustazioni con chi il vino lo fa: le esperienze Bevotoscano con le piccole cantine toscane.",

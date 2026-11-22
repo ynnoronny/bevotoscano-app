@@ -3,13 +3,10 @@ import { ESPERIENZE, CASSA, INSTAGRAM_URL } from "./data.js";
 import { saveLead, isEmail } from "./leads.js";
 import Oroscopo from "./games/Oroscopo.jsx";
 import QuizToscana from "./games/QuizToscana.jsx";
-import Eventi from "./eventi/Eventi.jsx";
-import Segnala from "./eventi/Segnala.jsx";
 import Admin from "./eventi/Admin.jsx";
-import Notte, { TestataNotte } from "./home/Notte.jsx";
-import Cantine from "./home/Cantine.jsx";
+import Shell from "./home/Shell.jsx";
 import { go, percorsoAttuale, suCambioPercorso } from "./nav.js";
-import { metaPercorso, applicaMeta, FILTRI_EVENTI } from "./seo.js";
+import { metaPercorso, applicaMeta } from "./seo.js";
 
 // Indirizzi veri per ogni sezione: bevotoscano.com/gioca/quiz porta dritto al quiz.
 function useRoute() {
@@ -18,15 +15,6 @@ function useRoute() {
   useEffect(() => suCambioPercorso(() => setRoute(read())), []);
   return route;
 }
-
-// Le sezioni che vivono nella schermata unica (la mappa): /, /eventi, /gioca, /cantine
-// e le scorciatoie /eventi/weekend, /eventi/senza-auto, /eventi/vicino.
-const PAGINE_A_PARTE = ["esperienze", "cassa", "segnala", "admin"];
-const nelFeed = (section, sub) =>
-  !PAGINE_A_PARTE.includes(section) &&
-  !(section === "eventi" && sub && !FILTRI_EVENTI.includes(sub)) &&
-  !(section === "cantine" && sub) &&
-  !(section === "gioca" && sub);
 
 export default function App() {
   const [section, sub] = useRoute();
@@ -48,29 +36,16 @@ export default function App() {
     return <QuizToscana iniziale="classifica" onExit={() => go("gioca")} />;
   }
 
-  if (nelFeed(section, sub)) {
-    const tab = section === "cantine" || section === "gioca" ? section : "eventi";
-    return <Notte tab={tab} filtro={section === "eventi" ? sub : undefined} />;
-  }
+  if (section === "admin") return <div className="app"><main className="page"><Admin /></main></div>;
 
-  // Le pagine a sé (un evento, una cantina, segnala…) tengono la stessa testata.
-  const attiva = ["eventi", "cantine"].includes(section) ? section : null;
+  // Tutto il resto vive nella schermata fissa: pills in alto, sotto scorre solo il contenuto.
+  const aParte = section === "esperienze" ? <Esperienze /> : section === "cassa" ? <Cassa /> : null;
   return (
-    <div className="app">
-      <TestataNotte attiva={attiva} />
-      <main className="page fade" key={`${section}/${sub || ""}`}>
-        {section === "cantine" && <Cantine apri={sub} />}
-        {section === "esperienze" && <Esperienze />}
-        {section === "cassa" && <Cassa />}
-        {section === "eventi" && <Eventi apri={sub} />}
-        {section === "segnala" && <Segnala />}
-        {section === "admin" && <Admin />}
-      </main>
-    </div>
+    <Shell section={section || "home"} sub={sub}>
+      {aParte && <div className="page shell-pagina">{aParte}</div>}
+    </Shell>
   );
 }
-
-
 
 function Esperienze() {
   return (
