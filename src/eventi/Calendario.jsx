@@ -39,7 +39,7 @@ export default function AggiungiCalendario({ e, percorso, className = "", compat
   const url = `${window.location.origin}/${percorso}`;
   return (
     <div className={`cal ${compatto ? "cal--mini" : ""} ${className}`}>
-      <button className={compatto ? "cal-mini" : "cal-btn"} aria-expanded={aperto} aria-label="Aggiungi al calendario" onClick={() => setAperto((x) => !x)}><Icona />{compatto ? <span>Aggiungi</span> : " Aggiungi al calendario"}</button>
+      <button className={compatto ? "cal-mini" : "cal-btn"} aria-expanded={aperto} aria-label="Promemoria nel calendario" onClick={() => setAperto((x) => !x)}><Icona />{compatto ? <span>Promemoria</span> : " Aggiungi un promemoria"}</button>
       {aperto && (
         <div className="cal-menu" role="menu">
           <a role="menuitem" href={googleUrl(e, url)} target="_blank" rel="noopener" onClick={() => setAperto(false)}>Google Calendar</a>
@@ -47,5 +47,23 @@ export default function AggiungiCalendario({ e, percorso, className = "", compat
         </div>
       )}
     </div>
+  );
+}
+
+// Indicazioni stradali: su iPhone apre Mappe di Apple, altrove Google Maps (app o sito).
+export function indicazioniUrl(e) {
+  const dest = e.lat != null ? `${e.lat},${e.lng}` : [e.luogo_nome, e.indirizzo, e.comune].filter(Boolean).join(", ");
+  if (!dest) return null;
+  const ios = typeof navigator !== "undefined" && /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent) && "ontouchend" in document;
+  return ios ? `https://maps.apple.com/?daddr=${encodeURIComponent(dest)}` : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(dest)}`;
+}
+
+export function Indicazioni({ e, className = "" }) {
+  const url = indicazioniUrl(e);
+  if (!url) return null;
+  return (
+    <a className={`ev-vai ${className}`} href={url} target="_blank" rel="noopener" aria-label="Indicazioni per arrivarci">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" aria-hidden="true"><path d="M3 11l18-8-8 18-2-8-8-2z" /></svg>
+    </a>
   );
 }

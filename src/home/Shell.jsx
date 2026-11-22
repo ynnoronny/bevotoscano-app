@@ -14,7 +14,8 @@ import MESE from "../games/oroscopoMese.json";
 import { Classifica } from "../games/Classifiche.jsx";
 import Link from "../Link.jsx";
 import Benvenuto, { segnoMio } from "./Benvenuto.jsx";
-import AggiungiCalendario from "../eventi/Calendario.jsx";
+import AggiungiCalendario, { Indicazioni } from "../eventi/Calendario.jsx";
+import { conProvincia } from "../province.js";
 import { Filtri, Riga, Scelta, Interruttore } from "./Filtri.jsx";
 import { go } from "../nav.js";
 import { eventoPercorso, FILTRI_EVENTI } from "../seo.js";
@@ -164,21 +165,22 @@ function FeedEventi({ filtro }) {
           return (
             <article key={e.id} className={`ev ev--${["viola", "vino", "sole"][i % 3]}`}>
               <div className="ev-su">
-                <span className="ev-quando">{quandoEv(e)}</span>
+                <span className="ev-quando">{inCorso(e) && <b className="ev-ora">In corso · </b>}{quandoEv(e)}</span>
                 {prezzoEv(e) && <span className={`ev-prezzo ${prezzoEv(e).gratis ? "ev-prezzo--gratis" : ""}`}>{prezzoEv(e).testo}</span>}
               </div>
               <Link to={eventoPercorso(e)} className="ev-titolo">{e.titolo}</Link>
+              <small className="ev-meta">
+                <span>{conProvincia(e.comune)}{e.d != null ? ` · ${fmtKm(e.d)}` : ""}</span>
+                {arrivo && <span className="ev-bus">🚌 {arrivo}</span>}
+              </small>
               <div className="ev-giu">
-                <small className="ev-meta">
-                  <span>{inCorso(e) && <b className="ev-ora">In corso · </b>}{e.comune}{e.d != null ? ` · ${fmtKm(e.d)}` : ""}</span>
-                  {arrivo && <span className="ev-bus">🚌 {arrivo}</span>}
-                </small>
-                <div className="ev-azioni">
-                  <AggiungiCalendario e={e} percorso={eventoPercorso(e)} compatto />
+                <AggiungiCalendario e={e} percorso={eventoPercorso(e)} compatto />
+                <span className="ev-azioni">
+                  <Indicazioni e={e} />
                   <button className="ev-share" aria-label="Condividi" onClick={() => condividi(e.titolo, eventoPercorso(e))}>
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5" /></svg>
                   </button>
-                </div>
+                </span>
               </div>
             </article>
           );

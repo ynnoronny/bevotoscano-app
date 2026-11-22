@@ -6,7 +6,8 @@ import Mappa from "./Mappa.jsx";
 
 import { go } from "../nav.js";
 import Link from "../Link.jsx";
-import AggiungiCalendario from "./Calendario.jsx";
+import AggiungiCalendario, { indicazioniUrl } from "./Calendario.jsx";
+import { conProvincia } from "../province.js";
 import { eventoPercorso, idDaPercorso, eventoMeta, eventoJsonLd, briciole, applicaMeta } from "../seo.js";
 const POS_KEY = "bevotoscano-posizione";
 
@@ -251,7 +252,7 @@ function Dettaglio({ e, centro }) {
             ))}
           </div>
         )}
-        <div className="pickup"><span>🍷 {e.luogo_nome}, {e.indirizzo ? `${e.indirizzo}, ` : ""}{e.comune}</span>{maps && <a className="link" href={maps} target="_blank" rel="noopener">Mappa</a>}</div>
+        <div className="pickup"><span>🍷 {e.luogo_nome}, {e.indirizzo ? `${e.indirizzo}, ` : ""}{conProvincia(e.comune)}</span>{indicazioniUrl(e) && <a className="link" href={indicazioniUrl(e)} target="_blank" rel="noopener">Indicazioni</a>}</div>
       </section>
 
       <section className="card">
