@@ -38,10 +38,10 @@ function MappaCantine({ cantine, attiva, onScegli }) {
   return <div ref={box} className="mappa mappa--bassa" />;
 }
 
-export default function Cantine({ apri }) {
+export default function Cantine({ apri, inFeed = false }) {
   const scheda = apri && CANTINE.find((c) => c.id === apri);
   if (scheda) return <Scheda c={scheda} />;
-  return <Elenco />;
+  return <Elenco inFeed={inFeed} />;
 }
 
 // La pagina di una cantina: bevotoscano.com/cantine/fibbiano
@@ -85,7 +85,7 @@ function Scheda({ c }) {
   );
 }
 
-function Elenco() {
+function Elenco({ inFeed }) {
   const [zona, setZona] = useState("Tutte");
   const [attiva, setAttiva] = useState(null);
   const [eventi, setEventi] = useState([]);
@@ -106,14 +106,18 @@ function Elenco() {
 
   return (
     <>
-      <section className="testata">
-        <img src="/img/strada-bianca.jpg" alt="Strada bianca tra le vigne" />
-        <div>
-          <p className="eyebrow">Le cantine</p>
-          <h1>Piccoli produttori, scelti uno a uno</h1>
-        </div>
-      </section>
-      <p className="muted">Andiamo a conoscerle di persona, a ognuna chiediamo qual è il suo vino più toscano. Si parte dalle colline pisane, intorno a Terricciola, e la mappa cresce a ogni visita.</p>
+      {!inFeed && (
+        <>
+          <section className="testata">
+            <img src="/img/strada-bianca.jpg" alt="Strada bianca tra le vigne" />
+            <div>
+              <p className="eyebrow">Le cantine</p>
+              <h1>Piccoli produttori, scelti uno a uno</h1>
+            </div>
+          </section>
+          <p className="muted">Andiamo a conoscerle di persona, a ognuna chiediamo qual è il suo vino più toscano. Si parte dalle colline pisane, intorno a Terricciola, e la mappa cresce a ogni visita.</p>
+        </>
+      )}
 
       <MappaCantine cantine={lista} attiva={attiva} onScegli={scegli} />
 
@@ -153,6 +157,7 @@ function Elenco() {
         })}
       </div>
 
+      {!inFeed && (
       <section className="card card--plum">
         <strong>Sei una cantina, o ne conosci una che merita?</strong>
         <p>Scrivici: veniamo a conoscervi. Se avete un evento in programma, segnalatelo, è gratis.</p>
@@ -161,6 +166,7 @@ function Elenco() {
           <a className="link light" href={`mailto:${CONTACT_EMAIL}?subject=Una%20cantina%20per%20Bevotoscano`}>{CONTACT_EMAIL}</a>
         </div>
       </section>
+      )}
     </>
   );
 }

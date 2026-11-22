@@ -262,3 +262,91 @@ button.badge { cursor: pointer; align-self: flex-start; }
 .oro-mese small { color: var(--muted); font-size: 12px; }
 .board-pts small { font-family: var(--sans); font-weight: 400; font-size: 11px; color: var(--muted); }
 .classifiche { display: flex; flex-direction: column; gap: 10px; }
+
+/* Schermata unica (feed): niente più tab in basso, una testata fissa con i chip delle sezioni */
+.app { padding-bottom: env(safe-area-inset-bottom); }
+.testa { position: sticky; top: 0; z-index: 500; background: var(--plum); color: #fff; }
+.testa-riga { height: 52px; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.testa-chips { display: flex; gap: 2px; overflow-x: auto; padding: 0 14px 10px; scrollbar-width: none; }
+.testa-chips::-webkit-scrollbar { display: none; }
+.testa-chip { flex: none; height: 34px; padding: 0 14px; border-radius: 999px; display: flex; align-items: center; font-size: 14px; font-weight: 700; color: rgba(255, 255, 255, 0.75); transition: background 0.2s, color 0.2s; }
+.testa-chip--on { background: #fff; color: var(--plum); }
+.feed { display: flex; flex-direction: column; padding-bottom: 8px; }
+.feed-hero { min-height: 320px; }
+.feed-hero h1 { font-size: 48px; }
+.feed-pad { padding: 0 20px; }
+.feed-sez { display: flex; flex-direction: column; gap: 14px; padding-top: 30px; scroll-margin-top: 104px; }
+.feed-head { display: flex; justify-content: space-between; align-items: baseline; padding: 0 20px; }
+.feed-h2 { font-family: var(--serif); font-weight: 700; font-size: 31px; line-height: 1; color: var(--plum); }
+.feed-card { margin: 0 16px; width: auto; }
+.feed-rail { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding: 0 20px; padding: 4px 20px 14px; scrollbar-width: none; }
+.feed-rail::-webkit-scrollbar { display: none; }
+.feed-rail--chips { gap: 6px; scroll-snap-type: none; padding-bottom: 4px; }
+.feed-filtri { display: flex; gap: 6px; padding: 0 20px; overflow-x: auto; scrollbar-width: none; }
+.feed-filtri button { flex: none; height: 38px; padding: 0 15px; border-radius: 999px; border: 1px solid var(--line); background: var(--paper); font-size: 14px; font-weight: 700; color: var(--plum); }
+.feed-filtri button.on { background: var(--plum); color: #fff; border-color: var(--plum); }
+.feed-dentro { display: flex; flex-direction: column; gap: 14px; }
+.feed-fine { gap: 14px; padding-bottom: 20px; }
+
+/* Storie */
+.storie { gap: 6px; padding-top: 18px; padding-bottom: 4px; scroll-snap-type: none; }
+.storia { flex: none; width: 74px; display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--plum); text-align: center; }
+.storia-ring { width: 66px; height: 66px; border-radius: 50%; padding: 3px; border: 2.5px solid var(--gold); display: block; }
+.storia-ring--grigio { border-color: #D9CFD8; }
+.storia-in { width: 100%; height: 100%; border-radius: 50%; background: var(--plum); display: flex; align-items: center; justify-content: center; font-size: 25px; overflow: hidden; }
+.storia-in img { width: 100%; height: 100%; object-fit: cover; }
+.storia-in--wine { background: var(--wine); }
+.storia-in--dark { background: var(--plum-dark); }
+.storia-in--gold { background: var(--gold); }
+.storia-in--bianco { background: var(--paper); border: 1px solid var(--line); }
+
+/* Eventi a schede grandi */
+.ev-card { flex: none; width: 82%; max-width: 300px; scroll-snap-align: start; background: var(--paper); border-radius: 16px; overflow: hidden; box-shadow: 0 6px 24px rgba(67, 37, 67, 0.1); display: flex; flex-direction: column; }
+.ev-card-top { height: 128px; padding: 16px 18px; color: #fff; display: flex; justify-content: space-between; align-items: flex-start; }
+.ev-card-top--plum { background: var(--plum); }
+.ev-card-top--wine { background: var(--wine); }
+.ev-card-top--dark { background: var(--plum-dark); }
+.ev-card-giorno { display: block; font-family: var(--serif); font-weight: 800; font-size: 62px; line-height: 0.85; }
+.ev-card-quando { display: block; margin-top: 8px; font-size: 12.5px; font-weight: 900; letter-spacing: 1.2px; text-transform: uppercase; opacity: 0.85; }
+.ev-card-prezzo { font-size: 13px; font-weight: 700; background: rgba(255, 255, 255, 0.16); border-radius: 999px; padding: 5px 10px; white-space: nowrap; }
+.ev-card-body { padding: 14px 18px 16px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.ev-card-tit { font-family: var(--serif); font-weight: 700; font-size: 22px; line-height: 1.1; color: var(--plum); }
+.ev-card-meta { font-size: 13.5px; color: var(--muted); }
+.ev-card-bus { align-self: flex-start; }
+.ev-card-act { display: flex; gap: 8px; margin-top: auto; padding-top: 6px; }
+.ev-card-act .btn { flex: 1; padding: 12px 16px; }
+.ev-card-share { width: 46px; height: 46px; flex: none; border-radius: 50%; background: var(--cream); color: var(--plum); display: flex; align-items: center; justify-content: center; }
+.ev-card--tutti { width: 140px; align-items: center; justify-content: center; gap: 4px; text-align: center; padding: 12px; background: transparent; border: 1.5px dashed rgba(67, 37, 67, 0.3); box-shadow: none; color: var(--plum); }
+.ev-card--tutti strong { font-family: var(--serif); font-size: 20px; }
+.ev-card--tutti small { font-size: 12px; color: var(--muted); }
+
+/* La domanda del giorno */
+.gioca-card { margin: 0 16px; padding: 22px 18px; border-radius: 20px; background: var(--plum); color: #fff; display: flex; flex-direction: column; gap: 14px; }
+.gioca-eyebrow { font-size: 12px; font-weight: 900; letter-spacing: 1.6px; text-transform: uppercase; color: #D9BE8E; }
+.gioca-q { font-family: var(--serif); font-weight: 700; font-size: 26px; line-height: 1.15; }
+.gioca-opz { display: flex; flex-direction: column; gap: 8px; }
+.gioca-o { width: 100%; min-height: 48px; border-radius: 12px; padding: 12px 14px; background: rgba(255, 255, 255, 0.1); border: 1.5px solid rgba(255, 255, 255, 0.2); color: #fff; font-size: 15px; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s; }
+.gioca-o--ok { background: #E9F0DC; border-color: #E9F0DC; color: #2F3D17; font-weight: 700; }
+.gioca-o--no { background: rgba(199, 91, 57, 0.28); border-color: #E08A6E; }
+.gioca-o--dim { opacity: 0.45; }
+.gioca-esito { font-size: 14px; line-height: 1.5; color: rgba(255, 255, 255, 0.88); }
+.gioca-act { display: flex; gap: 8px; flex-wrap: wrap; }
+.gioca-act .btn { flex: 1; align-self: auto; padding: 13px 18px; }
+
+/* Oroscopo nel feed */
+.segno { flex: none; height: 38px; padding: 0 14px; border-radius: 999px; font-size: 14px; font-weight: 700; color: var(--plum); background: var(--paper); border: 1px solid var(--line); display: flex; align-items: center; }
+.segno--on { background: var(--plum); color: #fff; border-color: var(--plum); }
+.oro-card { margin: 0 16px; background: var(--paper); border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 6px 24px rgba(67, 37, 67, 0.08); }
+.oro-card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.oro-card-head > b { font-size: 12px; font-weight: 900; letter-spacing: 1.4px; text-transform: uppercase; color: var(--wine); }
+.oro-card-head small { font-size: 13px; color: var(--muted); }
+.oro-card-head small b { color: var(--plum); }
+.oro-card h3 { font-family: var(--serif); font-weight: 700; font-size: 24px; line-height: 1.15; color: var(--plum); }
+.oro-card p { font-size: 15px; line-height: 1.55; }
+.oro-card .oro-card-vino { font-weight: 700; color: var(--plum); }
+
+/* Cantine nel feed */
+.cant { flex: none; width: 96px; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; scroll-snap-align: start; }
+.cant-av { width: 64px; height: 64px; border-radius: 50%; background: var(--paper); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; font-family: var(--serif); font-weight: 800; font-size: 28px; color: var(--plum); }
+.cant b { font-size: 12.5px; line-height: 1.2; }
+.cant small { font-size: 11.5px; color: var(--muted); }

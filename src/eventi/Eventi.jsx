@@ -17,7 +17,7 @@ const QUANDO = [
 ];
 const RAGGIO = [["0", "Ovunque"], ["15", "Entro 15 km"], ["30", "Entro 30 km"], ["60", "Entro 60 km"]];
 
-function nelPeriodo(e, quando) {
+export function nelPeriodo(e, quando) {
   if (quando === "tutte") return true;
   const t = new Date(e.inizio), ora = new Date();
   if (quando === "weekend") {
@@ -46,7 +46,7 @@ const PRESET = {
   "senza-auto": { senzaAuto: true },
 };
 
-export default function Eventi({ apri: sub }) {
+export default function Eventi({ apri: sub, inFeed = false }) {
   // /eventi/weekend, /eventi/senza-auto, /eventi/vicino sono scorciatoie dalla Home; il resto è l'id di un evento.
   const preset = PRESET[sub] || {};
   const apri = sub && !PRESET[sub] && sub !== "vicino" ? sub : null;
@@ -80,8 +80,8 @@ export default function Eventi({ apri: sub }) {
 
   return (
     <>
-      <h1 className="page-title">Eventi del vino</h1>
-      <p className="muted">Gli eventi del vino toscano, con chi il vino lo fa. Curiosa tra tutti, oppure cerca vicino a te: ti mostriamo anche i punti di raccolta dei bus.</p>
+      {!inFeed && <h1 className="page-title">Eventi del vino</h1>}
+      {!inFeed && <p className="muted">Gli eventi del vino toscano, con chi il vino lo fa. Curiosa tra tutti, oppure cerca vicino a te: ti mostriamo anche i punti di raccolta dei bus.</p>}
 
       <Partenza centro={centro} setCentro={setCentro} subito={sub === "vicino"} />
 
@@ -124,11 +124,13 @@ export default function Eventi({ apri: sub }) {
         </div>
       )}
 
-      <section className="card">
-        <strong>Organizzi un evento del vino in Toscana?</strong>
-        <p className="muted">Cantine, enoteche, aziende bus: segnalarlo è gratis e richiede due minuti.</p>
-        <button className="btn btn--outline" onClick={() => go("segnala")}>Segnala un evento</button>
-      </section>
+      {!inFeed && (
+        <section className="card">
+          <strong>Organizzi un evento del vino in Toscana?</strong>
+          <p className="muted">Cantine, enoteche, aziende bus: segnalarlo è gratis e richiede due minuti.</p>
+          <button className="btn btn--outline" onClick={() => go("segnala")}>Segnala un evento</button>
+        </section>
+      )}
     </>
   );
 }
