@@ -6,6 +6,7 @@ import Mappa from "./Mappa.jsx";
 
 import { go } from "../nav.js";
 import Link from "../Link.jsx";
+import AggiungiCalendario from "./Calendario.jsx";
 import { eventoPercorso, idDaPercorso, eventoMeta, eventoJsonLd, briciole, applicaMeta } from "../seo.js";
 const POS_KEY = "bevotoscano-posizione";
 
@@ -224,10 +225,12 @@ function Dettaglio({ e, centro }) {
   const maps = e.lat != null ? `https://www.openstreetmap.org/?mlat=${e.lat}&mlon=${e.lng}#map=14/${e.lat}/${e.lng}` : null;
   return (
     <>
-      <Link className="link" to="eventi">← Tutti gli eventi</Link>
-      <p className="eyebrow">{fmtData(e.inizio)}{e.fine ? ` → ${new Date(e.fine).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}` : ""}</p>
+      <p className="eyebrow">{e.fine && new Date(e.fine).toDateString() !== new Date(e.inizio).toDateString()
+        ? `Dal ${fmtData(e.inizio, false)} al ${fmtData(e.fine, false)}`
+        : `${fmtData(e.inizio)}${e.fine ? ` → ${new Date(e.fine).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}` : ""}`}</p>
       <h1 className="page-title">{e.titolo}</h1>
       <Badges e={e} />
+      <AggiungiCalendario e={e} percorso={eventoPercorso(e)} className="cal--pagina" />
       {e.altre_date && <p className="muted">Altre date: {e.altre_date}</p>}
       {e.descrizione && <p>{e.descrizione}</p>}
       {e.vini && <p className="cantina-wine">Nel bicchiere: <b>{e.vini}</b></p>}

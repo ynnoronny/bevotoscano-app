@@ -1,5 +1,5 @@
 // Gli articoli del blog. Per aggiungerne uno: copia un blocco, cambia id (diventa l'indirizzo
-// bevotoscano.com/blog/<id>), titolo, data e paragrafi. Il primo articolo dell'elenco è il più recente.
+// bevotoscano.com/blog/<id>), titolo, data, immagine (in public/img/) e paragrafi. Il primo articolo dell'elenco è il più recente.
 import { SEGNI } from "./games/oroscopoData.js";
 
 export const ARTICOLI = [
@@ -9,6 +9,8 @@ export const ARTICOLI = [
     sottotitolo: "Non c'è solo il Sangiovese: dal Ciliegiolo alla Barsaglina, la Toscana nel bicchiere è molto più larga.",
     data: "2026-11-22",
     tag: "Vitigni",
+    immagine: "/img/colline.jpg",
+    alt: "Colline toscane coltivate a vigna",
     paragrafi: [
       "Quando si dice vino toscano si pensa al Sangiovese, e ha ragione chi lo fa. Ma intorno al re ci sono vitigni antichi, rari, a volte quasi spariti, che le piccole cantine stanno riportando nel bicchiere. Sono gli stessi dodici del nostro oroscopo del vino.",
       ...SEGNI.map((s) => `${s.vitigno}. ${s.curiosita}`),
@@ -21,6 +23,8 @@ export const ARTICOLI = [
     sottotitolo: "Una domanda sola, fatta a cantine, baristi ed enoteche. Le risposte dicono molto più di una scheda tecnica.",
     data: "2026-11-15",
     tag: "Il format",
+    immagine: "/og.jpg",
+    alt: "Bevotoscano",
     paragrafi: [
       "È la domanda che facciamo a chiunque abbia una bottiglia in mano per lavoro: qual è il vino più toscano che hai? Non il migliore, non il più caro: il più toscano.",
       "Le risposte cambiano a ogni porta. C'è chi tira fuori un Sangiovese in purezza, chi un vitigno che conosce solo il paese, chi un vino che racconta la nonna. Ogni risposta è un pezzo di territorio.",
@@ -33,6 +37,8 @@ export const ARTICOLI = [
     sottotitolo: "Una Città del Vino con più di venti aziende agricole e poco più di 4.500 abitanti. Attraversata spesso, vissuta poco.",
     data: "2026-11-08",
     tag: "Chi siamo",
+    immagine: "/img/strada-bianca.jpg",
+    alt: "Strada bianca tra le vigne",
     paragrafi: [
       "Terricciola sta sulle colline pisane, a metà strada tra il mare e Volterra. È una Città del Vino: più di venti aziende agricole per poco più di 4.500 abitanti.",
       "Eppure è uno di quei posti che si attraversano, o dove si sceglie di dormire, ma che raramente si vivono davvero. Bevotoscano nasce da qui, con una domanda: può il vino diventare la chiave per scoprire una Toscana meno battuta?",

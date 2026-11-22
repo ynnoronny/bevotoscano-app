@@ -326,7 +326,7 @@ ${a.paragrafi.map((t) => `<p>${esc(t)}</p>`).join("\n")}
 
 export function cantinaCorpo(c) {
   return `<div class="app"><main class="page"><a class="link" href="/cantine">← Tutte le cantine</a>
-<p class="eyebrow">${esc(c.comune)} · ${esc(c.zona)}</p>
+<p class="eyebrow">${esc(c.comune)}${c.provincia ? ` (provincia di ${esc(c.provincia)})` : ""} · ${esc(c.zona)}</p>
 <h1 class="page-title">${esc(c.nome)}</h1>
 <p>${esc(cantinaMeta(c).description)}</p>
 ${c.sito ? `<p><a href="${esc(c.sito)}" rel="noopener">Sito della cantina</a></p>` : ""}</main></div>`;

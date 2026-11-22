@@ -90,7 +90,7 @@ export default function QuizToscana({ onExit, iniziale = "start" }) {
     <div className={`game ${fase === "fine" ? "game--result" : ""}`} style={fase === "fine" ? { background: GRADIENTE } : undefined}>
       <div className="game-top">
         <button className="game-back" onClick={fase === "classifica" && iniziale !== "classifica" ? () => setFase("start") : onExit}>
-          ← {fase === "classifica" && iniziale !== "classifica" ? "Indietro" : "Classifica"}
+          ← {fase === "classifica" && iniziale !== "classifica" ? "Indietro" : "Giochi"}
         </button>
         <span className="game-brand">Bevotoscano</span>
       </div>
@@ -200,7 +200,7 @@ function Fine({ corrette, onRigioca, onExit }) {
       />
       <div className="row">
         <button className="link light" onClick={onRigioca}>Rigioca</button>
-        <button className="link light" onClick={onExit}>Torna alla classifica</button>
+        <button className="link light" onClick={onExit}>Torna ai giochi</button>
       </div>
     </div>
   );

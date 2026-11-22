@@ -7,20 +7,51 @@ import { eventiPubblici } from "../eventi/api.js";
 import { go } from "../nav.js";
 import Link from "../Link.jsx";
 import { pos } from "./luoghi.js";
+import { Filtri, Riga, Scelta, Interruttore } from "./Filtri.jsx";
 import { cantinaPercorso, cantinaMeta, cantinaJsonLd, briciole, applicaMeta, eventoPercorso } from "../seo.js";
 
-const iniziale = (nome) => nome.replace(/^(Podere|Fattoria|Tenuta( di)?|La|L')\s*/i, "").charAt(0);
+const SIGLA = { Pisa: "PI", Firenze: "FI", Siena: "SI", Livorno: "LI", Lucca: "LU", Arezzo: "AR", Grosseto: "GR", Pistoia: "PT", Prato: "PO", "Massa-Carrara": "MS" };
+const dove = (c) => `${c.comune}${c.provincia ? ` (${SIGLA[c.provincia] || c.provincia})` : ""} · ${c.zona}`;
 
-function MappaCantine({ cantine, attiva, onScegli }) {
+// Le zone come aree sulla mappa: un cerchio che abbraccia le sue cantine.
+function aree(cantine) {
+  const per = {};
+  cantine.forEach((c) => { const p = pos(c); if (p) (per[c.zona] ||= []).push(p); });
+  return Object.entries(per).map(([zona, pp]) => {
+    const centro = [pp.reduce((s, p) => s + p[0], 0) / pp.length, pp.reduce((s, p) => s + p[1], 0) / pp.length];
+    const raggio = Math.max(...pp.map((p) => L.latLng(p).distanceTo(centro))) + 5000;
+    return { zona, centro, raggio };
+  });
+}
+
+function MappaCantine({ cantine, attiva, onScegli, zona, onZona }) {
   const box = useRef(null);
   const map = useRef(null);
   const layer = useRef(null);
+  const zone = useRef(null);
   useEffect(() => {
-    map.current = L.map(box.current, { scrollWheelZoom: false }).setView([43.55, 10.7], 10);
-    L.tileLayer(TILE, { className: "tile-calde", maxZoom: 16, attribution: TILE_ATTR, }).addTo(map.current);
+    map.current = L.map(box.current, { scrollWheelZoom: false }).setView([43.55, 10.7], 9);
+    L.tileLayer(TILE, { className: "tile-calde", maxZoom: 16, attribution: TILE_ATTR }).addTo(map.current);
+    zone.current = L.layerGroup().addTo(map.current);
     layer.current = L.layerGroup().addTo(map.current);
     return () => map.current.remove();
   }, []);
+  useEffect(() => {
+    if (!onZona) return;
+    zone.current.clearLayers();
+    aree(CANTINE).forEach((a) => {
+      const on = a.zona === zona;
+      const cerchio = L.circle(a.centro, { radius: a.raggio, color: "#432543", weight: on ? 2.5 : 1.5, dashArray: on ? null : "5 6", fillColor: on ? "#F2B33D" : "#432543", fillOpacity: on ? 0.22 : 0.07 })
+        .bindTooltip(a.zona, { permanent: true, direction: "top", className: "zona-tip", offset: [0, -8] })
+        .on("click", () => onZona(on ? "Tutte" : a.zona))
+        .addTo(zone.current);
+      if (on) map.current.fitBounds(cerchio.getBounds(), { padding: [10, 10] });
+    });
+    if (zona === "Tutte") {
+      const b = L.featureGroup(zone.current.getLayers()).getBounds();
+      if (b.isValid()) map.current.fitBounds(b, { padding: [24, 24] });
+    }
+  }, [zona]);
   useEffect(() => {
     layer.current.clearLayers();
     const punti = [];
@@ -30,13 +61,54 @@ function MappaCantine({ cantine, attiva, onScegli }) {
       // piccolo scostamento per le cantine dello stesso comune, così non si sovrappongono
       const q = [p[0] + (i % 3) * 0.004, p[1] + (i % 2) * 0.006];
       const on = c.id === attiva;
-      L.circleMarker(q, { radius: on ? 11 : 8, color: "#FFFDF8", weight: 2, fillColor: on ? "#B3243B" : "#432543", fillOpacity: 1 })
+      L.circleMarker(q, { radius: on ? 11 : 8, color: "#FFFDF8", weight: 2, fillColor: on ? "#B3243B" : c.intervistata ? "#B3243B" : "#432543", fillOpacity: 1 })
         .bindTooltip(c.nome).on("click", () => onScegli(c.id)).addTo(layer.current);
       punti.push(q);
     });
-    if (punti.length) map.current.fitBounds(punti, { padding: [36, 36], maxZoom: 12 });
+    if (!onZona && punti.length) map.current.fitBounds(punti, { padding: [36, 36], maxZoom: 12 });
   }, [cantine, attiva]);
   return <div ref={box} className="mappa mappa--bassa" />;
+}
+
+const Grappolo = () => (
+  <svg width="34" height="34" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <circle cx="9" cy="9" r="2.4" /><circle cx="14" cy="9" r="2.4" /><circle cx="11.5" cy="13" r="2.4" /><circle cx="6.8" cy="13" r="2.2" /><circle cx="16.2" cy="13" r="2.2" /><circle cx="9.2" cy="17" r="2.2" /><circle cx="13.8" cy="17" r="2.2" /><circle cx="11.5" cy="20.6" r="2" />
+    <path d="M11.5 6.5V3.2M11.5 4.5c1.5-1.6 3.6-2 5.5-1.5" stroke="currentColor" strokeWidth="1.6" fill="none" strokeLinecap="round" />
+  </svg>
+);
+
+function Foto({ c, grande }) {
+  if (c.foto) return <img className={`cant-foto ${grande ? "cant-foto--grande" : ""}`} src={c.foto} alt={c.nome} loading="lazy" />;
+  return <span className={`cant-foto cant-foto--vuota ${grande ? "cant-foto--grande" : ""}`}><Grappolo /></span>;
+}
+
+function Segni({ c }) {
+  const [info, setInfo] = useState(false);
+  const premi = c.premi || [];
+  if (!c.intervistata && !premi.length) return null;
+  return (
+    <div className="cant-segni">
+      {c.intervistata && (
+        c.reel
+          ? <a className="cant-segno cant-segno--ok" href={c.reel} target="_blank" rel="noopener" onClick={(x) => x.stopPropagation()}>✓ Intervistata</a>
+          : <span className="cant-segno cant-segno--ok">✓ Intervistata</span>
+      )}
+      {premi.length > 0 && (
+        <span className="cant-premi">
+          <button className="cant-segno cant-segno--premi" aria-expanded={info} onClick={(x) => { x.stopPropagation(); setInfo((v) => !v); }}
+            onMouseEnter={() => setInfo(true)} onMouseLeave={() => setInfo(false)}>
+            🏅 {premi.length === 1 ? "1 premio" : `${premi.length} premi`} <i aria-hidden="true">i</i>
+          </button>
+          {info && (
+            <span className="cant-premi-box" role="tooltip">
+              {premi.slice(0, 3).map((p) => <span key={p}>{p}</span>)}
+              {premi.length > 3 && <em>e altri {premi.length - 3}</em>}
+            </span>
+          )}
+        </span>
+      )}
+    </div>
+  );
 }
 
 export default function Cantine({ apri }) {
@@ -51,53 +123,64 @@ function Scheda({ c }) {
   useEffect(() => { eventiPubblici().then(setEventi).catch(() => {}); }, []);
   useEffect(() => {
     applicaMeta(cantinaMeta(c), [cantinaJsonLd(c, pos(c)), briciole([["Cantine", "cantine"], [c.nome, cantinaPercorso(c)]])]);
-    window.scrollTo(0, 0);
   }, [c.id]);
   const ev = eventi.filter((e) => [e.org_nome, e.luogo_nome].some((n) => (n || "").toLowerCase() === c.nome.toLowerCase()));
   const vicine = CANTINE.filter((x) => x.id !== c.id && (x.comune === c.comune || x.zona === c.zona)).slice(0, 4);
   return (
-    <>
-      <Link className="link" to="cantine">← Tutte le cantine</Link>
-      <p className="eyebrow">{c.comune} · {c.zona}</p>
-      <h1 className="page-title">{c.nome}</h1>
-      <MappaCantine cantine={[c]} attiva={c.id} onScegli={() => {}} />
-      <section className="card">
+    <div className="cant-scheda">
+      {c.foto && <Foto c={c} grande />}
+      <div className="cant-scheda-testa">
+        <p className="cant-dove">{dove(c)}</p>
+        <h1 className="page-title">{c.nome}</h1>
+        <Segni c={c} />
+      </div>
+      <section className="cant-blocco cant-blocco--vino">
         {c.vinoPiuToscano
-          ? <p className="cantina-wine">Il suo vino più toscano: <b>{c.vinoPiuToscano}</b></p>
-          : <p className="muted">Una piccola cantina di {c.comune}, nella zona {c.zona}. Presto andiamo a trovarla e le chiediamo qual è il suo vino più toscano.</p>}
-        <div className="row">
-          {c.reel && <a className="link" href={c.reel} target="_blank" rel="noopener">Guarda il reel</a>}
-          {c.sito && <a className="link" href={c.sito} target="_blank" rel="noopener">Sito della cantina</a>}
+          ? <p>Il suo vino più toscano: <b>{c.vinoPiuToscano}</b></p>
+          : <p>Una piccola cantina di {c.comune}, in provincia di {c.provincia}, zona {c.zona}. Presto andiamo a trovarla e le chiediamo qual è il suo vino più toscano.</p>}
+        <div className="cant-azioni">
+          {c.sito && <a className="cant-btn" href={c.sito} target="_blank" rel="noopener">Sito della cantina ↗</a>}
+          {c.reel && <a className="cant-btn cant-btn--chiaro" href={c.reel} target="_blank" rel="noopener">Guarda l'intervista ↗</a>}
         </div>
       </section>
+      {(c.premi || []).length > 0 && (
+        <section className="cant-blocco">
+          <strong>Premi</strong>
+          <ul className="cant-lista-premi">{c.premi.map((p) => <li key={p}>🏅 {p}</li>)}</ul>
+        </section>
+      )}
+      <MappaCantine cantine={[c]} attiva={c.id} onScegli={() => {}} />
       {ev.length > 0 && (
-        <section className="card">
+        <section className="cant-blocco">
           <strong>Eventi in arrivo</strong>
           {ev.map((e) => <Link key={e.id} className="link" to={eventoPercorso(e)}>{e.titolo}</Link>)}
         </section>
       )}
       {vicine.length > 0 && (
-        <section className="card">
+        <section className="cant-blocco">
           <strong>Altre cantine qui vicino</strong>
-          {vicine.map((x) => <Link key={x.id} className="link" to={cantinaPercorso(x)}>{x.nome}, {x.comune}</Link>)}
+          {vicine.map((x) => <Link key={x.id} className="cant-vicina" to={cantinaPercorso(x)}><Foto c={x} /><span><b>{x.nome}</b><small>{dove(x)}</small></span></Link>)}
         </section>
       )}
-    </>
+    </div>
   );
 }
 
 function Elenco() {
   const [zona, setZona] = useState("Tutte");
+  const [provincia, setProvincia] = useState("");
+  const [soloIntervistate, setSoloIntervistate] = useState(false);
+  const [soloPremiate, setSoloPremiate] = useState(false);
   const [attiva, setAttiva] = useState(null);
   const [eventi, setEventi] = useState([]);
   useEffect(() => { eventiPubblici().then(setEventi).catch(() => {}); }, []);
 
-  const zone = useMemo(() => {
-    const conta = {};
-    CANTINE.forEach((c) => { conta[c.zona] = (conta[c.zona] || 0) + 1; });
-    return [["Tutte", CANTINE.length], ...Object.entries(conta)];
-  }, []);
-  const lista = zona === "Tutte" ? CANTINE : CANTINE.filter((c) => c.zona === zona);
+  const zone = useMemo(() => [["Tutte", `Tutte · ${CANTINE.length}`], ...[...new Set(CANTINE.map((c) => c.zona))].map((z) => [z, `${z} · ${CANTINE.filter((c) => c.zona === z).length}`])], []);
+  const province = useMemo(() => [...new Set(CANTINE.map((c) => c.provincia).filter(Boolean))], []);
+  const lista = CANTINE.filter((c) => (zona === "Tutte" || c.zona === zona) && (!provincia || c.provincia === provincia)
+    && (!soloIntervistate || c.intervistata) && (!soloPremiate || (c.premi || []).length))
+    // prima le cantine dove siamo già stati
+    .sort((a, b) => (b.intervistata ? 1 : 0) - (a.intervistata ? 1 : 0));
   const eventiDi = (c) => eventi.filter((e) => (e.org_nome || "").toLowerCase() === c.nome.toLowerCase() || (e.luogo_nome || "").toLowerCase() === c.nome.toLowerCase());
 
   const scegli = (id) => {
@@ -106,62 +189,63 @@ function Elenco() {
   };
 
   return (
-    <>
-      <section className="testata">
-        <img src="/img/strada-bianca.jpg" alt="Strada bianca tra le vigne" />
-        <div>
-          <p className="eyebrow">Le cantine</p>
-          <h1>Piccoli produttori, scelti uno a uno</h1>
-        </div>
-      </section>
-      <p className="muted">Andiamo a conoscerle di persona, a ognuna chiediamo qual è il suo vino più toscano. Si parte dalle colline pisane, intorno a Terricciola, e la mappa cresce a ogni visita.</p>
+    <div className="feed">
+      <Filtri>
+        <Riga etichetta="Zona"><Scelta opzioni={zone} valore={zona} onCambia={(z) => { setZona(z); setAttiva(null); }} /></Riga>
+        <Riga etichetta="Mostra">
+          <label className={`filtri-sel ${provincia ? "on" : ""}`}>
+            <select value={provincia} onChange={(x) => setProvincia(x.target.value)} aria-label="Provincia">
+              <option value="">Tutte le province</option>
+              {province.map((p) => <option key={p} value={p}>Provincia di {p}</option>)}
+            </select>
+          </label>
+          <Interruttore on={soloIntervistate} onCambia={setSoloIntervistate}>✓ Intervistate</Interruttore>
+          <Interruttore on={soloPremiate} onCambia={setSoloPremiate}>🏅 Premiate</Interruttore>
+        </Riga>
+      </Filtri>
 
-      <MappaCantine cantine={lista} attiva={attiva} onScegli={scegli} />
+      <MappaCantine cantine={lista} attiva={attiva} onScegli={scegli} zona={zona} onZona={(z) => { setZona(z); setAttiva(null); }} />
+      <p className="tiny">Tocca una zona sulla mappa per vederla da vicino.</p>
 
-      <div className="chips">
-        {zone.map(([z, n]) => (
-          <button key={z} className={`chip ${z === zona ? "chip--on" : ""}`} onClick={() => { setZona(z); setAttiva(null); }}>{z} · {n}</button>
-        ))}
-      </div>
-
-      <div className="list">
+      {lista.length === 0 && <p className="feed-vuoto">Nessuna cantina con questi filtri, per ora.</p>}
+      <div className="feed-griglia">
         {lista.map((c) => {
           const ev = eventiDi(c);
           return (
-            <article key={c.id} id={`cantina-${c.id}`} className={`card cantina ${attiva === c.id ? "cantina--on" : ""}`} onClick={() => setAttiva(c.id)}>
-              <div className="cantina-head">
-                <span className="avatar">{iniziale(c.nome)}</span>
-                <div>
-                  <strong className="cantina-nome">{c.nome}</strong>
-                  <small>{c.comune} · {c.zona}</small>
-                </div>
-              </div>
+            <article key={c.id} id={`cantina-${c.id}`} className={`cant ${attiva === c.id ? "cant--on" : ""}`} onClick={() => setAttiva(c.id)}>
+              <Link to={cantinaPercorso(c)} className="cant-testa" onClick={(x) => x.stopPropagation()}>
+                <Foto c={c} />
+                <span className="cant-nome">
+                  <strong>{c.nome}</strong>
+                  <small>{dove(c)}</small>
+                </span>
+              </Link>
+              <Segni c={c} />
               {c.vinoPiuToscano
-                ? <p className="cantina-wine">Il suo vino più toscano: <b>{c.vinoPiuToscano}</b></p>
-                : <p className="tiny">Il suo vino più toscano? Glielo chiediamo presto.</p>}
+                ? <p className="cant-vino">Il suo vino più toscano: <b>{c.vinoPiuToscano}</b></p>
+                : <p className="cant-vino cant-vino--presto">Il suo vino più toscano? Glielo chiediamo presto.</p>}
               {ev.length > 0 && (
-                <button className="badge badge--gold" onClick={(x) => { x.stopPropagation(); go(eventoPercorso(ev[0])); }}>
-                  📅 {ev.length === 1 ? "1 evento in arrivo" : `${ev.length} eventi in arrivo`} →
+                <button className="cant-ev" onClick={(x) => { x.stopPropagation(); go(eventoPercorso(ev[0])); }}>
+                  📅 {ev.length === 1 ? "1 evento in arrivo" : `${ev.length} eventi in arrivo`}
                 </button>
               )}
-              <div className="row">
-                {c.reel && <a className="link" href={c.reel} target="_blank" rel="noopener">Guarda il reel</a>}
-                {c.sito && <a className="link" href={c.sito} target="_blank" rel="noopener">Sito della cantina</a>}
-                <Link className="link" to={cantinaPercorso(c)} onClick={(x) => x.stopPropagation()}>Scheda della cantina →</Link>
+              <div className="cant-azioni">
+                <Link className="cant-btn" to={cantinaPercorso(c)} onClick={(x) => x.stopPropagation()}>Scheda →</Link>
+                {c.sito && <a className="cant-btn cant-btn--chiaro" href={c.sito} target="_blank" rel="noopener" onClick={(x) => x.stopPropagation()}>Sito ↗</a>}
               </div>
             </article>
           );
         })}
       </div>
 
-      <section className="card card--plum">
+      <section className="cant-invito">
         <strong>Sei una cantina, o ne conosci una che merita?</strong>
         <p>Scrivici: veniamo a conoscervi. Se avete un evento in programma, segnalatelo, è gratis.</p>
-        <div className="row">
-          <button className="btn btn--light" onClick={() => go("segnala")}>Segnala un evento</button>
-          <a className="link light" href={`mailto:${CONTACT_EMAIL}?subject=Una%20cantina%20per%20Bevotoscano`}>{CONTACT_EMAIL}</a>
+        <div className="cant-azioni">
+          <button className="cant-btn cant-btn--sole" onClick={() => go("segnala")}>Segnala un evento</button>
+          <a className="cant-btn cant-btn--chiaro" href={`mailto:${CONTACT_EMAIL}?subject=Una%20cantina%20per%20Bevotoscano`}>Scrivici</a>
         </div>
       </section>
-    </>
+    </div>
   );
 }
