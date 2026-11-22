@@ -9,8 +9,8 @@ import { Scelta } from "./Filtri.jsx";
 // nell'app finché non le inseriamo noi.
 const TIPI = [["evento", "Un evento"], ["cantina", "Una cantina"], ["enoteca", "Un'enoteca"]];
 
-export default function SegnalaScelta() {
-  const [tipo, setTipo] = useState("evento");
+export default function SegnalaScelta({ iniziale }) {
+  const [tipo, setTipo] = useState(TIPI.some(([t]) => t === iniziale) ? iniziale : "evento");
   return (
     <div className="segnala-scelta">
       <h1 className="page-title">Segnala</h1>

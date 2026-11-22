@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { TILE, TILE_ATTR } from "../tema.js";
-import { CANTINE, CONTACT_EMAIL } from "../data.js";
+import { CANTINE } from "../data.js";
 import { eventiPubblici } from "../eventi/api.js";
 import { go } from "../nav.js";
 import Link from "../Link.jsx";
@@ -239,11 +239,10 @@ function Elenco() {
       </div>
 
       <section className="cant-invito">
-        <strong>Sei una cantina, o ne conosci una che merita?</strong>
-        <p>Scrivici: veniamo a conoscervi. Se avete un evento in programma, segnalatelo, è gratis.</p>
+        <strong>Conosci una cantina che merita?</strong>
+        <p>Proponila: la valutiamo e andiamo a conoscerla di persona.</p>
         <div className="cant-azioni">
-          <button className="cant-btn cant-btn--sole" onClick={() => go("segnala")}>Segnala un evento</button>
-          <a className="cant-btn cant-btn--chiaro" href={`mailto:${CONTACT_EMAIL}?subject=Una%20cantina%20per%20Bevotoscano`}>Scrivici</a>
+          <Link className="cant-btn cant-btn--sole" to="segnala/cantina">Proponi una cantina</Link>
         </div>
       </section>
     </div>

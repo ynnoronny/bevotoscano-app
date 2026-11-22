@@ -78,7 +78,7 @@ function Contenuto({ section, sub }) {
   if (section === "cantine") return <div className="shell-pagina shell-pagina--larga"><Cantine apri={sub} /></div>;
   if (section === "blog") return sub ? <Articolo id={sub} /> : <Blog />;
   if (section === "gioca") return <Gioca />;
-  if (section === "segnala") return <div className="page shell-pagina"><SegnalaScelta /></div>;
+  if (section === "segnala") return <div className="page shell-pagina"><SegnalaScelta iniziale={sub} /></div>;
   if (section === "eventi" && sub && !FILTRI_EVENTI.includes(sub)) {
     return <div className="page shell-pagina"><Eventi apri={sub} /></div>;
   }
@@ -184,7 +184,7 @@ function FeedEventi({ filtro }) {
       </div>
       {mappa && eventi && <div className="feed-mappa"><Mappa eventi={lista} centro={centro} onApri={(e) => go(eventoPercorso(e))} /></div>}
       {!eventi && <p className="feed-vuoto">Carico gli eventi…</p>}
-      {eventi && lista.length === 0 && <p className="feed-vuoto">{noAuto ? "Per ora nessun evento di questo periodo ha un bus o un treno, o si raggiunge a piedi. Togli \"Solo senza auto\" per vederli tutti." : "Nessun evento in questo periodo, per ora. Prova un'altra data, o segnalacene uno tu."}</p>}
+      {eventi && lista.length === 0 && <p className="feed-vuoto">{noAuto ? "Per ora nessun evento di questo periodo ha un bus o un treno, o si raggiunge a piedi. Togli \"Solo senza auto\" per vederli tutti." : "Nessun evento in questo periodo, per ora. Prova un'altra data, o segnalaci un evento con il pulsante + Segnala."}</p>}
       {!mappa && <div className="feed-griglia">
         {lista.map((e, i) => {
           const arrivo = comeArrivi(e, centro);
