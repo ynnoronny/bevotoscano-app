@@ -131,6 +131,9 @@ async function condividi(titolo, percorso) {
   } catch { /* annullato */ }
 }
 
+// Eventi con un passaggio organizzato: bus o navetta con punti di raccolta.
+const conNavetta = (e) => (e.pickup || []).length > 0 || (e.accesso || []).includes("bus");
+
 const QUANDO = [["tutte", "Tutte le date"], ["oggi", "Oggi"], ["weekend", "Questo weekend"], ["7", "Prossimi 7 giorni"], ["30", "Prossimi 30 giorni"]];
 // Un evento è "nel periodo" se si svolge anche solo in parte in quei giorni (vale anche per quelli in corso).
 function nelQuando(e, q) {
@@ -154,7 +157,7 @@ function FeedEventi({ filtro }) {
   const [quando, setQuando] = useState(filtro === "weekend" ? "weekend" : "tutte");
   const [noAuto, setNoAuto] = useState(filtro === "senza-auto");
   const [mappa, setMappa] = useState(false);
-  const quantiSenzaAuto = (eventi || []).filter((e) => senzaAuto(e) && nelQuando(e, quando)).length;
+  const quantiSenzaAuto = (eventi || []).filter((e) => conNavetta(e) && nelQuando(e, quando)).length;
   useEffect(() => { eventiPubblici().then(setEventi).catch(() => setEventi([])); }, []);
   useEffect(() => { scrivi(POS_KEY, centro); }, [centro]);
   useEffect(() => {
@@ -164,7 +167,7 @@ function FeedEventi({ filtro }) {
   }, [filtro]);
 
   const lista = useMemo(() => (eventi || [])
-    .filter((e) => (!noAuto || senzaAuto(e)) && nelQuando(e, quando))
+    .filter((e) => (!noAuto || conNavetta(e)) && nelQuando(e, quando))
     .map((e) => ({ ...e, d: km(centro, e) }))
     .sort((a, b) => (centro && a.d != null && b.d != null ? a.d - b.d : a.inizio.localeCompare(b.inizio))),
   [eventi, quando, noAuto, centro]);
@@ -175,7 +178,7 @@ function FeedEventi({ filtro }) {
         <Riga etichetta="Quando"><Scelta opzioni={QUANDO} valore={quando} onCambia={setQuando} /></Riga>
         <Riga etichetta="Dove">
           <Partenza centro={centro} setCentro={setCentro} />
-          <Interruttore on={noAuto} onCambia={setNoAuto}>🚌 Solo senza auto ({quantiSenzaAuto})</Interruttore>
+          <Interruttore on={noAuto} onCambia={setNoAuto}>🚐 Con navetta ({quantiSenzaAuto})</Interruttore>
         </Riga>
       </Filtri>
       <div className="feed-vista">
@@ -184,7 +187,7 @@ function FeedEventi({ filtro }) {
       </div>
       {mappa && eventi && <div className="feed-mappa"><Mappa eventi={lista} centro={centro} onApri={(e) => go(eventoPercorso(e))} /></div>}
       {!eventi && <p className="feed-vuoto">Carico gli eventi…</p>}
-      {eventi && lista.length === 0 && <p className="feed-vuoto">{noAuto ? "Per ora nessun evento di questo periodo ha un bus o un treno, o si raggiunge a piedi. Togli \"Solo senza auto\" per vederli tutti." : "Nessun evento in questo periodo, per ora. Prova un'altra data, o segnalaci un evento con il pulsante + Segnala."}</p>}
+      {eventi && lista.length === 0 && <p className="feed-vuoto">{noAuto ? "Per ora nessun evento di questo periodo ha una navetta che ti passa a prendere. Togli \"Con navetta\" per vederli tutti." : "Nessun evento in questo periodo, per ora. Prova un'altra data, o segnalaci un evento con il pulsante + Segnala."}</p>}
       {!mappa && <div className="feed-griglia">
         {lista.map((e, i) => {
           const arrivo = comeArrivi(e, centro);
