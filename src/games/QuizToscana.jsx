@@ -4,6 +4,7 @@ import { inviaPunteggio, PAESI } from "../leaderboard.js";
 import { Classifica } from "./Classifiche.jsx";
 import ShareButton from "./ShareButton.jsx";
 
+// Il quiz. Si può partire anche dalla domanda del giorno in home: quella risposta conta già.
 // Il quiz infinito. Si parte con 0 vite, ogni 3 risposte giuste se ne guadagna una.
 // Una risposta sbagliata toglie una vita; sbagliare con 0 vite chiude la partita.
 // La classifica conta quante risposte giuste fai prima di cadere.
@@ -21,8 +22,15 @@ const GRADIENTE = "linear-gradient(170deg, #432543 0%, #6B2440 45%, #B3243B 80%,
 const titolo = (c) =>
   c >= 80 ? ["Leggenda del vino toscano", "👑"] : c >= 50 ? ["Gran Sommelier di Toscana", "🏆"] : c >= 25 ? ["Enologo di bottega", "🍷"] : c >= 10 ? ["Bevitore curioso", "🍇"] : ["Turista del vino", "🧳"];
 
+// La domanda del giorno (home) lascia qui la sua risposta, così il quiz riparte da lì.
+export const DAL_GIORNO = "bevotoscano-dal-giorno";
+function leggiDalGiorno() {
+  try { return JSON.parse(sessionStorage.getItem(DAL_GIORNO)); } catch { return null; }
+}
+
 export default function QuizToscana({ onExit, iniziale = "start" }) {
-  const [fase, setFase] = useState(iniziale); // start | gioco | fine | classifica
+  const [dalGiorno] = useState(() => (iniziale === "start" ? leggiDalGiorno() : null));
+  const [fase, setFase] = useState(dalGiorno ? "gioco" : iniziale); // start | gioco | fine | classifica
   const [domande, setDomande] = useState([]);
   const [i, setI] = useState(0);
   const [tempo, setTempo] = useState(SECONDI_PER_DOMANDA);
@@ -30,13 +38,21 @@ export default function QuizToscana({ onExit, iniziale = "start" }) {
   const [corrette, setCorrette] = useState(0);
   const [vite, setVite] = useState(0);
   const [nota, setNota] = useState(""); // "+1 vita", "-1 vita"
+  const [finita, setFinita] = useState(false);
   const inizio = useRef(0);
 
-  const parti = () => {
-    setDomande(primoGiro());
-    setI(0); setCorrette(0); setVite(0); setScelta(null); setNota("");
+  // da: la domanda del giorno già risposta in home ({ d, ok }): non si ripete e, se giusta, conta.
+  const parti = (da) => {
+    setDomande(primoGiro().filter((q) => !da || q.d !== da.d));
+    setI(0); setCorrette(da?.ok ? 1 : 0); setVite(0); setScelta(null); setFinita(false);
+    setNota(da ? (da.ok ? "Hai già 1 giusta dalla domanda del giorno" : "La domanda del giorno non conta: si parte da qui") : "");
     setFase("gioco");
   };
+  useEffect(() => {
+    if (!dalGiorno) return;
+    try { sessionStorage.removeItem(DAL_GIORNO); } catch { /* niente */ }
+    parti(dalGiorno);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (fase !== "gioco" || scelta) return;
@@ -62,7 +78,7 @@ export default function QuizToscana({ onExit, iniziale = "start" }) {
     if (scelta) return;
     const q = domande[i];
     const giusta = r === q.giusta;
-    let finita = false;
+    let fine = false;
     if (giusta) {
       const c = corrette + 1;
       setCorrette(c);
@@ -71,16 +87,20 @@ export default function QuizToscana({ onExit, iniziale = "start" }) {
       setVite(vite - 1);
       setNota("-1 vita");
     } else {
-      finita = true;
+      fine = true;
       setNota("");
     }
+    setFinita(fine);
     setScelta(r);
-    setTimeout(() => {
-      if (finita) return setFase("fine");
-      if (i + 1 >= domande.length) setDomande((d) => [...d, ...altroGiro()]);
-      setI(i + 1);
-      setScelta(null);
-    }, 1300);
+  }
+
+  // Dopo la risposta resta la spiegazione: si va avanti quando si vuole.
+  function avanti() {
+    if (finita) return setFase("fine");
+    if (i + 1 >= domande.length) setDomande((d) => [...d, ...altroGiro()]);
+    setI(i + 1);
+    setScelta(null);
+    setNota("");
   }
 
   const q = domande[i];
@@ -105,7 +125,7 @@ export default function QuizToscana({ onExit, iniziale = "start" }) {
             <p><b>Sbagli?</b> Perdi una vita. Se sbagli quando non ne hai, la partita finisce.</p>
             <p><b>Niente aiutini:</b> {SECONDI_PER_DOMANDA} secondi a domanda, e se esci dall'app per cercare la risposta la domanda è persa.</p>
           </div>
-          <button className="btn btn--primary wide" onClick={parti}>Inizia</button>
+          <button className="btn btn--primary wide" onClick={() => parti()}>Inizia</button>
           <button className="link" onClick={() => setFase("classifica")}>Vedi la classifica</button>
         </div>
       )}
@@ -129,23 +149,26 @@ export default function QuizToscana({ onExit, iniziale = "start" }) {
               return <button key={o} className={`option ${stato}`} onClick={() => rispondi(o)} disabled={!!scelta}>{o}</button>;
             })}
           </div>
+          {!scelta && nota && <p className="tiny avviso">{nota}</p>}
           {scelta && (
             <p className={`feedback ${scelta === q.giusta ? "ok" : "error"}`}>
               {scelta === q.giusta ? "Giusto!" : scelta === "__tempo" ? "Tempo scaduto!" : scelta === "__uscito" ? "Sei uscito dall'app: domanda persa!" : "Sbagliato!"}
               {nota && ` ${nota}`}
             </p>
           )}
+          {scelta && q.p && <p className="spiega fade">{q.p}</p>}
+          {scelta && <button className="btn btn--primary wide avanti" onClick={avanti} autoFocus>{finita ? "Vedi il risultato" : "Avanti"}</button>}
         </div>
       )}
 
-      {fase === "fine" && <Fine corrette={corrette} onRigioca={parti} onExit={onExit} />}
+      {fase === "fine" && <Fine corrette={corrette} onRigioca={() => parti()} onExit={onExit} />}
 
       {fase === "classifica" && (
         <div className="fade">
           <h1 className="page-title">Classifica</h1>
           <p className="tiny">Conta quante risposte giuste fai prima di cadere.</p>
           <Classifica limite={50} />
-          <button className="btn btn--primary wide" style={{ marginTop: 20 }} onClick={parti}>Gioca</button>
+          <button className="btn btn--primary wide" style={{ marginTop: 20 }} onClick={() => parti()}>Gioca</button>
         </div>
       )}
     </div>

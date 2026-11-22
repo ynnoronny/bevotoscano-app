@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { eventiPubblici } from "./api.js";
 import { km, fmtKm, cercaLuogo, posizioneAttuale, CITTA } from "./geo.js";
-import { ACCESSI, senzaAuto, fmtData } from "./shared.js";
+import { ACCESSI, senzaAuto, fmtData, conNavetta } from "./shared.js";
 import Mappa from "./Mappa.jsx";
 import CondividiEvento from "./Condividi.jsx";
 
@@ -184,7 +184,7 @@ function Partenza({ centro, setCentro, subito }) {
 function Badges({ e }) {
   return (
     <div className="badges">
-      {senzaAuto(e) && <span className="badge badge--gold">🚌 Senza auto</span>}
+      {conNavetta(e) && <span className="badge badge--gold">🚐 Con navetta</span>}
       {e.guidato && <span className="badge">🧭 Con guida</span>}
       {e.prezzo && <span className="badge">{e.prezzo}</span>}
       {e.esempio && <span className="badge badge--demo">Esempio</span>}

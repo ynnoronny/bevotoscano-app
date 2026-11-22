@@ -18,8 +18,8 @@ export const CANTINE = [
   { id: "fibbiano", nome: "Fattoria Fibbiano", comune: "Terricciola", provincia: "Pisa", zona: "Colline pisane", sito: "https://www.fattoria-fibbiano.it/" },
   { id: "gimonda", nome: "La Gimonda", comune: "Terricciola", provincia: "Pisa", zona: "Colline pisane", sito: "https://www.lagimonda.it/" },
   { id: "castelvecchio", nome: "Tenuta Castelvecchio", comune: "Terricciola", provincia: "Pisa", zona: "Colline pisane", sito: "https://agricastelvecchio.com/" },
-  { id: "pellicciano", nome: "Podere Pellicciano", comune: "San Miniato", provincia: "Pisa", zona: "Valdarno inferiore", sito: "https://www.poderepellicciano.it/" },
-  { id: "montefoscoli", nome: "Tenuta di Montefoscoli", comune: "Montefoscoli", provincia: "Pisa", zona: "Colline pisane", sito: "https://tenutadimontefoscoli.com" },
+  { id: "pellicciano", nome: "Podere Pellicciano", comune: "San Miniato", provincia: "Pisa", zona: "Valdarno inferiore", sito: "https://www.poderepellicciano.it/", foto: "https://poderepellicciano.it/wp-content/uploads/2023/07/Podere-Pellicciano-winery-scaled.jpg" },
+  { id: "montefoscoli", nome: "Tenuta di Montefoscoli", comune: "Montefoscoli", provincia: "Pisa", zona: "Colline pisane", sito: "https://tenutadimontefoscoli.com", foto: "https://www.tenutadimontefoscoli.com/wp-content/uploads/2026/02/Tenuta-di-Montefoscoli_Home.jpg" },
   { id: "ghizzano", nome: "Tenuta di Ghizzano", comune: "Ghizzano", provincia: "Pisa", zona: "Colline pisane", sito: "https://www.tenutadighizzano.com/" },
 ];
 

@@ -12,6 +12,8 @@ import { DOMANDE } from "../games/quizData.js";
 import { SEGNI, segnoDa } from "../games/oroscopoData.js";
 import MESE from "../games/oroscopoMese.json";
 import { Classifica } from "../games/Classifiche.jsx";
+import { DAL_GIORNO } from "../games/QuizToscana.jsx";
+import { CANTINE } from "../data.js";
 import Link from "../Link.jsx";
 import Benvenuto, { segnoMio } from "./Benvenuto.jsx";
 import AggiungiCalendario, { Indicazioni } from "../eventi/Calendario.jsx";
@@ -42,7 +44,7 @@ function indietroDa(section, sub) {
 }
 
 export default function Shell({ section, sub, children }) {
-  const pill = section === "home" ? "eventi" : section;
+  const pill = section;
   const area = useRef(null);
   const indietro = indietroDa(section, sub);
   // a ogni cambio di pagina si riparte dall'alto del contenuto
@@ -83,7 +85,8 @@ function Contenuto({ section, sub }) {
   if (section === "eventi" && sub && !FILTRI_EVENTI.includes(sub)) {
     return <div className="page shell-pagina"><Eventi apri={sub} /></div>;
   }
-  return <FeedEventi filtro={section === "eventi" ? sub : undefined} />;
+  if (section === "eventi") return <FeedEventi filtro={sub} />;
+  return <Home />;
 }
 
 // ---------- Eventi ----------
@@ -169,32 +172,47 @@ function FeedEventi({ filtro }) {
       {!eventi && <p className="feed-vuoto">Carico gli eventi…</p>}
       {eventi && lista.length === 0 && <p className="feed-vuoto">{noAuto ? "Per ora nessun evento di questo periodo ha una navetta che ti passa a prendere. Togli \"Con navetta\" per vederli tutti." : "Nessun evento in questo periodo, per ora. Prova un'altra data, o segnalaci un evento con il pulsante + Segnala."}</p>}
       {!mappa && <div className="feed-griglia">
-        {lista.map((e, i) => {
-          const arrivo = comeArrivi(e, centro);
-          return (
-            <article key={e.id} className={`ev ev--${["viola", "vino", "sole"][i % 3]}`}>
-              <div className="ev-su">
-                <span className="ev-quando">{quandoEv(e)}</span>
-                <span className={`ev-prezzo ${prezzoEv(e).gratis ? "ev-prezzo--gratis" : ""} ${prezzoEv(e).vuoto ? "ev-prezzo--vuoto" : ""}`}>{prezzoEv(e).testo}</span>
-              </div>
-              <Link to={eventoPercorso(e)} className="ev-titolo">{e.titolo}</Link>
-              <small className="ev-meta">
-                <span>{conProvincia(e.comune)}{e.d != null ? ` · ${fmtKm(e.d)}` : ""}</span>
-                {arrivo && <span className="ev-bus">🚌 {arrivo}</span>}
-              </small>
-              <div className="ev-giu">
-                <AggiungiCalendario e={e} percorso={eventoPercorso(e)} compatto />
-                <span className="ev-azioni">
-                  <Indicazioni e={e} />
-                  <CondividiEvento e={e} />
-                </span>
-              </div>
-            </article>
-          );
-        })}
+        {lista.map((e, i) => <SchedaEvento key={e.id} e={e} i={i} centro={centro} />)}
       </div>}
       <FineFeed />
     </div>
+  );
+}
+
+// Il badge del prezzo: cifra, oppure solo il simbolo (€ a pagamento, € sbarrato gratis).
+export function Prezzo({ e }) {
+  const p = prezzoEv(e);
+  if (p.vuoto) return null;
+  if (!p.simbolo) return <span className="ev-prezzo">{p.testo}</span>;
+  return (
+    <span className={`ev-prezzo ev-prezzo--simbolo ${p.gratis ? "ev-prezzo--gratis" : ""}`} title={p.testo} aria-label={p.testo}>
+      <span aria-hidden="true">€</span>
+    </span>
+  );
+}
+
+function SchedaEvento({ e, i, centro }) {
+  const arrivo = comeArrivi(e, centro);
+  return (
+    <article className={`ev ev--${["viola", "vino", "sole"][i % 3]} ${e.immagine ? "ev--foto" : ""}`}>
+      {e.immagine && <Link to={eventoPercorso(e)} className="ev-foto" tabIndex={-1} aria-hidden="true"><img src={e.immagine} alt="" loading="lazy" onError={(x) => { x.currentTarget.parentElement.style.display = "none"; }} /></Link>}
+      <div className="ev-su">
+        <span className="ev-quando">{quandoEv(e)}</span>
+        <Prezzo e={e} />
+      </div>
+      <Link to={eventoPercorso(e)} className="ev-titolo">{e.titolo}</Link>
+      <small className="ev-meta">
+        <span>{conProvincia(e.comune)}{e.d != null ? ` · ${fmtKm(e.d)}` : ""}</span>
+        {arrivo && <span className="ev-bus">🚌 {arrivo}</span>}
+      </small>
+      <div className="ev-giu">
+        <AggiungiCalendario e={e} percorso={eventoPercorso(e)} compatto />
+        <span className="ev-azioni">
+          <Indicazioni e={e} />
+          <CondividiEvento e={e} />
+        </span>
+      </div>
+    </article>
   );
 }
 
@@ -278,12 +296,10 @@ function domandaDelGiorno() {
   const oggi = Math.floor((Date.now() - new Date().getTimezoneOffset() * 60000) / 86400000);
   const q = DOMANDE[oggi % DOMANDE.length];
   const opzioni = [...q.r].sort((a, b) => ((a.length * 7 + oggi) % 5) - ((b.length * 7 + oggi) % 5) || a.localeCompare(b));
-  return { testo: q.d, giusta: q.r[0], opzioni };
+  return { testo: q.d, giusta: q.r[0], opzioni, perche: q.p };
 }
 
 function Gioca() {
-  const q = useMemo(domandaDelGiorno, []);
-  const [scelta, setScelta] = useState(null);
   return (
     <div className="feed">
       <div className="feed-griglia feed-griglia--gioca">
@@ -293,22 +309,15 @@ function Gioca() {
           <p>Le domande non finiscono mai. Ogni 3 risposte giuste guadagni una vita, se sbagli ne perdi una. Sbagli senza vite? Fine della partita.</p>
           <Link to="gioca/quiz" className="gioco-via">Gioca ora</Link>
         </section>
-        <Oroscopo />
+        <section className="gioco-vit">
+          <small>IL TUO VITIGNO</small>
+          <strong>Che vitigno sei?</strong>
+          <p>Dalla tua data di nascita, il vitigno toscano che ti somiglia. Da condividere nelle storie.</p>
+          <Link to="gioca/oroscopo" className="gioco-via gioco-via--chiaro">Scoprilo</Link>
+        </section>
         <section className="gioco-classifica">
           <div className="gioco-classifica-testa"><strong>Classifica</strong><small>Quante giuste prima di cadere</small></div>
           <Classifica limite={50} />
-        </section>
-        <section className="gioco-giorno">
-          <small>DOMANDA DEL GIORNO · dal quiz, una nuova ogni giorno</small>
-          <strong>{q.testo}</strong>
-          <div className="gioco-opz">
-            {q.opzioni.map((o) => {
-              const cls = !scelta ? "" : o === q.giusta ? "ok" : o === scelta ? "no" : "spento";
-              return <button key={o} className={cls} disabled={!!scelta} onClick={() => setScelta(o)}>{o}</button>;
-            })}
-          </div>
-          {scelta && <p>{scelta === q.giusta ? "Esatto!" : `Era: ${q.giusta}.`} Domani ne arriva un'altra.</p>}
-          {scelta && <Link to="gioca/quiz" className="gioco-via gioco-via--chiaro">Ne vuoi altre? Gioca al quiz</Link>}
         </section>
       </div>
       <FineFeed />
@@ -316,14 +325,71 @@ function Gioca() {
   );
 }
 
+// ---------- Home ----------
+// Si apre qui: il tuo oroscopo del vino, la domanda del giorno (che fa partire il quiz),
+// i prossimi eventi e una scorciatoia per cantine e blog.
+
+function Home() {
+  const [eventi, setEventi] = useState(null);
+  useEffect(() => { eventiPubblici().then(setEventi).catch(() => setEventi([])); }, []);
+  const prossimi = (eventi || []).slice(0, 3);
+  return (
+    <div className="feed home">
+      <div className="home-griglia">
+        <Oroscopo compatto />
+        <DomandaDelGiorno />
+      </div>
+      <div className="home-titolo">
+        <h2>Prossimi eventi</h2>
+        <Link to="eventi" className="home-tutti">Tutti gli eventi →</Link>
+      </div>
+      {!eventi && <p className="feed-vuoto">Carico gli eventi…</p>}
+      {eventi && !prossimi.length && <p className="feed-vuoto">Nuovi eventi in arrivo. Ne conosci uno? Segnalacelo con + Segnala.</p>}
+      <div className="feed-griglia">{prossimi.map((e, i) => <SchedaEvento key={e.id} e={e} i={i} />)}</div>
+      <div className="home-scorciatoie">
+        <Link to="cantine" className="home-scorc"><b>Cantine</b><small>{CANTINE.length} piccole cantine da conoscere</small></Link>
+        <Link to="blog" className="home-scorc"><b>Blog</b><small>{ARTICOLI[0]?.titolo}</small></Link>
+      </div>
+      <FineFeed />
+    </div>
+  );
+}
+
+function DomandaDelGiorno() {
+  const q = useMemo(domandaDelGiorno, []);
+  const [scelta, setScelta] = useState(null);
+  const ok = scelta === q.giusta;
+  const continua = () => {
+    try { sessionStorage.setItem(DAL_GIORNO, JSON.stringify({ d: q.testo, ok })); } catch { /* niente */ }
+    go("gioca/quiz");
+  };
+  return (
+    <section className="gioco-giorno">
+      <small>DOMANDA DEL GIORNO</small>
+      <strong>{q.testo}</strong>
+      <div className="gioco-opz">
+        {q.opzioni.map((o) => {
+          const cls = !scelta ? "" : o === q.giusta ? "ok" : o === scelta ? "no" : "spento";
+          return <button key={o} className={cls} disabled={!!scelta} onClick={() => setScelta(o)}>{o}</button>;
+        })}
+      </div>
+      {scelta && <p className="giorno-esito fade"><b>{ok ? "Esatto!" : `Era: ${q.giusta}.`}</b> {q.perche}</p>}
+      {scelta
+        ? <button className="gioco-via" onClick={continua}>{ok ? "Continua col quiz: 1 giusta già fatta" : "Rifatti col quiz"}</button>
+        : <small className="giorno-nota">Rispondi e parti col quiz da qui.</small>}
+    </section>
+  );
+}
+
 const dataBreve = (iso) => new Date(`${iso}T12:00:00`).toLocaleDateString("it-IT", { day: "numeric", month: "long" });
 
-function Oroscopo() {
+function Oroscopo({ compatto }) {
   const d = new Date();
   const mio = segnoMio();
   const corrente = mio || segnoDa(d.getMonth() + 1, d.getDate()) || SEGNI[0];
   const [id, setId] = useState(corrente.id);
   const [altri, setAltri] = useState(false);
+  const [tutto, setTutto] = useState(!compatto);
   const s = SEGNI.find((x) => x.id === id);
   const t = MESE.testi?.[id];
   const suo = id === mio?.id;
@@ -353,7 +419,7 @@ function Oroscopo() {
           <strong>{t.titolo}</strong>
           <p>{t.testo}</p>
           <p className="gioco-oro-vino">{t.vino}</p>
-          {(t.affine || t.antagonista) && (
+          {tutto && (t.affine || t.antagonista) && (
             <div className="oro-rapporti">
               {rapporto(t.affine, "affine")}
               {rapporto(t.antagonista, "anti")}
@@ -361,13 +427,14 @@ function Oroscopo() {
           )}
         </div>
       )}
-      <button className="oro-altri" aria-expanded={altri} onClick={() => setAltri((v) => !v)}>{altri ? "Chiudi gli altri segni" : "Guarda anche gli altri segni"}</button>
+      {!tutto && <button className="oro-altri" onClick={() => setTutto(true)}>Il tuo segno affine e l'antagonista del mese</button>}
+      {tutto && <button className="oro-altri" aria-expanded={altri} onClick={() => setAltri((v) => !v)}>{altri ? "Chiudi gli altri segni" : "Guarda anche gli altri segni"}</button>}
       {altri && (
         <div className="gioco-segni fade">
           {ordine.map((x) => <button key={x.id} className={x.id === id ? "on" : ""} onClick={() => setId(x.id)}>{x.simbolo}︎ {x.segno}{x.id === mio?.id ? " ★" : ""}</button>)}
         </div>
       )}
-      <Link to="gioca/oroscopo" className="gioco-via gioco-via--chiaro">Il tuo vitigno, da condividere</Link>
+      {!compatto && <Link to="gioca/oroscopo" className="gioco-via gioco-via--chiaro">Il tuo vitigno, da condividere</Link>}
     </section>
   );
 }

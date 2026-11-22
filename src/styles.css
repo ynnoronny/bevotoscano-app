@@ -412,6 +412,8 @@ html, body { height: 100%; }
 .cant-invito .cant-btn--chiaro { border-color: rgba(255, 255, 255, 0.4); color: #fff; }
 .leaflet-tooltip.zona-tip { background: var(--plum); color: #fff; border: none; border-radius: 999px; font-weight: 800; font-size: 12px; padding: 4px 10px; box-shadow: none; }
 .leaflet-tooltip-top.zona-tip::before { border-top-color: var(--plum); }
+.leaflet-tooltip.zona-tip--vuota { background: rgba(255, 253, 248, 0.9); color: var(--plum); font-weight: 700; font-size: 11px; box-shadow: inset 0 0 0 1px rgba(67, 37, 67, 0.25); }
+.leaflet-tooltip.zona-tip::before { display: none; }
 
 /* Prima schermata: data di nascita */
 .benvenuto { position: fixed; inset: 0; z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 20px; background: linear-gradient(170deg, #432543 0%, #5A2A48 55%, #B3243B 100%); }
@@ -497,7 +499,7 @@ html, body { height: 100%; }
   .feed-griglia--blog .art--primo { grid-column: span 2; }
   .feed-griglia--gioca { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-flow: dense; align-items: start; }
   .feed-griglia--gioca > * { grid-column: 1; }
-  .feed-griglia--gioca > .gioco-classifica { grid-column: 2; grid-row: 1 / span 3; }
+  .feed-griglia--gioca > .gioco-classifica { grid-column: 2; grid-row: 1 / span 2; }
 }
 @media (max-width: 560px) {
   .shell-logo { font-size: 29px; }
@@ -574,7 +576,8 @@ html, body { height: 100%; }
 .ev-vai { flex: none; height: 38px; padding: 0 12px 0 10px; border-radius: 999px; background: var(--cream); color: var(--plum); display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; }
 .ev-quando { letter-spacing: 0.2px; font-size: 13.5px; }
 .ev-quando::first-letter { text-transform: uppercase; }
-.ev-prezzo--vuoto { background: transparent; color: var(--t); box-shadow: inset 0 0 0 1.5px currentColor; font-weight: 700; opacity: 0.85; }
+.ev-prezzo--simbolo { width: 30px; height: 30px; padding: 0; display: inline-grid; place-items: center; font-size: 16px; position: relative; }
+.ev-prezzo--simbolo.ev-prezzo--gratis::after { content: ""; position: absolute; left: 6px; right: 6px; top: 50%; height: 2.5px; border-radius: 2px; background: currentColor; transform: rotate(-45deg); }
 .feed-vista { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .feed-vista > span { font-size: 13.5px; font-weight: 700; color: var(--muted); }
 .feed-vista .filtri-scelta { background: var(--paper); box-shadow: inset 0 0 0 1px var(--line); }
@@ -591,3 +594,44 @@ html, body { height: 100%; }
 .condividi-aiuto .link { align-self: flex-start; }
 .condividi-gira { width: 16px; height: 16px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: gira 0.7s linear infinite; }
 @keyframes gira { to { transform: rotate(360deg); } }
+
+/* ===== Home ===== */
+.home-griglia { display: grid; gap: 14px; }
+@media (min-width: 760px) { .home-griglia { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; } }
+.home-titolo { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 26px 2px 12px; }
+.home-titolo h2 { font-family: var(--serif); font-weight: 800; font-size: 24px; letter-spacing: -0.4px; color: var(--plum); }
+.home-tutti { font-weight: 800; font-size: 14px; color: var(--wine); }
+.home-scorciatoie { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }
+.home-scorc { display: flex; flex-direction: column; gap: 4px; padding: 16px 18px; border-radius: 18px; background: var(--paper); box-shadow: 0 6px 18px rgba(67, 37, 67, 0.07), inset 0 0 0 1px rgba(67, 37, 67, 0.06); transition: transform 0.12s ease; }
+.home-scorc:active { transform: scale(0.97); }
+.home-scorc b { font-family: var(--serif); font-size: 20px; color: var(--plum); }
+.home-scorc b::after { content: " →"; color: var(--wine); }
+.home-scorc small { font-size: 13px; line-height: 1.35; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.giorno-esito { font-weight: 400 !important; font-size: 14.5px; line-height: 1.5; color: rgba(255, 255, 255, 0.92); }
+.giorno-esito b { color: var(--gold); }
+.giorno-nota { color: rgba(255, 255, 255, 0.7) !important; font-weight: 600 !important; letter-spacing: 0 !important; font-size: 13px !important; }
+.gioco-giorno .gioco-via { background: var(--gold); color: var(--plum); }
+
+/* Giochi: il vitigno */
+.gioco-vit { display: flex; flex-direction: column; gap: 10px; padding: 20px; border-radius: 22px; background: var(--plum); color: #fff; box-shadow: 0 12px 28px rgba(67, 37, 67, 0.18); }
+.gioco-vit small { font-size: 12px; font-weight: 800; letter-spacing: 1.2px; color: var(--gold); }
+.gioco-vit strong { font-family: var(--serif); font-weight: 800; font-size: 24px; line-height: 1.1; }
+.gioco-vit p { font-size: 15px; line-height: 1.5; color: rgba(255, 255, 255, 0.88); }
+
+/* Quiz: la spiegazione dopo la risposta */
+.spiega { margin: 12px auto 0; max-width: 520px; padding: 14px 16px; border-radius: 14px; background: rgba(242, 179, 61, 0.16); border-left: 3px solid var(--gold); font-size: 15px; line-height: 1.5; }
+.avanti { margin-top: 16px; }
+.avviso { margin-top: 14px; text-align: center; opacity: 0.8; }
+
+/* Eventi con foto */
+.ev-foto { display: block; margin: 0 -18px; height: 150px; overflow: hidden; border-radius: 22px 22px 0 0; background: var(--cream); }
+.ev-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ev--foto .ev-su { border-radius: 0; }
+
+/* Blog: foto dentro la scheda, con il suo bordo, sempre nello stesso formato */
+.art-img, .art--primo .art-img { width: 100%; height: auto; aspect-ratio: 1200 / 630; margin: 0 0 6px; border-radius: 14px; object-fit: cover; }
+.articolo-img { aspect-ratio: 16 / 9; height: auto; max-height: none; }
+@media (min-width: 760px) {
+  .feed-griglia--blog .art--primo { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); column-gap: 22px; align-content: center; }
+  .feed-griglia--blog .art--primo .art-img { grid-row: 1 / span 5; margin: 0; }
+}
