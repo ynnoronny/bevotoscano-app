@@ -3,6 +3,7 @@ import { eventiPubblici } from "./api.js";
 import { km, fmtKm, cercaLuogo, posizioneAttuale, CITTA } from "./geo.js";
 import { ACCESSI, senzaAuto, fmtData } from "./shared.js";
 import Mappa from "./Mappa.jsx";
+import CondividiEvento from "./Condividi.jsx";
 
 import { go } from "../nav.js";
 import Link from "../Link.jsx";
@@ -232,6 +233,7 @@ function Dettaglio({ e, centro }) {
       <h1 className="page-title">{e.titolo}</h1>
       <Badges e={e} />
       <AggiungiCalendario e={e} percorso={eventoPercorso(e)} className="cal--pagina" />
+      <CondividiEvento e={e} grande />
       {e.altre_date && <p className="muted">Altre date: {e.altre_date}</p>}
       {e.descrizione && <p>{e.descrizione}</p>}
       {e.vini && <p className="cantina-wine">Nel bicchiere: <b>{e.vini}</b></p>}

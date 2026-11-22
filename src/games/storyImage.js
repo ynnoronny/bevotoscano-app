@@ -3,7 +3,11 @@
 // Nota: si condivide SOLO il file. Se insieme all'immagine passi anche del testo,
 // su iPhone Instagram sparisce dal menu o apre il post invece della storia.
 export async function shareStory(card, filename) {
-  const blob = await renderStory(card);
+  return condividiFile(await renderStory(card), filename);
+}
+
+// Condivide un'immagine già pronta (menu di condivisione del telefono) o, se non si può, la scarica.
+export async function condividiFile(blob, filename) {
   const file = new File([blob], `${filename}.png`, { type: "image/png" });
   if (navigator.canShare && navigator.canShare({ files: [file] })) {
     try {

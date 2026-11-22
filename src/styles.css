@@ -578,3 +578,16 @@ html, body { height: 100%; }
 .feed-vista { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .feed-vista > span { font-size: 13.5px; font-weight: 700; color: var(--muted); }
 .feed-vista .filtri-scelta { background: var(--paper); box-shadow: inset 0 0 0 1px var(--line); }
+
+/* Condividi un evento: storia Instagram o link */
+.condividi { position: relative; flex: none; }
+.condividi-menu { left: auto; right: 0; width: 220px; bottom: 46px; }
+.condividi-menu button { display: flex; align-items: center; gap: 10px; }
+.condividi--grande { display: flex; flex-direction: column; gap: 6px; }
+.condividi--grande .condividi-menu { display: none; }
+.condividi-ig { display: inline-flex; align-items: center; gap: 8px; }
+.condividi-aiuto { position: absolute; z-index: 30; right: 0; bottom: 46px; width: 240px; display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border-radius: 16px; background: var(--paper); color: var(--plum); font-size: 13.5px; box-shadow: 0 14px 34px rgba(43, 26, 36, 0.28); animation: apri 0.18s ease both; }
+.condividi--grande .condividi-aiuto { position: static; width: auto; box-shadow: none; background: var(--cream); }
+.condividi-aiuto .link { align-self: flex-start; }
+.condividi-gira { width: 16px; height: 16px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: gira 0.7s linear infinite; }
+@keyframes gira { to { transform: rotate(360deg); } }
