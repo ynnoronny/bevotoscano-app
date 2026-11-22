@@ -194,6 +194,10 @@ function Editor({ ev, pickups, onAnnulla, onSalva, onPickupSalvato, err }) {
         <Campo label="Coordinate del luogo" hint={v.lat != null ? `✓ ${v.lat.toFixed(4)}, ${v.lng.toFixed(4)}` : "Servono per la mappa e le distanze"}>
           <Trova testo={[v.luogo_nome, v.indirizzo, v.comune].filter(Boolean).join(", ")} onTrovato={(r) => setV((x) => ({ ...x, lat: r.lat, lng: r.lng }))} />
         </Campo>
+        <Campo label="Foto (link a un'immagine)" hint="Va in cima alla scheda dell'evento. Usa la foto ufficiale dal sito dell'evento.">
+          <input className="input" type="url" maxLength={300} value={v.immagine || ""} onChange={(e) => set("immagine", e.target.value.trim() || null)} placeholder="https://…jpg" />
+        </Campo>
+        {v.immagine && <img src={v.immagine} alt="" style={{ width: "100%", maxHeight: 180, objectFit: "cover", borderRadius: 12 }} />}
         <Campo label="Note interne"><textarea className="input" rows={2} value={v.note_admin || ""} onChange={(e) => set("note_admin", e.target.value)} /></Campo>
       </section>
       {err && <p className="error">{err}</p>}
