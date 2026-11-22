@@ -6,7 +6,7 @@ import Eventi, { nelPeriodo } from "../eventi/Eventi.jsx";
 import Mappa from "../eventi/Mappa.jsx";
 import { km, fmtKm, posizioneAttuale, CITTA } from "../eventi/geo.js";
 import Cantine from "./Cantine.jsx";
-import Segnala from "../eventi/Segnala.jsx";
+import SegnalaScelta from "./SegnalaScelta.jsx";
 import { ARTICOLI, articolo, dataArticolo } from "../blog.js";
 import { DOMANDE } from "../games/quizData.js";
 import { SEGNI, segnoDa } from "../games/oroscopoData.js";
@@ -57,7 +57,7 @@ export default function Shell({ section, sub, children }) {
               </Link>
             )}
             <Link to="home" className="shell-marchio" aria-label="Bevotoscano, torna all'inizio"><span className="shell-logo">Bevotoscano</span><em>Il vino da vivere</em></Link>
-            <Link to="segnala" className="shell-segnala">+ Segnala evento</Link>
+            <Link to="segnala" className="shell-segnala">+ Segnala</Link>
           </div>
           <nav className="shell-pills" aria-label="Sezioni">
             {PILLS.map((p) => (
@@ -77,7 +77,7 @@ function Contenuto({ section, sub }) {
   if (section === "cantine") return <div className="shell-pagina shell-pagina--larga"><Cantine apri={sub} /></div>;
   if (section === "blog") return sub ? <Articolo id={sub} /> : <Blog />;
   if (section === "gioca") return <Gioca />;
-  if (section === "segnala") return <div className="page shell-pagina"><Segnala /></div>;
+  if (section === "segnala") return <div className="page shell-pagina"><SegnalaScelta /></div>;
   if (section === "eventi" && sub && !FILTRI_EVENTI.includes(sub)) {
     return <div className="page shell-pagina"><Eventi apri={sub} /></div>;
   }

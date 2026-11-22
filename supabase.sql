@@ -146,3 +146,40 @@ alter table punteggi add constraint punteggi_coerenza_check check (
   or (modalita = 'alltime' and punti = corrette)
 );
 create index if not exists punteggi_classifica on punteggi (modalita, punti desc);
+
+-- ===================== PROPOSTE (cantine, enoteche…) =====================
+-- Dal pulsante "Segnala" dell'app arrivano proposte di cantine ed enoteche.
+-- Restano "in_attesa" finché un admin non le approva o le scarta dal gestionale.
+create table if not exists proposte (
+  id bigint generated always as identity primary key,
+  tipo text not null check (tipo in ('cantina','enoteca')),
+  stato text not null default 'in_attesa' check (stato in ('in_attesa','approvata','scartata')),
+  nome text not null check (char_length(nome) between 2 and 100),
+  comune text not null check (char_length(comune) <= 80),
+  sito text check (char_length(sito) <= 200),
+  ruolo text check (ruolo in ('titolare','cliente')),
+  referente text check (char_length(referente) <= 80),
+  email text not null check (char_length(email) <= 200 and email like '%@%'),
+  note text check (char_length(note) <= 600),
+  note_admin text,
+  creato timestamptz not null default now(),
+  deciso timestamptz
+);
+alter table proposte enable row level security;
+drop policy if exists "nuova proposta" on proposte;
+create policy "nuova proposta" on proposte for insert to anon
+  with check (stato = 'in_attesa' and note_admin is null and deciso is null);
+drop policy if exists "proposte admin" on proposte;
+create policy "proposte admin" on proposte for all to authenticated using (is_admin()) with check (is_admin());
+
+create or replace function limita_proposte() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if (select count(*) from proposte where email = new.email and creato > now() - interval '1 day') >= 5
+     or (select count(*) from proposte where creato > now() - interval '1 hour') >= 30 then
+    raise exception 'troppe proposte, riprova più tardi';
+  end if;
+  return new;
+end $$;
+drop trigger if exists limita_proposte on proposte;
+create trigger limita_proposte before insert on proposte for each row execute function limita_proposte();

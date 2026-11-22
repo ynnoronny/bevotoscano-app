@@ -131,3 +131,23 @@ export async function posta(azione, dati = {}) {
   if (!r.ok) throw new Error(j.errore || `Errore ${r.status}`);
   return j;
 }
+
+// ---------- proposte di cantine ed enoteche (pulsante "Segnala") ----------
+const LOCAL_PROPOSTE = "bevotoscano-proposte";
+const proposteLocali = () => { try { return JSON.parse(localStorage.getItem(LOCAL_PROPOSTE) || "[]"); } catch { return []; } };
+const salvaLocali = (l) => { try { localStorage.setItem(LOCAL_PROPOSTE, JSON.stringify(l)); } catch { /* niente */ } };
+
+export async function proponi(p) {
+  const riga = { ...p, stato: "in_attesa" };
+  if (online()) return rest("proposte", { method: "POST", body: riga, prefer: "return=minimal" });
+  salvaLocali([...proposteLocali(), { ...riga, id: Date.now(), creato: new Date().toISOString() }]);
+}
+export async function tutteLeProposte() {
+  if (online()) return rest("proposte?select=*&order=creato.desc", { token: await token() });
+  return proposteLocali().reverse();
+}
+export async function decidiProposta(id, stato, note_admin) {
+  const campi = { stato, deciso: new Date().toISOString(), ...(note_admin != null ? { note_admin } : {}) };
+  if (online()) return rest(`proposte?id=eq.${id}`, { method: "PATCH", body: campi, token: await token(), prefer: "return=minimal" });
+  salvaLocali(proposteLocali().map((p) => (p.id === id ? { ...p, ...campi } : p)));
+}

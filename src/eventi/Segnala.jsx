@@ -75,7 +75,7 @@ export function CampiEvento({ v, set, pickupExtra }) {
   );
 }
 
-export default function Segnala() {
+export default function Segnala({ dentro = false }) {
   const [v, setV] = useState(VUOTO);
   const [criteri, setCriteri] = useState([false, false, false]);
   const [privacy, setPrivacy] = useState(false);
@@ -124,7 +124,7 @@ export default function Segnala() {
 
   return (
     <form className="stack form" onSubmit={invia} noValidate>
-      <h1 className="page-title">Segnala un evento</h1>
+      {!dentro && <h1 className="page-title">Segnala un evento</h1>}
       <p className="muted">È gratis. Raccogliamo in un unico posto gli eventi del vino toscano, con un occhio a chi vuole arrivarci senza guidare. Ogni evento viene controllato da noi prima di essere pubblicato.</p>
 
       <section className="card">

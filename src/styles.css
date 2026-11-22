@@ -563,3 +563,6 @@ html, body { height: 100%; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
+
+.segnala-scelta { display: flex; flex-direction: column; gap: 14px; }
+.segnala-scelta > .filtri-scelta { align-self: flex-start; max-width: 100%; overflow-x: auto; }
