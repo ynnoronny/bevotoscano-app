@@ -5,8 +5,8 @@ import { proponi } from "../eventi/api.js";
 import { Scelta } from "./Filtri.jsx";
 
 // "Segnala": un solo pulsante in alto, poi scegli cosa proponi.
-// Le cantine e le enoteche proposte arrivano a Bevotoscano da valutare: non compaiono
-// nell'app finché non le inseriamo noi.
+// Le cantine e le enoteche proposte finiscono nell'elenco dello scanner (scanner_attori) da valutare:
+// compaiono nell'app solo dopo l'approvazione dal gestionale.
 const TIPI = [["evento", "Un evento"], ["cantina", "Una cantina"], ["enoteca", "Un'enoteca"]];
 
 export default function SegnalaScelta({ iniziale }) {
@@ -27,6 +27,7 @@ function ProponiLuogo({ tipo }) {
   const [v, setV] = useState(VUOTO);
   const [errore, setErrore] = useState("");
   const [fatto, setFatto] = useState(false);
+  const [invio, setInvio] = useState(false);
   const set = (k, x) => { setV((o) => ({ ...o, [k]: x })); setErrore(""); };
   const cosa = tipo === "cantina" ? "cantina" : "enoteca";
 
@@ -34,13 +35,14 @@ function ProponiLuogo({ tipo }) {
     return (
       <div className="card segnala-ok fade">
         <strong>Grazie! 🍷</strong>
-        <p>Abbiamo ricevuto la {cosa}. La guardiamo e, se fa per Bevotoscano, ti scriviamo per andarla a trovare.</p>
+        <p>{fatto === "doppione"
+          ? `Questa ${cosa} la conosciamo già: è tra quelle che stiamo valutando. Grazie lo stesso!`
+          : `Abbiamo ricevuto la ${cosa}. La guardiamo e, se fa per Bevotoscano, ti scriviamo per andarla a trovare.`}</p>
         <button className="link" onClick={() => { setV(VUOTO); setFatto(false); }}>Proponine un'altra</button>
       </div>
     );
   }
 
-  const [invio, setInvio] = useState(false);
   const invia = async (e) => {
     e.preventDefault();
     if (!v.nome.trim() || !v.comune.trim()) return setErrore(`Scrivi almeno il nome della ${cosa} e il comune.`);
@@ -48,15 +50,16 @@ function ProponiLuogo({ tipo }) {
     const p = { tipo, nome: v.nome.trim(), comune: v.comune.trim(), sito: v.sito.trim() || null, ruolo: v.ruolo,
       referente: v.referente.trim() || null, email: v.email.trim(), note: v.note.trim() || null };
     setInvio(true);
+    let esito = true;
     try {
-      await proponi(p);
+      if ((await proponi(p)) === "doppione") esito = "doppione";
     } catch (x) {
       if (/troppe/.test(x.message)) { setInvio(false); return setErrore("Hai già mandato molte proposte oggi: riprova domani."); }
       // se la coda nel database non risponde, la proposta finisce comunque tra i contatti
       saveLead(`proposta-${tipo}`, { email: p.email, nome: p.referente, ...p });
     }
     setInvio(false);
-    setFatto(true);
+    setFatto(esito);
   };
 
   return (

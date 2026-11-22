@@ -3,18 +3,38 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { TILE, TILE_ATTR } from "../tema.js";
 import { CANTINE } from "../data.js";
-import { eventiPubblici } from "../eventi/api.js";
+import { eventiPubblici, attoriPubblici } from "../eventi/api.js";
+import { siglaProvincia } from "../province.js";
 import { go } from "../nav.js";
 import Link from "../Link.jsx";
 import { pos } from "./luoghi.js";
-import { ZONE } from "../zone.js";
+import { ZONE, zonaDi } from "../zone.js";
 import { Filtri, Riga, Scelta, Interruttore } from "./Filtri.jsx";
 import { cantinaPercorso, cantinaMeta, cantinaJsonLd, briciole, applicaMeta, eventoPercorso } from "../seo.js";
 
 const SIGLA = { Pisa: "PI", Firenze: "FI", Siena: "SI", Livorno: "LI", Lucca: "LU", Arezzo: "AR", Grosseto: "GR", Pistoia: "PT", Prato: "PO", "Massa-Carrara": "MS" };
-const dove = (c) => `${c.comune}${c.provincia ? ` (${SIGLA[c.provincia] || c.provincia})` : ""} · ${c.zona}`;
+const dove = (c) => [`${c.comune || ""}${c.provincia ? ` (${SIGLA[c.provincia] || c.provincia})` : ""}`, c.zona].filter(Boolean).join(" · ");
+const PROVINCIA = Object.fromEntries(Object.entries(SIGLA).map(([n, s]) => [s, n]));
 
-function MappaCantine({ cantine, attiva, onScegli, zona, onZona }) {
+// Le realtà approvate dal gestionale (le trova lo scanner o le segnalano gli utenti) si aggiungono
+// alle cantine scritte a mano in data.js. Non hanno ancora una scheda: portano al sito o a Google Maps.
+const TIPI_DB = { cantina: "Cantina", azienda_agricola: "Azienda agricola", fattoria: "Fattoria", enoteca: "Enoteca", wine_bar: "Wine bar", ristorante: "Ristorante" };
+const daAttore = (a) => ({
+  id: `r${a.id}`, db: true, nome: a.nome, comune: a.comune, tipo: TIPI_DB[a.tipo],
+  provincia: PROVINCIA[siglaProvincia(a.comune)] || null,
+  zona: zonaDi(a.lat != null ? [a.lat, a.lng] : null), lat: a.lat, lng: a.lng,
+  sito: a.sito ? (/^https?:\/\//.test(a.sito) ? a.sito : `https://${a.sito}`) : null, maps: a.google_maps,
+});
+function useCantine() {
+  const [extra, setExtra] = useState([]);
+  useEffect(() => {
+    const note = new Set(CANTINE.map((c) => c.nome.toLowerCase()));
+    attoriPubblici().then((l) => setExtra((l || []).filter((a) => TIPI_DB[a.tipo] && !note.has(a.nome.toLowerCase())).map(daAttore))).catch(() => {});
+  }, []);
+  return useMemo(() => [...CANTINE, ...extra], [extra]);
+}
+
+function MappaCantine({ cantine, attiva, onScegli, zona, onZona, tutte = CANTINE }) {
   const box = useRef(null);
   const map = useRef(null);
   const layer = useRef(null);
@@ -32,7 +52,7 @@ function MappaCantine({ cantine, attiva, onScegli, zona, onZona }) {
     // tutte le zone del vino toscano, anche quelle dove non abbiamo ancora cantine
     ZONE.forEach((a) => {
       const on = a.zona === zona;
-      const n = CANTINE.filter((c) => c.zona === a.zona).length;
+      const n = tutte.filter((c) => c.zona === a.zona).length;
       const cerchio = L.circle(a.centro, { radius: a.km * 1000, color: "#432543", weight: on ? 2.5 : 1.5, dashArray: on ? null : "5 6", fillColor: on ? "#F2B33D" : "#432543", fillOpacity: on ? 0.22 : n ? 0.09 : 0.03, opacity: n || on ? 1 : 0.45 })
         // il nome resta scritto solo dove ci sono cantine (o sulla zona scelta): le altre lo mostrano al tocco
         .bindTooltip(n ? `${a.zona} · ${n}` : a.zona, { permanent: !!n || on, direction: "center", className: `zona-tip ${n ? "" : "zona-tip--vuota"}` })
@@ -44,7 +64,7 @@ function MappaCantine({ cantine, attiva, onScegli, zona, onZona }) {
       const b = L.featureGroup(zone.current.getLayers()).getBounds();
       if (b.isValid()) map.current.fitBounds(b, { padding: [12, 12] });
     }
-  }, [zona]);
+  }, [zona, tutte]);
   useEffect(() => {
     layer.current.clearLayers();
     const punti = [];
@@ -167,16 +187,17 @@ function Elenco() {
   const [attiva, setAttiva] = useState(null);
   const [eventi, setEventi] = useState([]);
   useEffect(() => { eventiPubblici().then(setEventi).catch(() => {}); }, []);
+  const tutte = useCantine();
 
   const zone = useMemo(() => {
-    const piene = [...new Set(CANTINE.map((c) => c.zona))];
-    const elenco = [["Tutte", `Tutte · ${CANTINE.length}`], ...piene.map((z) => [z, `${z} · ${CANTINE.filter((c) => c.zona === z).length}`])];
+    const piene = [...new Set(tutte.map((c) => c.zona).filter(Boolean))];
+    const elenco = [["Tutte", `Tutte · ${tutte.length}`], ...piene.map((z) => [z, `${z} · ${tutte.filter((c) => c.zona === z).length}`])];
     // una zona ancora vuota scelta dalla mappa compare tra le scelte, così si vede dove sei
     if (zona !== "Tutte" && !piene.includes(zona)) elenco.push([zona, `${zona} · 0`]);
     return elenco;
-  }, [zona]);
-  const province = useMemo(() => [...new Set(CANTINE.map((c) => c.provincia).filter(Boolean))], []);
-  const lista = CANTINE.filter((c) => (zona === "Tutte" || c.zona === zona) && (!provincia || c.provincia === provincia)
+  }, [zona, tutte]);
+  const province = useMemo(() => [...new Set(tutte.map((c) => c.provincia).filter(Boolean))], [tutte]);
+  const lista = tutte.filter((c) => (zona === "Tutte" || c.zona === zona) && (!provincia || c.provincia === provincia)
     && (!soloIntervistate || c.intervistata) && (!soloPremiate || (c.premi || []).length))
     // prima le cantine dove siamo già stati
     .sort((a, b) => (b.intervistata ? 1 : 0) - (a.intervistata ? 1 : 0));
@@ -203,10 +224,10 @@ function Elenco() {
         </Riga>
       </Filtri>
 
-      <MappaCantine cantine={lista} attiva={attiva} onScegli={scegli} zona={zona} onZona={(z) => { setZona(z); setAttiva(null); }} />
+      <MappaCantine cantine={lista} tutte={tutte} attiva={attiva} onScegli={scegli} zona={zona} onZona={(z) => { setZona(z); setAttiva(null); }} />
       <p className="tiny">Tocca una zona sulla mappa per vederla da vicino.</p>
 
-      {lista.length === 0 && (zona !== "Tutte" && !CANTINE.some((c) => c.zona === zona)
+      {lista.length === 0 && (zona !== "Tutte" && !tutte.some((c) => c.zona === zona)
         ? <p className="feed-vuoto">In zona {zona} non abbiamo ancora cantine. Ne conosci una? <Link className="link" to="segnala/cantina">Proponila</Link>.</p>
         : <p className="feed-vuoto">Nessuna cantina con questi filtri, per ora.</p>)}
       <div className="feed-griglia">
@@ -214,13 +235,23 @@ function Elenco() {
           const ev = eventiDi(c);
           return (
             <article key={c.id} id={`cantina-${c.id}`} className={`cant ${attiva === c.id ? "cant--on" : ""}`} onClick={() => setAttiva(c.id)}>
-              <Link to={cantinaPercorso(c)} className="cant-testa" onClick={(x) => x.stopPropagation()}>
-                <Foto c={c} />
-                <span className="cant-nome">
-                  <strong>{c.nome}</strong>
-                  <small>{dove(c)}</small>
-                </span>
-              </Link>
+              {c.db ? (
+                <div className="cant-testa">
+                  <Foto c={c} />
+                  <span className="cant-nome">
+                    <strong>{c.nome}</strong>
+                    <small>{[c.tipo !== "Cantina" && c.tipo, dove(c)].filter(Boolean).join(" · ")}</small>
+                  </span>
+                </div>
+              ) : (
+                <Link to={cantinaPercorso(c)} className="cant-testa" onClick={(x) => x.stopPropagation()}>
+                  <Foto c={c} />
+                  <span className="cant-nome">
+                    <strong>{c.nome}</strong>
+                    <small>{dove(c)}</small>
+                  </span>
+                </Link>
+              )}
               <Segni c={c} />
               {c.vinoPiuToscano
                 ? <p className="cant-vino">Il suo vino più toscano: <b>{c.vinoPiuToscano}</b></p>
@@ -231,7 +262,9 @@ function Elenco() {
                 </button>
               )}
               <div className="cant-azioni">
-                <Link className="cant-btn" to={cantinaPercorso(c)} onClick={(x) => x.stopPropagation()}>Scheda →</Link>
+                {c.db
+                  ? c.maps && <a className="cant-btn" href={c.maps} target="_blank" rel="noopener" onClick={(x) => x.stopPropagation()}>Mappa ↗</a>
+                  : <Link className="cant-btn" to={cantinaPercorso(c)} onClick={(x) => x.stopPropagation()}>Scheda →</Link>}
                 {c.sito && <a className="cant-btn cant-btn--chiaro" href={c.sito} target="_blank" rel="noopener" onClick={(x) => x.stopPropagation()}>Sito ↗</a>}
               </div>
             </article>

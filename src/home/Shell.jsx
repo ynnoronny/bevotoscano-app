@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { INSTAGRAM_URL, RYB_URL } from "../data.js";
-import { eventiPubblici } from "../eventi/api.js";
+import { eventiPubblici, notiziePubbliche } from "../eventi/api.js";
+import { Dettagli, CATEGORIE_NOTIZIE } from "../eventi/AdminScanner.jsx";
 import { senzaAuto, prezzoEv, conNavetta } from "../eventi/shared.js";
 import Eventi from "../eventi/Eventi.jsx";
 import Mappa from "../eventi/Mappa.jsx";
@@ -256,14 +257,29 @@ function FineFeed() {
 
 // ---------- Blog ----------
 
+// Le notizie approvate dal gestionale (le trova lo scanner) si mettono accanto agli articoli
+// scritti a mano, in ordine di data. Il loro indirizzo è bevotoscano.com/blog/n-<id>.
+const daNotizia = (n) => ({
+  id: `n-${n.id}`, notizia: n, titolo: n.titolo, tag: CATEGORIE_NOTIZIE[n.categoria] || "Notizie",
+  data: (n.data_fonte || n.approvato || "").slice(0, 10),
+  sottotitolo: (n.sintesi || "").split(/(?<=\.)\s/)[0],
+});
+function useNotizie() {
+  const [notizie, setNotizie] = useState([]);
+  useEffect(() => { notiziePubbliche().then((l) => setNotizie((l || []).map(daNotizia))).catch(() => {}); }, []);
+  return notizie;
+}
+
 function Blog() {
+  const notizie = useNotizie();
+  const tutti = [...ARTICOLI, ...notizie].sort((a, b) => String(b.data).localeCompare(String(a.data)));
   return (
     <div className="feed">
       <div className="feed-griglia feed-griglia--blog">
-        {ARTICOLI.map((a, i) => (
-          <Link key={a.id} to={`blog/${a.id}`} className={`art ${i === 0 ? "art--primo" : ""}`}>
+        {tutti.map((a, i) => (
+          <Link key={a.id} to={`blog/${a.id}`} className={`art ${i === 0 ? "art--primo" : ""} ${a.notizia ? "art--notizia" : ""}`}>
             {a.immagine && <img className="art-img" src={a.immagine} alt="" loading="lazy" />}
-            <span className="art-tag">{a.tag} · {dataArticolo(a.data)}</span>
+            <span className="art-tag">{a.tag}{a.data ? ` · ${dataArticolo(a.data)}` : ""}</span>
             <strong>{a.titolo}</strong>
             <span className="art-sotto">{a.sottotitolo}</span>
             <span className="art-leggi">Leggi</span>
@@ -276,7 +292,11 @@ function Blog() {
 }
 
 function Articolo({ id }) {
+  const notizie = useNotizie();
+  const n = id.startsWith("n-") ? notizie.find((x) => x.id === id) : null;
+  if (n) return <Notizia a={n} />;
   const a = articolo(id);
+  if (!a && id.startsWith("n-")) return <div className="page shell-pagina"><p className="muted">Carico…</p></div>;
   if (!a) return <div className="page shell-pagina"><p className="muted">Articolo non trovato.</p><Link className="link" to="blog">← Tutti gli articoli</Link></div>;
   return (
     <article className="page shell-pagina articolo">
@@ -286,6 +306,24 @@ function Articolo({ id }) {
       <p className="articolo-sotto">{a.sottotitolo}</p>
       {a.paragrafi.map((p, i) => <p key={i} className="articolo-p">{p}</p>)}
       <Link className="btn btn--primary" to="eventi">Guarda gli eventi</Link>
+    </article>
+  );
+}
+
+function Notizia({ a }) {
+  const n = a.notizia;
+  useEffect(() => { document.title = `${a.titolo} · Bevotoscano`; }, [a.id]);
+  return (
+    <article className="page shell-pagina articolo">
+      <span className="art-tag">{a.tag}{a.data ? ` · ${dataArticolo(a.data)}` : ""}</span>
+      <h1 className="page-title">{a.titolo}</h1>
+      {(n.sintesi || "").split(/\n+/).filter(Boolean).map((p, i) => <p key={i} className="articolo-p">{p}</p>)}
+      <Dettagli d={n.dettagli} />
+      <p className="articolo-fonte">
+        Fonte: <a className="link" href={n.fonte_url} target="_blank" rel="noopener">{n.fonte_nome || "leggi l'originale"} ↗</a>
+        {n.fonte_url_2 && <> · <a className="link" href={n.fonte_url_2} target="_blank" rel="noopener">altra fonte ↗</a></>}
+      </p>
+      <Link className="btn btn--primary" to="blog">← Tutto il blog</Link>
     </article>
   );
 }

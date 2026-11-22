@@ -642,3 +642,22 @@ html, body { height: 100%; }
 .admin-origine--ia { background: #E4E9F7; color: #2F3F7A; }
 .admin-origine--form { background: rgba(242, 179, 61, 0.28); color: #6B4A08; }
 .admin-origine--admin { background: rgba(67, 37, 67, 0.1); }
+
+/* Gestionale: scanner (verifica, cantine, notizie, registro) */
+.admin-verifica--ok { background: #DDF1E2; color: #1F5C30; }
+.admin-verifica--mezzo { background: rgba(242, 179, 61, 0.28); color: #6B4A08; }
+.admin-verifica--no { background: #F6DADA; color: #8A1F1F; }
+.admin-cat { font-weight: 700; color: var(--wine); }
+.admin-nota { margin: 0; padding: 8px 10px; border-radius: 10px; background: #EEF1FA; font-size: 14px; line-height: 1.45; }
+.admin-nota--chiara { background: var(--cream); }
+.admin-filtri { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; align-items: center; margin: 8px 0; }
+.admin-check { display: flex; align-items: center; gap: 6px; font-size: 14px; }
+.admin-comune { display: flex; gap: 8px; align-items: center; }
+.admin-comune .input { max-width: 260px; }
+.admin-avviso { color: #8A5A00; }
+.admin-link { display: flex; flex-wrap: wrap; gap: 12px; }
+.admin-riga { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 12px; background: var(--paper); border: 1px solid var(--line); }
+.admin-regola { font-family: ui-monospace, Menlo, monospace; font-size: 13px; line-height: 1.5; }
+.notizia-dettagli { margin: 4px 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
+.notizia-dettagli li span { display: block; font-size: 14px; color: var(--muted); }
+.articolo-fonte { font-size: 15px; color: var(--muted); }

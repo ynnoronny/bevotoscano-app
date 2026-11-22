@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { online, accedi, esci, sessione, tuttiGliEventi, salvaEvento, eliminaEvento, pickupPoints, salvaPickup, tutteLeProposte, decidiProposta } from "./api.js";
+import { online, accedi, esci, sessione, tuttiGliEventi, salvaEvento, eliminaEvento, pickupPoints, salvaPickup } from "./api.js";
 import { cercaLuogo } from "./geo.js";
 import { TIPI_ORG, fmtData, senzaAuto } from "./shared.js";
 import { CampiEvento, Campo } from "./Segnala.jsx";
 import Posta from "./Posta.jsx";
+import { Attori, Notizie, Registro, CATEGORIE } from "./AdminScanner.jsx";
 
 // Backend di moderazione: bevotoscano.com/admin (non è nel menu).
 const toInput = (iso) => {
@@ -28,11 +29,14 @@ export default function Admin() {
     <>
       <div className="chips">
         <button className={`chip ${area === "eventi" ? "chip--on" : ""}`} onClick={() => setArea("eventi")}>Eventi</button>
-        <button className={`chip ${area === "proposte" ? "chip--on" : ""}`} onClick={() => setArea("proposte")}>Cantine ed enoteche</button>
-        <button className={`chip ${area === "posta" ? "chip--on" : ""}`} onClick={() => setArea("posta")}>Posta info@</button>
+        {[["attori", "Cantine ed enoteche"], ["notizie", "Notizie"], ["scanner", "Scanner"], ["posta", "Posta info@"]].map(([k, l]) => (
+          <button key={k} className={`chip ${area === k ? "chip--on" : ""}`} onClick={() => setArea(k)}>{l}</button>
+        ))}
       </div>
       {area === "eventi" && <Moderazione email={s?.email} onEsci={fuori} />}
-      {area === "proposte" && <Proposte onEsci={fuori} />}
+      {area === "attori" && <Attori onEsci={fuori} />}
+      {area === "notizie" && <Notizie onEsci={fuori} />}
+      {area === "scanner" && <Registro onEsci={fuori} />}
       {area === "posta" && <Posta onSessione={fuori} />}
     </>
   );
@@ -74,7 +78,9 @@ function Moderazione({ email, onEsci }) {
   }
 
   const conta = (st) => (eventi || []).filter((e) => e.stato === st).length;
-  const lista = (eventi || []).filter((e) => e.stato === tab);
+  // da approvare: prima quelli che il verificatore dà per pronti, poi da completare, poi da scartare
+  const lista = (eventi || []).filter((e) => e.stato === tab)
+    .sort((a, b) => (tab === "in_attesa" ? (ORDINE_VERIFICA[a.verifica] ?? 1.5) - (ORDINE_VERIFICA[b.verifica] ?? 1.5) : 0));
 
   return (
     <>
@@ -98,9 +104,16 @@ function Moderazione({ email, onEsci }) {
             <div className="admin-testa">
               <Origine fonte={e.fonte} />
               <small className="evento-data">{fmtData(e.inizio)} · {e.comune}</small>
+              {e.verifica && <Verifica v={e.verifica} />}
+              {e.categoria && <small className="admin-cat">{CATEGORIE[e.categoria] || e.categoria}</small>}
               {e.fonte_url && <a className="link" href={e.fonte_url} target="_blank" rel="noopener"><small>dove l'ha trovato ↗</small></a>}
             </div>
             <strong className="evento-titolo">{e.titolo}</strong>
+            {e.verifica_note && <p className="admin-nota"><b>Il verificatore:</b> {e.verifica_note}</p>}
+            {e.note_scanner && <p className="admin-nota admin-nota--chiara"><b>Note dello scanner:</b> {e.note_scanner}</p>}
+            {(e.orari || e.prenotazione || e.prezzo) && (
+              <small>{[e.orari && `🕒 ${e.orari}${e.orario_trovato === false ? " (orario non trovato)" : ""}`, e.prezzo && `💶 ${e.prezzo}`, e.prenotazione && `Prenotazione ${e.prenotazione}`].filter(Boolean).join(" · ")}</small>
+            )}
             <small>{TIPI_ORG[e.org_tipo] || e.org_tipo}: <b>{e.org_nome}</b>{e.org_referente ? ` (${e.org_referente})` : ""}</small>
             <small>
               {e.org_email && <a className="link" href={`mailto:${e.org_email}`}>{e.org_email}</a>} {e.org_telefono} {e.org_social}
@@ -170,7 +183,8 @@ function Editor({ ev, pickups, onAnnulla, onSalva, onPickupSalvato, err }) {
       out.stato = "pubblicato";
       out.approvato = out.approvato || new Date().toISOString();
     }
-    if (!out.org_email) out.org_email = "admin@bevotoscano.com";
+    // gli eventi dello scanner possono restare senza email (la chiede solo il modulo Segnala)
+    if (!out.org_email && out.fonte !== "scanner") out.org_email = "admin@bevotoscano.com";
     if (!out.accesso.includes("bus")) out.pickup = [];
     out.pickup = out.pickup.filter((p) => p.nome);
     delete out.esempio;
@@ -202,6 +216,29 @@ function Editor({ ev, pickups, onAnnulla, onSalva, onPickupSalvato, err }) {
           <input className="input" type="url" maxLength={300} value={v.immagine || ""} onChange={(e) => set("immagine", e.target.value.trim() || null)} placeholder="https://…jpg" />
         </Campo>
         {v.immagine && <img src={v.immagine} alt="" style={{ width: "100%", maxHeight: 180, objectFit: "cover", borderRadius: 12 }} />}
+        <div className="due">
+          <Campo label="Categoria">
+            <select className="input" value={v.categoria || ""} onChange={(e) => set("categoria", e.target.value || null)}>
+              <option value="">—</option>
+              {Object.entries(CATEGORIE).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+            </select>
+          </Campo>
+          <Campo label="Prenotazione">
+            <select className="input" value={v.prenotazione || ""} onChange={(e) => set("prenotazione", e.target.value || null)}>
+              <option value="">—</option>
+              {["obbligatoria", "consigliata", "no"].map((k) => <option key={k} value={k}>{k}</option>)}
+            </select>
+          </Campo>
+        </div>
+        <div className="due">
+          <Campo label="Orari (testo)"><input className="input" maxLength={200} value={v.orari || ""} onChange={(e) => set("orari", e.target.value || null)} placeholder="Es. 17-23, sabato e domenica" /></Campo>
+          <Campo label="Provincia">
+            <select className="input" value={v.provincia || ""} onChange={(e) => set("provincia", e.target.value || null)}>
+              <option value="">—</option>
+              {["FI", "SI", "PI", "LI", "LU", "AR", "GR", "PT", "PO", "MS"].map((k) => <option key={k} value={k}>{k}</option>)}
+            </select>
+          </Campo>
+        </div>
         <Campo label="Note interne"><textarea className="input" rows={2} value={v.note_admin || ""} onChange={(e) => set("note_admin", e.target.value)} /></Campo>
       </section>
       {err && <p className="error">{err}</p>}
@@ -213,55 +250,6 @@ function Editor({ ev, pickups, onAnnulla, onSalva, onPickupSalvato, err }) {
   );
 }
 
-// Le cantine e le enoteche proposte dal pulsante "Segnala": si approvano o si scartano.
-// Approvare non le pubblica da sola: segna che vanno inserite nell'app.
-function Proposte({ onEsci }) {
-  const [lista, setLista] = useState(null);
-  const [tab, setTab] = useState("in_attesa");
-  const [err, setErr] = useState("");
-  const carica = () => tutteLeProposte().then(setLista).catch((e) => {
-    if (e.message === "sessione") return onEsci();
-    setLista([]);
-    setErr(/proposte/.test(e.message) ? "La coda delle proposte non è ancora attiva nel database." : e.message);
-  });
-  useEffect(() => { carica(); }, []);
-  const decidi = async (id, stato) => {
-    setErr("");
-    try { await decidiProposta(id, stato); carica(); } catch (e) { e.message === "sessione" ? onEsci() : setErr(e.message); }
-  };
-  const conta = (st) => (lista || []).filter((p) => p.stato === st).length;
-  const vista = (lista || []).filter((p) => p.stato === tab);
-  return (
-    <>
-      <h1 className="page-title">Cantine ed enoteche proposte</h1>
-      <div className="chips">
-        {[["in_attesa", "Da valutare"], ["approvata", "Approvate"], ["scartata", "Scartate"]].map(([k, l]) => (
-          <button key={k} className={`chip ${tab === k ? "chip--on" : ""}`} onClick={() => setTab(k)}>{l} ({conta(k)})</button>
-        ))}
-      </div>
-      {err && <p className="error">{err}</p>}
-      {!lista && <p className="muted">Carico…</p>}
-      {lista && vista.length === 0 && !err && <p className="muted">Niente qui.</p>}
-      <div className="list">
-        {vista.map((p) => (
-          <article key={p.id} className="card">
-            <small className="evento-data">{p.tipo === "cantina" ? "🍇 Cantina" : "🍷 Enoteca"} · {p.comune} · {fmtData(p.creato)}</small>
-            <strong className="evento-titolo">{p.nome}</strong>
-            {p.sito && <a className="link" href={p.sito.startsWith("http") ? p.sito : `https://${p.sito}`} target="_blank" rel="noopener">{p.sito}</a>}
-            <small>{p.ruolo === "titolare" ? "La propone chi ci lavora" : "La consiglia un cliente"}{p.referente ? `: ${p.referente}` : ""} · <a className="link" href={`mailto:${p.email}`}>{p.email}</a></small>
-            {p.note && <p className="muted">{p.note}</p>}
-            <div className="row">
-              {p.stato !== "approvata" && <button className="btn btn--primary" onClick={() => decidi(p.id, "approvata")}>Approva</button>}
-              {p.stato !== "scartata" && <button className="btn btn--outline" onClick={() => decidi(p.id, "scartata")}>Scarta</button>}
-              {p.stato !== "in_attesa" && <button className="link" onClick={() => decidi(p.id, "in_attesa")}>Rimetti da valutare</button>}
-            </div>
-          </article>
-        ))}
-      </div>
-    </>
-  );
-}
-
 // Da dove arriva l'evento: trovato dall'agente di ricerca, proposto col modulo Segnala, o inserito a mano.
 const ORIGINI = {
   scanner: ["🤖 Trovato dall'IA", "admin-origine--ia"],
@@ -270,5 +258,17 @@ const ORIGINI = {
 };
 function Origine({ fonte }) {
   const [testo, cls] = ORIGINI[fonte] || [fonte || "Origine sconosciuta", ""];
+  return <span className={`admin-origine ${cls}`}>{testo}</span>;
+}
+
+// L'esito del verificatore (routine 6 dello scanner).
+const ORDINE_VERIFICA = { pronto: 0, da_completare: 1, da_scartare: 2 };
+const VERIFICHE = {
+  pronto: ["✓ Pronto", "admin-verifica--ok"],
+  da_completare: ["Da completare", "admin-verifica--mezzo"],
+  da_scartare: ["Da scartare", "admin-verifica--no"],
+};
+function Verifica({ v }) {
+  const [testo, cls] = VERIFICHE[v] || [v, ""];
   return <span className={`admin-origine ${cls}`}>{testo}</span>;
 }

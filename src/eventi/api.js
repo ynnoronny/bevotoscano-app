@@ -132,22 +132,66 @@ export async function posta(azione, dati = {}) {
   return j;
 }
 
-// ---------- proposte di cantine ed enoteche (pulsante "Segnala") ----------
-const LOCAL_PROPOSTE = "bevotoscano-proposte";
-const proposteLocali = () => { try { return JSON.parse(localStorage.getItem(LOCAL_PROPOSTE) || "[]"); } catch { return []; } };
-const salvaLocali = (l) => { try { localStorage.setItem(LOCAL_PROPOSTE, JSON.stringify(l)); } catch { /* niente */ } };
+// ---------- cantine ed enoteche (tabella scanner_attori) ----------
+// Lo scanner le trova da solo; il pulsante "Segnala" le aggiunge con origine "segnalazione".
+// Tutte restano "in_attesa" finché non le approvi dal gestionale.
+const LOCAL_ATTORI = "bevotoscano-attori";
+const attoriLocali = () => { try { return JSON.parse(localStorage.getItem(LOCAL_ATTORI) || "[]"); } catch { return []; } };
+const salvaAttoriLocali = (l) => { try { localStorage.setItem(LOCAL_ATTORI, JSON.stringify(l)); } catch { /* niente */ } };
 
-export async function proponi(p) {
-  const riga = { ...p, stato: "in_attesa" };
-  if (online()) return rest("proposte", { method: "POST", body: riga, prefer: "return=minimal" });
-  salvaLocali([...proposteLocali(), { ...riga, id: Date.now(), creato: new Date().toISOString() }]);
+// Ritorna "doppione" se la conosciamo già (stesso nome e comune).
+export async function proponi({ tipo, nome, comune, sito, ruolo, referente, email, note }) {
+  const chi = ruolo === "titolare" ? "La propone chi ci lavora" : "La consiglia un cliente";
+  const riga = {
+    tipo, nome, comune, sito, stato: "in_attesa", origine: "segnalazione", segnalato_da_email: email,
+    note: [`${chi}${referente ? `: ${referente}` : ""}.`, note].filter(Boolean).join(" ").slice(0, 900),
+  };
+  if (online()) {
+    try { return await rest("scanner_attori", { method: "POST", body: riga, prefer: "return=minimal" }); }
+    catch (e) { if (/duplicate|unique/i.test(e.message)) return "doppione"; throw e; }
+  }
+  salvaAttoriLocali([...attoriLocali(), { ...riga, id: Date.now(), creato: new Date().toISOString(), attivo: true }]);
 }
-export async function tutteLeProposte() {
-  if (online()) return rest("proposte?select=*&order=creato.desc", { token: await token() });
-  return proposteLocali().reverse();
+export async function tuttiGliAttori() {
+  if (online()) return rest("scanner_attori?select=*&order=creato.desc&limit=5000", { token: await token() });
+  return attoriLocali().reverse();
 }
-export async function decidiProposta(id, stato, note_admin) {
-  const campi = { stato, deciso: new Date().toISOString(), ...(note_admin != null ? { note_admin } : {}) };
-  if (online()) return rest(`proposte?id=eq.${id}`, { method: "PATCH", body: campi, token: await token(), prefer: "return=minimal" });
-  salvaLocali(proposteLocali().map((p) => (p.id === id ? { ...p, ...campi } : p)));
+// Aggiorna una o più righe insieme (per approvare in blocco).
+export async function aggiornaAttori(ids, campi) {
+  if (!ids.length) return;
+  if (online()) {
+    const t = await token();
+    for (let i = 0; i < ids.length; i += 150) {
+      await rest(`scanner_attori?id=in.(${ids.slice(i, i + 150).join(",")})`, { method: "PATCH", body: campi, token: t, prefer: "return=minimal" });
+    }
+    return;
+  }
+  salvaAttoriLocali(attoriLocali().map((a) => (ids.includes(a.id) ? { ...a, ...campi } : a)));
+}
+// Le realtà approvate, per la sezione Cantine dell'app.
+export async function attoriPubblici() {
+  if (online()) return rest("attori_pubblici?select=*&order=nome.asc");
+  return attoriLocali().filter((a) => a.stato === "approvato");
+}
+
+// ---------- notizie per il blog (le scrive lo scanner come bozze) ----------
+export async function tutteLeNotizie() {
+  if (!online()) return [];
+  return rest("notizie?select=*&order=creato.desc", { token: await token() });
+}
+export async function aggiornaNotizia(id, campi) {
+  return rest(`notizie?id=eq.${id}`, { method: "PATCH", body: campi, token: await token(), prefer: "return=minimal" });
+}
+export async function notiziePubbliche() {
+  if (!online()) return [];
+  return rest("notizie?select=id,categoria,titolo,sintesi,dettagli,aziende,fonte_nome,fonte_url,fonte_url_2,data_fonte,approvato&stato=eq.pubblicata&order=approvato.desc");
+}
+
+// ---------- registro dello scanner (solo lettura, tranne le regole) ----------
+export async function registroScanner(tabella, query) {
+  if (!online()) return [];
+  return rest(`${tabella}?${query}`, { token: await token() });
+}
+export async function salvaRegola(nome, testo) {
+  return rest(`scanner_regole?nome=eq.${encodeURIComponent(nome)}`, { method: "PATCH", body: { testo, aggiornato: new Date().toISOString() }, token: await token(), prefer: "return=minimal" });
 }
