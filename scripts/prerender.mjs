@@ -4,7 +4,8 @@
 // Le schede dei singoli eventi le prepara al volo api/evento.js, così sono sempre aggiornate.
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
-import { PAGINE, metaPercorso, headHtml, inserisci, esc, eventoPercorso, SITO_JSON_LD, cantinaPercorso, cantinaMeta, cantinaJsonLd, cantinaCorpo, briciole } from "../src/seo.js";
+import { PAGINE, metaPercorso, headHtml, inserisci, esc, eventoPercorso, SITO_JSON_LD, cantinaPercorso, cantinaMeta, cantinaJsonLd, cantinaCorpo, briciole, articoloLd, articoloCorpo, articoloPercorso } from "../src/seo.js";
+import { ARTICOLI } from "../src/blog.js";
 import { pos } from "../src/home/luoghi.js";
 import { CANTINE, ESPERIENZE, CASSA, GIOCHI } from "../src/data.js";
 import { leggiEventi } from "./eventi-db.mjs";
@@ -44,9 +45,12 @@ const CORPI = {
   cantine: pagina("Piccoli produttori, scelti uno a uno", "Andiamo a conoscerle di persona e a ognuna chiediamo qual è il suo vino più toscano. Si parte dalle colline pisane, intorno a Terricciola.",
     `<ul>${CANTINE.map((c) => `<li><a href="/${cantinaPercorso(c)}">${esc(c.nome)}</a>, ${esc(c.comune)} (${esc(c.zona)})</li>`).join("")}</ul>`),
   gioca: pagina("Gioca", "La parte gaming di Bevotoscano: impari il vino toscano giocando, e sfidi il mondo.", listaGiochi),
-  "gioca/quiz": pagina("Quanto ne sai di vino toscano?", "Il quiz a tempo sul vino toscano: vitigni, denominazioni, territori. Sfida da 10 domande o All Time a oltranza, con la classifica."),
+  "gioca/quiz": pagina("Quanto ne sai di vino toscano?", "Il quiz infinito sul vino toscano: vitigni, denominazioni, territori. Parti con 0 vite, ogni 3 risposte giuste ne guadagni una; sbagli senza vite e la partita finisce."),
   "gioca/oroscopo": pagina("L'oroscopo del vino", "Inserisci giorno e mese di nascita e scopri il tuo vitigno toscano, con l'oroscopo del mese da condividere nelle stories."),
-  "gioca/classifica": pagina("Classifiche", "Chi ne sa di più di vino toscano: la classifica All Time e quella della Sfida da 10."),
+  "gioca/classifica": pagina("Classifica", "Chi ne sa di più di vino toscano: la classifica del quiz infinito, conta quante risposte giuste fai prima di cadere."),
+  blog: pagina("Blog", "Storie di vino toscano: vitigni rari, piccole cantine, Terricciola.",
+    `<ul>${ARTICOLI.map((a) => `<li><a href="/${articoloPercorso(a)}">${esc(a.titolo)}</a>: ${esc(a.sottotitolo)}</li>`).join("")}</ul>`),
+  ...Object.fromEntries(ARTICOLI.map((a) => [articoloPercorso(a), articoloCorpo(a)])),
   esperienze: pagina("Esperienze", "Il vino si capisce meglio con chi lo fa.", `<ul>${ESPERIENZE.map((e) => `<li><b>${esc(e.titolo)}</b>: ${esc(e.testo)}</li>`).join("")}</ul>`),
   cassa: pagina(CASSA.titolo, CASSA.testo),
   segnala: pagina("Segnala un evento", "Cantine, enoteche, aziende bus: segnalare un evento del vino in Toscana su Bevotoscano è gratis e richiede due minuti."),
@@ -55,7 +59,8 @@ const CORPI = {
 
 for (const p of Object.keys(PAGINE)) {
   const m = metaPercorso(p);
-  const html = inserisci(base, headHtml(m), CORPI[p] ?? "");
+  const art = ARTICOLI.find((a) => articoloPercorso(a) === p);
+  const html = inserisci(base, headHtml(m, art ? articoloLd(art) : []), CORPI[p] ?? "");
   // Con "cleanUrls" di Vercel, dist/eventi.html risponde a bevotoscano.com/eventi
   const file = new URL(p === "" ? "index.html" : `${p}.html`, DIST);
   mkdirSync(dirname(file.pathname), { recursive: true });

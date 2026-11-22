@@ -296,6 +296,34 @@ export function briciole(voci) {
   };
 }
 
+// ---------- blog ----------
+export const articoloPercorso = (a) => `blog/${a.id}`;
+export function articoloLd(a) {
+  return [
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      headline: a.titolo,
+      description: a.sottotitolo,
+      datePublished: a.data,
+      author: { "@type": "Organization", name: NOME, url: SITO },
+      publisher: { "@type": "Organization", name: NOME, url: SITO },
+      image: IMMAGINE,
+      url: `${SITO}/${articoloPercorso(a)}`,
+      mainEntityOfPage: `${SITO}/${articoloPercorso(a)}`,
+    },
+    briciole([["Blog", "blog"], [a.titolo, articoloPercorso(a)]]),
+  ];
+}
+export function articoloCorpo(a) {
+  return `<div class="app"><main class="page"><a class="link" href="/blog">← Tutti gli articoli</a>
+<p class="eyebrow">${esc(a.tag)} · <time datetime="${a.data}">${esc(a.data.split("-").reverse().join("/"))}</time></p>
+<h1 class="page-title">${esc(a.titolo)}</h1>
+<p><em>${esc(a.sottotitolo)}</em></p>
+${a.paragrafi.map((t) => `<p>${esc(t)}</p>`).join("\n")}
+<p><a href="/eventi">Guarda gli eventi del vino in Toscana</a></p></main></div>`;
+}
+
 export function cantinaCorpo(c) {
   return `<div class="app"><main class="page"><a class="link" href="/cantine">← Tutte le cantine</a>
 <p class="eyebrow">${esc(c.comune)} · ${esc(c.zona)}</p>

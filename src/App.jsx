@@ -6,7 +6,8 @@ import QuizToscana from "./games/QuizToscana.jsx";
 import Admin from "./eventi/Admin.jsx";
 import Shell from "./home/Shell.jsx";
 import { go, percorsoAttuale, suCambioPercorso } from "./nav.js";
-import { metaPercorso, applicaMeta } from "./seo.js";
+import { metaPercorso, applicaMeta, articoloLd } from "./seo.js";
+import { articolo } from "./blog.js";
 
 // Indirizzi veri per ogni sezione: bevotoscano.com/gioca/quiz porta dritto al quiz.
 function useRoute() {
@@ -22,7 +23,8 @@ export default function App() {
   // Titolo e descrizione della pagina (la scheda di un evento imposta i suoi).
   useEffect(() => {
     const m = metaPercorso([section, sub].filter(Boolean).join("/"));
-    if (m) applicaMeta(m);
+    const a = section === "blog" && sub && articolo(sub);
+    if (m) applicaMeta(m, a ? articoloLd(a) : undefined);
   }, [section, sub]);
 
   // Un minigioco aperto prende tutto lo schermo.
