@@ -503,3 +503,61 @@ html, body { height: 100%; }
   .shell-pill { font-size: 14px; }
   .articolo .page-title { font-size: 30px; }
 }
+
+/* Oroscopo: il tuo segno in primo piano, affine e antagonista del mese */
+.oro-segno { display: flex; align-items: center; gap: 14px; animation: entra 0.35s ease both; }
+.oro-simbolo { flex: none; width: 58px; height: 58px; border-radius: 18px; display: flex; align-items: center; justify-content: center; background: var(--gold); color: var(--plum); font-size: 32px; box-shadow: inset 0 -3px 0 rgba(67, 37, 67, 0.15); }
+.oro-segno > span:not(.oro-simbolo) { display: flex; flex-direction: column; min-width: 0; }
+.oro-segno b { font-family: var(--serif); font-weight: 800; font-size: 26px; line-height: 1; }
+.oro-segno em { font-family: var(--marchio); font-style: italic; font-size: 17px; color: var(--gold); }
+.oro-torna { margin-left: auto; height: 34px; padding: 0 12px; border-radius: 999px; border: 1.5px solid rgba(255, 255, 255, 0.35); color: #fff; font-size: 12.5px; font-weight: 700; }
+.oro-corpo { display: flex; flex-direction: column; gap: 10px; }
+.oro-rapporti { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; margin-top: 4px; }
+.oro-rap { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: 16px; text-align: left; color: #fff; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.12); transition: transform 0.15s, background 0.15s; }
+.oro-rap:hover { background: rgba(255, 255, 255, 0.14); }
+.oro-rap small { font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
+.oro-rap--affine small { color: var(--gold); }
+.oro-rap--anti small { color: #FF9AAA; }
+.oro-rap b { font-family: var(--serif); font-weight: 800; font-size: 16px; line-height: 1.2; }
+.oro-rap span { font-size: 13.5px; line-height: 1.45; color: rgba(255, 255, 255, 0.82); }
+.oro-altri { align-self: flex-start; padding: 6px 0; font-size: 14px; font-weight: 700; color: var(--gold); text-decoration: underline; text-underline-offset: 4px; }
+
+/* Piede: made by ryb e il badge beta */
+.piede { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 18px 0 6px; font-size: 12.5px; color: var(--muted); text-align: center; }
+.piede-riga { display: flex; align-items: center; gap: 10px; }
+.piede-riga a, .piede-riga > span:first-child { color: var(--plum); font-weight: 600; letter-spacing: 0.3px; }
+.piede-riga b { font-family: var(--marchio); font-size: 16px; font-weight: 800; }
+.piede-riga a:hover { color: var(--wine); }
+.piede-beta { padding: 3px 9px 3px 8px; border-radius: 999px; background: var(--plum); color: var(--gold); font-size: 10.5px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; display: inline-flex; align-items: center; gap: 5px; }
+.piede-beta::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--gold); animation: pulsa 2s ease-in-out infinite; }
+
+/* Rifiniture: tocchi, entrate, bordi */
+@keyframes entra { from { opacity: 0; transform: translateY(10px) scale(0.985); } to { opacity: 1; transform: none; } }
+@keyframes pulsa { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.35; transform: scale(0.75); } }
+@keyframes apri { from { opacity: 0; transform: translateY(6px) scale(0.97); } to { opacity: 1; transform: none; } }
+.feed-griglia > * { animation: entra 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.feed-griglia > :nth-child(2) { animation-delay: 0.05s; }
+.feed-griglia > :nth-child(3) { animation-delay: 0.1s; }
+.feed-griglia > :nth-child(4) { animation-delay: 0.15s; }
+.feed-griglia > :nth-child(n+5) { animation-delay: 0.2s; }
+.ev, .cant, .art, .gioco-card, .gioco-classifica, .gioco-giorno, .gioco-oro, .filtri, .feed-ig, .cant-blocco { box-shadow: 0 10px 26px rgba(67, 37, 67, 0.1), inset 0 0 0 1px rgba(67, 37, 67, 0.06); }
+.ev--viola, .ev--vino, .gioco-giorno, .gioco-oro, .feed-ig, .cant-blocco--vino, .cant-invito { box-shadow: 0 12px 28px rgba(67, 37, 67, 0.18), inset 0 0 0 1px rgba(255, 255, 255, 0.08); }
+.ev, .cant, .art { transition: transform 0.2s cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 0.2s; }
+@media (hover: hover) {
+  .ev:hover, .cant:hover { transform: translateY(-3px); }
+}
+.shell-pill, .filtri-scelta button, .filtri-btn, .filtri-sel, .cal-btn, .ev-share, .cant-btn, .gioco-via, .gioco-opz button, .gioco-segni button, .shell-segnala, .shell-indietro, .benvenuto-via, .oro-rap { transition: transform 0.12s ease, background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease; }
+.shell-pill:active, .filtri-scelta button:active, .filtri-btn:active, .cal-btn:active, .ev-share:active, .cant-btn:active, .gioco-via:active, .gioco-opz button:active, .gioco-segni button:active, .shell-indietro:active, .benvenuto-via:active, .oro-rap:active, .ev:active, .cant:active, .art:active { transform: scale(0.97); }
+.shell-segnala:hover { transform: rotate(0deg) scale(1.04); }
+.shell-pill.on { box-shadow: 0 4px 14px rgba(242, 179, 61, 0.35); }
+.cal-menu, .cant-premi-box { animation: apri 0.18s ease both; }
+.gioco-opz button.ok, .gioco-opz button.no { animation: apri 0.25s ease both; }
+.benvenuto-box { animation: entra 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+:focus-visible { outline: 2.5px solid var(--gold); outline-offset: 2px; }
+.shell-area { scroll-behavior: smooth; }
+.shell-area::-webkit-scrollbar { width: 8px; }
+.shell-area::-webkit-scrollbar-thumb { background: rgba(67, 37, 67, 0.2); border-radius: 8px; }
+::selection { background: var(--gold); color: var(--plum); }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}

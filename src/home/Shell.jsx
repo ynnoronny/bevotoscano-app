@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { INSTAGRAM_URL } from "../data.js";
+import { INSTAGRAM_URL, RYB_URL } from "../data.js";
 import { eventiPubblici } from "../eventi/api.js";
 import { senzaAuto } from "../eventi/shared.js";
 import Eventi, { nelPeriodo } from "../eventi/Eventi.jsx";
@@ -66,7 +66,7 @@ export default function Shell({ section, sub, children }) {
           </nav>
         </header>
         <main className="shell-area" ref={area}>
-          <div className="shell-dentro">{children || <Contenuto section={section} sub={sub} />}</div>
+          <div className="shell-dentro fade" key={`${section}/${sub || ""}`}>{children || <Contenuto section={section} sub={sub} />}</div>
         </main>
       </div>
     </Benvenuto>
@@ -204,7 +204,13 @@ function FineFeed() {
         <strong>“Qual è il vino più toscano che hai?”</strong>
         <small>Lo chiediamo a ogni cantina. Le risposte sono su Instagram.</small>
       </a>
-      <p className="tiny center">Bevi responsabilmente: se bevi, non guidare.</p>
+      <footer className="piede">
+        <p>Bevi responsabilmente: se bevi, non guidare.</p>
+        <div className="piede-riga">
+          {RYB_URL ? <a href={RYB_URL} target="_blank" rel="noopener">made by <b>ryb</b></a> : <span>made by <b>ryb</b></span>}
+          <span className="piede-beta" title="L'app è in prova: qualcosa può ancora cambiare">beta</span>
+        </div>
+      </footer>
     </div>
   );
 }
@@ -266,6 +272,7 @@ function Gioca() {
           <p>Le domande non finiscono mai. Ogni 3 risposte giuste guadagni una vita, se sbagli ne perdi una. Sbagli senza vite? Fine della partita.</p>
           <Link to="gioca/quiz" className="gioco-via">Gioca ora</Link>
         </section>
+        <Oroscopo />
         <section className="gioco-classifica">
           <div className="gioco-classifica-testa"><strong>Classifica</strong><small>Quante giuste prima di cadere</small></div>
           <Classifica limite={50} />
@@ -282,7 +289,6 @@ function Gioca() {
           {scelta && <p>{scelta === q.giusta ? "Esatto!" : `Era: ${q.giusta}.`} Domani ne arriva un'altra.</p>}
           {scelta && <Link to="gioca/quiz" className="gioco-via gioco-via--chiaro">Ne vuoi altre? Gioca al quiz</Link>}
         </section>
-        <Oroscopo />
       </div>
       <FineFeed />
     </div>
@@ -296,23 +302,49 @@ function Oroscopo() {
   const mio = segnoMio();
   const corrente = mio || segnoDa(d.getMonth() + 1, d.getDate()) || SEGNI[0];
   const [id, setId] = useState(corrente.id);
+  const [altri, setAltri] = useState(false);
   const s = SEGNI.find((x) => x.id === id);
   const t = MESE.testi?.[id];
+  const suo = id === mio?.id;
   const i0 = SEGNI.indexOf(corrente);
   const ordine = [...SEGNI.slice(i0), ...SEGNI.slice(0, i0)];
+  const rapporto = (r, tipo) => {
+    const x = r && SEGNI.find((y) => y.id === r.segno);
+    if (!x) return null;
+    return (
+      <button className={`oro-rap oro-rap--${tipo}`} onClick={() => setId(x.id)}>
+        <small>{tipo === "affine" ? "Segno affine del mese" : "Antagonista del mese"}</small>
+        <b><span aria-hidden="true">{x.simbolo}︎</span> {x.segno} · {r.nome}</b>
+        <span>{r.testo}</span>
+      </button>
+    );
+  };
   return (
     <section className="gioco-oro">
-      <small>{id === mio?.id ? "IL TUO OROSCOPO DEL VINO" : "OROSCOPO DEL VINO"} · fino al {dataBreve(MESE.al)}</small>
-      <div className="gioco-segni">
-        {ordine.map((x) => <button key={x.id} className={x.id === id ? "on" : ""} onClick={() => setId(x.id)}>{x.segno}{x.id === mio?.id ? " ★" : ""}</button>)}
+      <small>{suo ? "IL TUO OROSCOPO DEL VINO" : "OROSCOPO DEL VINO"} · fino al {dataBreve(MESE.al)}</small>
+      <div className="oro-segno" key={id}>
+        <span className="oro-simbolo" aria-hidden="true">{s.simbolo}︎</span>
+        <span><b>{s.segno}</b><em>{s.vitigno}</em></span>
+        {mio && !suo && <button className="oro-torna" onClick={() => setId(mio.id)}>Torna al tuo</button>}
       </div>
       {t && (
-        <>
+        <div className="oro-corpo fade" key={`t-${id}`}>
           <strong>{t.titolo}</strong>
-          <span className="gioco-oro-vit">Il tuo vitigno: {s.vitigno}</span>
           <p>{t.testo}</p>
           <p className="gioco-oro-vino">{t.vino}</p>
-        </>
+          {(t.affine || t.antagonista) && (
+            <div className="oro-rapporti">
+              {rapporto(t.affine, "affine")}
+              {rapporto(t.antagonista, "anti")}
+            </div>
+          )}
+        </div>
+      )}
+      <button className="oro-altri" aria-expanded={altri} onClick={() => setAltri((v) => !v)}>{altri ? "Chiudi gli altri segni" : "Guarda anche gli altri segni"}</button>
+      {altri && (
+        <div className="gioco-segni fade">
+          {ordine.map((x) => <button key={x.id} className={x.id === id ? "on" : ""} onClick={() => setId(x.id)}>{x.simbolo}︎ {x.segno}{x.id === mio?.id ? " ★" : ""}</button>)}
+        </div>
       )}
       <Link to="gioca/oroscopo" className="gioco-via gioco-via--chiaro">Il tuo vitigno, da condividere</Link>
     </section>

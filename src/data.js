@@ -1,6 +1,8 @@
 // Contenuti dell'app. Modifica qui testi, cantine ed esperienze senza toccare il resto del codice.
 
 export const INSTAGRAM_URL = "https://www.instagram.com/bevotoscano/"; // verifica che sia il profilo giusto
+// Il sito di chi ha fatto l'app (il "made by ryb" in fondo alle pagine). Vuoto = scritta senza link.
+export const RYB_URL = "";
 export const CONTACT_EMAIL = "info@bevotoscano.com"; // cambia con la mail che usi su Aruba
 
 // Le cantine: per ora solo nome, zona e sito. Aggiungi `vinoPiuToscano` quando hai la loro risposta

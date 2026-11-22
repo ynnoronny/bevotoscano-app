@@ -7,62 +7,182 @@
     "ariete": {
       "titolo": "Saturno ti tiene a stecchetto",
       "testo": "Con Saturno nel tuo segno, ogni cosa ti costa il doppio della fatica, ma resta fatta per bene. Il Sole in Sagittario ti rimette il fuoco nelle gambe: approfittane per una gita fuori porta, magari dove il vino lo fanno ancora in tre. Con la Luna piena del 24 non litigare per un posto a sedere.",
-      "vino": "Un Ciliegiolo giovane, per ricordarti che si può anche ridere."
+      "vino": "Un Ciliegiolo giovane, per ricordarti che si può anche ridere.",
+      "affine": {
+        "segno": "sagittario",
+        "nome": "Rosso di frutta e mare",
+        "testo": "Ciliegiolo e Vermentino Nero: due rossi che si stappano senza cerimonie. Col Sole in Sagittario, la gita la organizzate insieme."
+      },
+      "antagonista": {
+        "segno": "capricorno",
+        "nome": "Vino nuovo in botte vecchia",
+        "testo": "Tu vuoi partire ora, il Capricorno vuole aspettare che il vino si faccia. Non insistere: avete tempi di cantina diversi."
+      }
     },
     "toro": {
       "titolo": "Venere ti guarda storto, ma poco",
       "testo": "Venere passa nel segno opposto al tuo e le persone vicine diventano lo specchio dove guardarti, nel bene e nel male. Marte in Vergine ti dà pazienza da contadino: semina adesso, che a primavera raccogli. Dicembre è da tavole lunghe e chiacchiere corte.",
-      "vino": "Un Chianti Colline Pisane con l'arrosto della domenica."
+      "vino": "Un Chianti Colline Pisane con l'arrosto della domenica.",
+      "affine": {
+        "segno": "vergine",
+        "nome": "Uvaggio della domenica",
+        "testo": "Canaiolo e Vernaccia: rosso morbido e bianco preciso, la tavola è apparecchiata bene. Marte in Vergine vi fa lavorare d'accordo."
+      },
+      "antagonista": {
+        "segno": "leone",
+        "nome": "Troppo legno",
+        "testo": "Giove in Leone gonfia tutto e il Leone vuole il bicchiere più grande. Tu cerchi il vino buono, lui l'etichetta. Brindate a distanza."
+      }
     },
     "gemelli": {
       "titolo": "La Luna piena è tutta tua",
       "testo": "Il 24 la Luna piena cade nel tuo segno: emozioni a fiumi, telefonate a mezzanotte, idee che non ti fanno dormire. Il Sole davanti a te ti mette di fronte agli altri: un socio, un amore, un amico che torna. Ascolta più di quanto parli, una volta tanto.",
-      "vino": "Una Malvasia secca, che come te ha due anime."
+      "vino": "Una Malvasia secca, che come te ha due anime.",
+      "affine": {
+        "segno": "acquario",
+        "nome": "Spumante di idee",
+        "testo": "Malvasia e Barsaglina: profumi e curiosità, la serata finisce tardi a parlare di tutto. Con la Luna piena nel tuo segno, chiamalo tu."
+      },
+      "antagonista": {
+        "segno": "vergine",
+        "nome": "Tappo che non esce",
+        "testo": "Marte entra in Vergine e lei vuole ordine, tu vuoi assaggiare dieci vini. Uno dei due rischia di restare col cavatappi in mano."
+      }
     },
     "cancro": {
       "titolo": "Rimettere in ordine la cantina",
       "testo": "Mese da lavoro paziente e da piccole sistemazioni: cassetti, conti, abitudini. Marte in Vergine ti aiuta a finire quello che lasci sempre a metà. Con la Luna nuova del 9 dicembre inizia una routine nuova, anche piccola: una passeggiata, un bicchiere in meno, uno buono in più.",
-      "vino": "Un Trebbiano macerato, che sa di casa e di nonni."
+      "vino": "Un Trebbiano macerato, che sa di casa e di nonni.",
+      "affine": {
+        "segno": "scorpione",
+        "nome": "Vin Santo di mezzanotte",
+        "testo": "Trebbiano e Colorino: dolce e scuro, roba da confidenze in cantina. Venere entra in Scorpione e scalda il rapporto."
+      },
+      "antagonista": {
+        "segno": "ariete",
+        "nome": "Bicchiere rovesciato",
+        "testo": "Saturno in Ariete lo rende testardo: lui vuole correre, tu vuoi apparecchiare con calma. Lascia che si stappi da solo."
+      }
     },
     "leone": {
       "titolo": "Giove ti fa la corte",
       "testo": "Con Giove nel tuo segno sei al centro della piazza, e il Sole in Sagittario ti mette voglia di festa e di gente. Attento però a non offrire da bere a tutto il paese: Marte esce dal tuo segno e ti chiede di pensare anche ai soldi. Un regalo fatto a mano vale più di dieci comprati.",
-      "vino": "Un Sangiovese in purezza, che non ha bisogno di presentazioni."
+      "vino": "Un Sangiovese in purezza, che non ha bisogno di presentazioni.",
+      "affine": {
+        "segno": "sagittario",
+        "nome": "Gran Riserva in viaggio",
+        "testo": "Sangiovese e Vermentino Nero: un rosso che si fa portare in giro. Il Sole in Sagittario e Giove nel tuo segno vi fanno brillare insieme."
+      },
+      "antagonista": {
+        "segno": "scorpione",
+        "nome": "Duello di decanter",
+        "testo": "Venere in Scorpione lo rende geloso del tuo palco. Lui vuole i segreti, tu gli applausi. Meglio due tavoli diversi."
+      }
     },
     "vergine": {
       "titolo": "Marte ti rimbocca le maniche",
       "testo": "Marte entra nel tuo segno e torni a fare dieci cose al giorno, tutte con precisione. Il Sole quadrato ti tira verso casa e famiglia: non scappare dalle cene di dicembre, ci trovi più di quello che pensi. Con la Luna piena del 24 il lavoro alza la voce: rispondi con calma.",
-      "vino": "Una Vernaccia di San Gimignano, minerale e senza fronzoli."
+      "vino": "Una Vernaccia di San Gimignano, minerale e senza fronzoli.",
+      "affine": {
+        "segno": "capricorno",
+        "nome": "Annata di precisione",
+        "testo": "Vernaccia e Foglia Tonda: vitigni da lavoro serio, che danno il meglio con pazienza. Marte nel tuo segno vi fa costruire qualcosa."
+      },
+      "antagonista": {
+        "segno": "sagittario",
+        "nome": "Vendemmia in ritardo",
+        "testo": "Il Sole in Sagittario lo porta in giro per sagre, tu vorresti finire il lavoro in vigna. Fissate prima chi guida."
+      }
     },
     "bilancia": {
       "titolo": "Parole che pesano il giusto",
       "testo": "Venere ti lascia e passa in Scorpione: meno vetrina, più sostanza, anche nei soldi. Il Sole in Sagittario ti riempie l'agenda di messaggi, viaggi brevi, incontri per caso. È il mese giusto per riallacciare un rapporto che si era raffreddato. La Luna piena del 24 ti porta un'idea da segnare.",
-      "vino": "Un rosso col Mammolo dentro, elegante e profumato di viola."
+      "vino": "Un rosso col Mammolo dentro, elegante e profumato di viola.",
+      "affine": {
+        "segno": "acquario",
+        "nome": "Rosato di festa",
+        "testo": "Mammolo e Barsaglina: profumo di viola e voglia di novità. Una cena insieme sistema anche le cose rimaste a metà."
+      },
+      "antagonista": {
+        "segno": "capricorno",
+        "nome": "Etichetta storta",
+        "testo": "Il Capricorno conta le bottiglie, tu sistemi i bicchieri. In un mese di feste, discutere su chi paga il conto non conviene."
+      }
     },
     "scorpione": {
       "titolo": "Venere bussa alla tua porta",
       "testo": "Venere entra nel tuo segno e ti rende magnetico, anche più del solito. Mercurio lascia lo Scorpione e la testa si fa più leggera. Il Sole parla di soldi e di cose concrete: compra meno, compra meglio. Con la Luna nuova del 9 decidi cosa tenere e cosa lasciar andare.",
-      "vino": "Un Colorino scuro e profondo, da bere a lume di candela."
+      "vino": "Un Colorino scuro e profondo, da bere a lume di candela.",
+      "affine": {
+        "segno": "pesci",
+        "nome": "Fondo di bottiglia",
+        "testo": "Colorino e Ansonica: profondità e mare, un abbinamento che non si spiega ma funziona. Venere nel tuo segno vi avvicina."
+      },
+      "antagonista": {
+        "segno": "leone",
+        "nome": "Brindisi a voce troppo alta",
+        "testo": "Giove in Leone gli fa occupare tutta la tavola. Tu bevi in silenzio, lui vuole il discorso. Non rubargli il bicchiere."
+      }
     },
     "sagittario": {
       "titolo": "Buon compleanno, viandante",
       "testo": "Il Sole è nel tuo segno e la Luna nuova del 9 dicembre ti apre un anno nuovo: progetti, viaggi, una partenza vera o anche solo una voglia di partire. Giove in Leone ti spinge lontano, Marte in Vergine ti ricorda il lavoro: prima la vendemmia, poi la festa. Festeggia con chi ti segue davvero.",
-      "vino": "Un Vermentino Nero della costa, libero come te."
+      "vino": "Un Vermentino Nero della costa, libero come te.",
+      "affine": {
+        "segno": "leone",
+        "nome": "Toscana in purezza",
+        "testo": "Vermentino Nero e Sangiovese: costa e colline, il giro completo. Giove in Leone vi fa sognare in grande, e il Sole è nel tuo segno."
+      },
+      "antagonista": {
+        "segno": "vergine",
+        "nome": "Scheda tecnica",
+        "testo": "Marte in Vergine lo fa diventare pignolo: ti chiede gradi, rese e solfiti mentre tu vuoi solo partire. Portalo almeno alla prima tappa."
+      }
     },
     "capricorno": {
       "titolo": "Il mese che prepara il tuo",
       "testo": "Il Sole nel segno che ti precede ti chiede di fermarti, dormire di più, fare spazio. Marte in Vergine è un buon alleato per il lavoro di fino e per chiudere le pratiche dell'anno. Non è il momento di correre: è il momento di potare, che a gennaio si riparte.",
-      "vino": "Un Vin Santo dopo cena, lento come i pensieri buoni."
+      "vino": "Un Vin Santo dopo cena, lento come i pensieri buoni.",
+      "affine": {
+        "segno": "vergine",
+        "nome": "Cantina in ordine",
+        "testo": "Foglia Tonda e Vernaccia: due vitigni rari che non hanno fretta. Con Marte in Vergine il lavoro fatto insieme viene bene."
+      },
+      "antagonista": {
+        "segno": "ariete",
+        "nome": "Vino tolto troppo presto",
+        "testo": "Saturno in Ariete lo rende impaziente con te. Lui stappa, tu dici che non è pronto. Avete ragione tutti e due, ma non stasera."
+      }
     },
     "acquario": {
       "titolo": "Gli amici prima di tutto",
       "testo": "Il Sole in Sagittario illumina il gruppo, le amicizie, i progetti condivisi. Giove opposto al tuo segno porta incontri importanti: qualcuno ti propone qualcosa che non avevi previsto. Con la Luna piena del 24 hai l'ispirazione giusta per scrivere, creare, inventare.",
-      "vino": "Una Barsaglina, rara come le tue idee."
+      "vino": "Una Barsaglina, rara come le tue idee.",
+      "affine": {
+        "segno": "gemelli",
+        "nome": "Assaggio alla cieca",
+        "testo": "Barsaglina e Malvasia: vitigni curiosi per gente curiosa. La Luna piena in Gemelli il 24 accende la conversazione."
+      },
+      "antagonista": {
+        "segno": "scorpione",
+        "nome": "Bottiglia nascosta",
+        "testo": "Venere in Scorpione lo fa chiudere in cantina coi suoi segreti. Tu vuoi aprire tutto a tutti. Lascia stare la chiave."
+      }
     },
     "pesci": {
       "titolo": "Il lavoro chiede la tua voce",
       "testo": "Il Sole al vertice del tuo cielo mette in vista lavoro e reputazione: fatti avanti, anche se ti costa. Marte opposto ti mette davanti persone esigenti, ma giuste. A metà dicembre concediti una giornata al mare d'inverno, che ti rimette al mondo.",
-      "vino": "Un'Ansonica dell'Isola del Giglio, salina e sognante."
+      "vino": "Un'Ansonica dell'Isola del Giglio, salina e sognante.",
+      "affine": {
+        "segno": "cancro",
+        "nome": "Brodo e bicchiere della nonna",
+        "testo": "Ansonica e Trebbiano: bianchi di casa e di mare. Un pranzo lungo vi ricorda che il vino buono si beve in compagnia."
+      },
+      "antagonista": {
+        "segno": "sagittario",
+        "nome": "Corriera persa",
+        "testo": "Il Sole in Sagittario lo vuole sempre altrove, tu volevi restare al caldo. Mettetevi d'accordo prima, o qualcuno resta in piazza."
+      }
     }
   }
 }

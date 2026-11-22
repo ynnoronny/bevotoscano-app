@@ -16,6 +16,11 @@ Ogni volta che il Sole cambia segno, `src/games/oroscopoMese.json` va riscritto 
    - `testi`: un oggetto per ciascuno dei 12 segni (ariete, toro, gemelli, cancro, leone, vergine, bilancia, scorpione, sagittario, capricorno, acquario, pesci), ognuno con:
      - `titolo`: massimo 6 parole, con un po' di spirito;
      - `testo`: 3-4 frasi, massimo 420 caratteri;
+     - `affine` e `antagonista`: `{ "segno": "<id>", "nome": "...", "testo": "..." }`.
+       L'affine è uno dei due segni dello stesso elemento (trigono), l'antagonista uno dei due in quadratura.
+       Ogni mese scegli quello che il cielo del periodo mette in evidenza (dove sta il Sole, Venere, Marte, Giove…).
+       `nome`: il nome del rapporto, massimo 5 parole, preso dal mondo del vino ("Uvaggio della domenica", "Troppo legno").
+       `testo`: 1-2 frasi, massimo 160 caratteri, che citano i due vitigni o il transito che giustifica la scelta.
      - `vino`: una frase che consiglia un vino toscano (tipologia o vitigno, **mai marche o cantine**), legato al vitigno del segno in `src/games/oroscopoData.js` o al tema del mese.
 4. Controlla che il JSON sia valido e che `npm run build` passi. Poi fai un commit su `main` con il messaggio "Oroscopo del vino: Sole in <Segno>" e pusha. Vercel ripubblica da solo.
 
