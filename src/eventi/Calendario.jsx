@@ -34,12 +34,12 @@ const Icona = () => (
   </svg>
 );
 
-export default function AggiungiCalendario({ e, percorso, className = "" }) {
+export default function AggiungiCalendario({ e, percorso, className = "", compatto = false }) {
   const [aperto, setAperto] = useState(false);
   const url = `${window.location.origin}/${percorso}`;
   return (
-    <div className={`cal ${className}`}>
-      <button className="cal-btn" aria-expanded={aperto} onClick={() => setAperto((x) => !x)}><Icona /> Aggiungi al calendario</button>
+    <div className={`cal ${compatto ? "cal--mini" : ""} ${className}`}>
+      <button className={compatto ? "cal-mini" : "cal-btn"} aria-expanded={aperto} aria-label="Aggiungi al calendario" onClick={() => setAperto((x) => !x)}><Icona />{compatto ? <span>Aggiungi</span> : " Aggiungi al calendario"}</button>
       {aperto && (
         <div className="cal-menu" role="menu">
           <a role="menuitem" href={googleUrl(e, url)} target="_blank" rel="noopener" onClick={() => setAperto(false)}>Google Calendar</a>

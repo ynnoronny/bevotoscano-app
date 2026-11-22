@@ -99,12 +99,20 @@ function quandoEv(e) {
   if (!b || stessoGiorno(a, b)) return `${giornoMese(a, true)} · ${ora(a)}`;
   return `${giornoMese(a)} → ${giornoMese(b)}`;
 }
+// Il prezzo è l'informazione che conta di più: "Gratis" in evidenza, altrimenti la cifra.
+function prezzoEv(e) {
+  const p = (e.prezzo || "").trim();
+  if (!p) return null;
+  if (/grat|libero|free|offerta/i.test(p)) return { testo: "Gratis", gratis: true };
+  const cifra = p.match(/(da\s*)?(\d+([.,]\d+)?\s*€|€\s*\d+([.,]\d+)?)/i);
+  return { testo: cifra ? cifra[0].replace(/\s+/g, " ") : "A pagamento", gratis: false };
+}
 const inCorso = (e) => g(e.inizio) <= new Date() && (!e.fine || g(e.fine) >= new Date());
 function comeArrivi(e, centro) {
   const pk = [...(e.pickup || [])].map((p) => ({ ...p, d: km(centro, p) })).sort((a, b) => (a.d ?? 0) - (b.d ?? 0))[0];
-  if (pk) return `Bus da ${pk.nome.split(",")[0]}${pk.orario ? ` alle ${pk.orario}` : ""}`;
-  if ((e.accesso || []).includes("treno")) return "In treno o coi mezzi";
-  if ((e.accesso || []).includes("piedi")) return "A piedi dal centro";
+  if (pk) return `${pk.nome.split(",")[0]}${pk.orario ? ` ${pk.orario}` : ""}`;
+  if ((e.accesso || []).includes("treno")) return "Coi mezzi";
+  if ((e.accesso || []).includes("piedi")) return "A piedi";
   return "";
 }
 async function condividi(titolo, percorso) {
@@ -157,16 +165,20 @@ function FeedEventi({ filtro }) {
             <article key={e.id} className={`ev ev--${["viola", "vino", "sole"][i % 3]}`}>
               <div className="ev-su">
                 <span className="ev-quando">{quandoEv(e)}</span>
-                {inCorso(e) ? <span className="ev-tag">In corso</span> : e.prezzo ? <span className="ev-tag">{e.prezzo}</span> : null}
+                {prezzoEv(e) && <span className={`ev-prezzo ${prezzoEv(e).gratis ? "ev-prezzo--gratis" : ""}`}>{prezzoEv(e).testo}</span>}
               </div>
               <Link to={eventoPercorso(e)} className="ev-titolo">{e.titolo}</Link>
-              <small className="ev-meta">{e.luogo_nome && e.luogo_nome !== e.comune ? `${e.luogo_nome}, ` : ""}{e.comune}{e.d != null ? ` · ${fmtKm(e.d)}` : ""}{e.esempio ? " · esempio" : ""}</small>
-              {arrivo && <span className="ev-bus">{arrivo}</span>}
-              <div className="ev-azioni">
-                <AggiungiCalendario e={e} percorso={eventoPercorso(e)} />
-                <button className="ev-share" aria-label="Condividi" onClick={() => condividi(e.titolo, eventoPercorso(e))}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5" /></svg>
-                </button>
+              <div className="ev-giu">
+                <small className="ev-meta">
+                  <span>{inCorso(e) && <b className="ev-ora">In corso · </b>}{e.comune}{e.d != null ? ` · ${fmtKm(e.d)}` : ""}</span>
+                  {arrivo && <span className="ev-bus">🚌 {arrivo}</span>}
+                </small>
+                <div className="ev-azioni">
+                  <AggiungiCalendario e={e} percorso={eventoPercorso(e)} compatto />
+                  <button className="ev-share" aria-label="Condividi" onClick={() => condividi(e.titolo, eventoPercorso(e))}>
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5" /></svg>
+                  </button>
+                </div>
               </div>
             </article>
           );

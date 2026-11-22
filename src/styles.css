@@ -336,23 +336,25 @@ html, body { height: 100%; }
 .filtri-sel select { appearance: none; background: transparent; border: none; color: inherit; font: inherit; cursor: pointer; padding: 0 2px; }
 .filtri-sel select option { color: var(--text); }
 
-/* Scheda evento: tutta del suo colore, la data in alto */
-.ev { position: relative; display: flex; flex-direction: column; gap: 8px; padding: 18px; border-radius: 24px; color: #fff; box-shadow: 0 10px 26px rgba(67, 37, 67, 0.14); }
-.ev--viola { background: var(--plum); }
-.ev--vino { background: var(--wine); }
-.ev--sole { background: var(--gold); color: var(--plum); }
+/* Scheda evento: chiara, una sottile fascia di colore, il prezzo in evidenza */
+.ev { position: relative; display: flex; flex-direction: column; gap: 8px; padding: 18px 18px 14px; border-radius: 22px; background: var(--paper); color: var(--text); border-top: 4px solid var(--c, var(--plum)); }
+.ev--viola { --c: var(--plum); }
+.ev--vino { --c: var(--wine); }
+.ev--sole { --c: var(--gold); }
 .ev-su { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-.ev-quando { font-size: 13px; font-weight: 800; letter-spacing: 1.2px; }
-.ev--viola .ev-quando { color: var(--gold); }
-.ev--vino .ev-quando { color: #FFE3B0; }
-.ev-tag { padding: 4px 10px; border-radius: 999px; background: rgba(255, 255, 255, 0.18); font-size: 12px; font-weight: 800; white-space: nowrap; }
-.ev--sole .ev-tag { background: rgba(67, 37, 67, 0.12); }
-.ev-titolo { font-family: var(--serif); font-weight: 800; font-size: 23px; line-height: 1.1; letter-spacing: -0.4px; color: inherit; }
-.ev-meta { font-size: 14px; opacity: 0.85; }
-.ev-bus { align-self: flex-start; padding: 5px 10px; border-radius: 999px; background: rgba(255, 255, 255, 0.16); font-size: 13px; font-weight: 700; }
-.ev--sole .ev-bus { background: rgba(67, 37, 67, 0.1); }
-.ev-azioni { display: flex; gap: 8px; margin-top: auto; padding-top: 8px; }
-.ev-share { flex: none; width: 44px; height: 44px; border-radius: 50%; border: 1.5px solid currentColor; color: inherit; display: flex; align-items: center; justify-content: center; opacity: 0.9; }
+.ev-quando { font-size: 12.5px; font-weight: 800; letter-spacing: 1px; color: var(--wine); }
+.ev-prezzo { flex: none; padding: 5px 11px; border-radius: 999px; background: var(--plum); color: #fff; font-size: 13px; font-weight: 800; }
+.ev-prezzo--gratis { background: var(--gold); color: var(--plum); }
+.ev-titolo { font-family: var(--serif); font-weight: 800; font-size: 21px; line-height: 1.15; letter-spacing: -0.3px; color: var(--plum); }
+.ev-giu { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; margin-top: auto; }
+.ev-meta { display: flex; flex-direction: column; gap: 3px; font-size: 13.5px; color: var(--muted); min-width: 0; }
+.ev-ora { color: var(--wine); font-weight: 800; }
+.ev-bus { font-size: 12.5px; font-weight: 700; color: var(--plum); }
+.ev-azioni { display: flex; gap: 6px; flex: none; }
+.ev-share { flex: none; width: 38px; height: 38px; border-radius: 50%; color: var(--plum); background: var(--cream); display: flex; align-items: center; justify-content: center; }
+.cal--mini { flex: none; }
+.cal-mini { height: 38px; padding: 0 12px 0 10px; border-radius: 999px; background: var(--cream); color: var(--plum); display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; }
+.cal--mini .cal-menu { left: auto; right: 0; width: 210px; bottom: 46px; }
 .cal { position: relative; flex: 1; }
 .cal-btn { width: 100%; height: 44px; border-radius: 999px; background: rgba(255, 255, 255, 0.95); color: var(--plum); font-weight: 800; font-size: 14.5px; display: flex; align-items: center; justify-content: center; gap: 8px; }
 .ev--sole .cal-btn { background: var(--plum); color: #fff; }
@@ -542,13 +544,13 @@ html, body { height: 100%; }
 .feed-griglia > :nth-child(3) { animation-delay: 0.1s; }
 .feed-griglia > :nth-child(4) { animation-delay: 0.15s; }
 .feed-griglia > :nth-child(n+5) { animation-delay: 0.2s; }
-.ev, .cant, .art, .gioco-card, .gioco-classifica, .gioco-giorno, .gioco-oro, .filtri, .feed-ig, .cant-blocco { box-shadow: 0 10px 26px rgba(67, 37, 67, 0.1), inset 0 0 0 1px rgba(67, 37, 67, 0.06); }
-.ev--viola, .ev--vino, .gioco-giorno, .gioco-oro, .feed-ig, .cant-blocco--vino, .cant-invito { box-shadow: 0 12px 28px rgba(67, 37, 67, 0.18), inset 0 0 0 1px rgba(255, 255, 255, 0.08); }
+.cant, .art, .gioco-card, .gioco-classifica, .gioco-giorno, .gioco-oro, .filtri, .feed-ig, .cant-blocco { box-shadow: 0 10px 26px rgba(67, 37, 67, 0.1), inset 0 0 0 1px rgba(67, 37, 67, 0.06); }
+.gioco-giorno, .gioco-oro, .feed-ig, .cant-blocco--vino, .cant-invito { box-shadow: 0 12px 28px rgba(67, 37, 67, 0.18), inset 0 0 0 1px rgba(255, 255, 255, 0.08); }
 .ev, .cant, .art { transition: transform 0.2s cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 0.2s; }
 @media (hover: hover) {
   .ev:hover, .cant:hover { transform: translateY(-3px); }
 }
-.shell-pill, .filtri-scelta button, .filtri-btn, .filtri-sel, .cal-btn, .ev-share, .cant-btn, .gioco-via, .gioco-opz button, .gioco-segni button, .shell-segnala, .shell-indietro, .benvenuto-via, .oro-rap { transition: transform 0.12s ease, background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease; }
+.shell-pill, .filtri-scelta button, .filtri-btn, .filtri-sel, .cal-btn, .cal-mini, .ev-share, .cant-btn, .gioco-via, .gioco-opz button, .gioco-segni button, .shell-segnala, .shell-indietro, .benvenuto-via, .oro-rap { transition: transform 0.12s ease, background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease; }
 .shell-pill:active, .filtri-scelta button:active, .filtri-btn:active, .cal-btn:active, .ev-share:active, .cant-btn:active, .gioco-via:active, .gioco-opz button:active, .gioco-segni button:active, .shell-indietro:active, .benvenuto-via:active, .oro-rap:active, .ev:active, .cant:active, .art:active { transform: scale(0.97); }
 .shell-segnala:hover { transform: rotate(0deg) scale(1.04); }
 .shell-pill.on { box-shadow: 0 4px 14px rgba(242, 179, 61, 0.35); }
@@ -566,3 +568,6 @@ html, body { height: 100%; }
 
 .segnala-scelta { display: flex; flex-direction: column; gap: 14px; }
 .segnala-scelta > .filtri-scelta { align-self: flex-start; max-width: 100%; overflow-x: auto; }
+
+.ev { box-shadow: 0 6px 18px rgba(67, 37, 67, 0.07), inset 0 0 0 1px rgba(67, 37, 67, 0.06); }
+.cal-mini:active { transform: scale(0.97); }
