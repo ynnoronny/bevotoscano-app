@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { TILE_SCURE, TILE_ATTR } from "../tema.js";
 
 // Mappa OpenStreetMap: pallini vino = dove si tiene l'evento, pallini oro = punti di raccolta.
 export default function Mappa({ eventi, centro, onApri }) {
@@ -10,9 +11,9 @@ export default function Mappa({ eventi, centro, onApri }) {
 
   useEffect(() => {
     map.current = L.map(box.current, { zoomControl: true, attributionControl: true }).setView([43.45, 11.1], 8);
-    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    L.tileLayer(TILE_SCURE, { subdomains: "abcd",
       maxZoom: 18,
-      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      attribution: TILE_ATTR,
     }).addTo(map.current);
     layer.current = L.layerGroup().addTo(map.current);
     return () => map.current.remove();
@@ -35,7 +36,7 @@ export default function Mappa({ eventi, centro, onApri }) {
         punti.push([p.lat, p.lng]);
       });
       if (e.lat == null) return;
-      L.circleMarker([e.lat, e.lng], { radius: 9, color: "#432543", fillColor: "#722F37", fillOpacity: 1, weight: 2 })
+      L.circleMarker([e.lat, e.lng], { radius: 9, color: "#0D1411", fillColor: "#FF5C7A", fillOpacity: 1, weight: 2 })
         .bindTooltip(e.titolo).on("click", () => onApri(e)).addTo(g);
       punti.push([e.lat, e.lng]);
     });

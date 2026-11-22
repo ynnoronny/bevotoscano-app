@@ -6,7 +6,7 @@ import QuizToscana from "./games/QuizToscana.jsx";
 import Eventi from "./eventi/Eventi.jsx";
 import Segnala from "./eventi/Segnala.jsx";
 import Admin from "./eventi/Admin.jsx";
-import Feed, { Testata } from "./home/Feed.jsx";
+import Notte, { TestataNotte } from "./home/Notte.jsx";
 import Cantine from "./home/Cantine.jsx";
 import { go, percorsoAttuale, suCambioPercorso } from "./nav.js";
 import { metaPercorso, applicaMeta, FILTRI_EVENTI } from "./seo.js";
@@ -19,7 +19,7 @@ function useRoute() {
   return route;
 }
 
-// Le sezioni che vivono nella schermata unica (il feed): /, /eventi, /gioca, /cantine
+// Le sezioni che vivono nella schermata unica (la mappa): /, /eventi, /gioca, /cantine
 // e le scorciatoie /eventi/weekend, /eventi/senza-auto, /eventi/vicino.
 const PAGINE_A_PARTE = ["esperienze", "cassa", "segnala", "admin"];
 const nelFeed = (section, sub) =>
@@ -49,20 +49,15 @@ export default function App() {
   }
 
   if (nelFeed(section, sub)) {
-    const sezione = ["eventi", "gioca", "cantine"].includes(section) ? section : "home";
-    return (
-      <div className="app app--feed">
-        <Feed sezione={sezione} filtro={section === "eventi" ? sub : undefined} />
-      </div>
-    );
+    const tab = section === "cantine" || section === "gioca" ? section : "eventi";
+    return <Notte tab={tab} filtro={section === "eventi" ? sub : undefined} />;
   }
 
-  // Le pagine a sé (un evento, una cantina, segnala…) tengono la stessa testata:
-  // i chip riportano al punto giusto del feed.
-  const attiva = section === "eventi" || section === "cantine" ? section : null;
+  // Le pagine a sé (un evento, una cantina, segnala…) tengono la stessa testata.
+  const attiva = ["eventi", "cantine"].includes(section) ? section : null;
   return (
     <div className="app">
-      <Testata attiva={attiva} />
+      <TestataNotte attiva={attiva} />
       <main className="page fade" key={`${section}/${sub || ""}`}>
         {section === "cantine" && <Cantine apri={sub} />}
         {section === "esperienze" && <Esperienze />}

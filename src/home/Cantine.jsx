@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { TILE_SCURE, TILE_ATTR } from "../tema.js";
 import { CANTINE, CONTACT_EMAIL } from "../data.js";
 import { eventiPubblici } from "../eventi/api.js";
 import { go } from "../nav.js";
@@ -16,7 +17,7 @@ function MappaCantine({ cantine, attiva, onScegli }) {
   const layer = useRef(null);
   useEffect(() => {
     map.current = L.map(box.current, { scrollWheelZoom: false }).setView([43.55, 10.7], 10);
-    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 16, attribution: "© OpenStreetMap" }).addTo(map.current);
+    L.tileLayer(TILE_SCURE, { subdomains: "abcd", maxZoom: 16, attribution: TILE_ATTR, }).addTo(map.current);
     layer.current = L.layerGroup().addTo(map.current);
     return () => map.current.remove();
   }, []);
@@ -29,7 +30,7 @@ function MappaCantine({ cantine, attiva, onScegli }) {
       // piccolo scostamento per le cantine dello stesso comune, così non si sovrappongono
       const q = [p[0] + (i % 3) * 0.004, p[1] + (i % 2) * 0.006];
       const on = c.id === attiva;
-      L.circleMarker(q, { radius: on ? 11 : 8, color: "#fff", weight: 2, fillColor: on ? "#722F37" : "#432543", fillOpacity: 1 })
+      L.circleMarker(q, { radius: on ? 11 : 8, color: "#0D1411", weight: 2, fillColor: on ? "#FF5C7A" : "#EEE9DD", fillOpacity: 1 })
         .bindTooltip(c.nome).on("click", () => onScegli(c.id)).addTo(layer.current);
       punti.push(q);
     });
@@ -38,10 +39,10 @@ function MappaCantine({ cantine, attiva, onScegli }) {
   return <div ref={box} className="mappa mappa--bassa" />;
 }
 
-export default function Cantine({ apri, inFeed = false }) {
+export default function Cantine({ apri }) {
   const scheda = apri && CANTINE.find((c) => c.id === apri);
   if (scheda) return <Scheda c={scheda} />;
-  return <Elenco inFeed={inFeed} />;
+  return <Elenco />;
 }
 
 // La pagina di una cantina: bevotoscano.com/cantine/fibbiano
@@ -85,7 +86,7 @@ function Scheda({ c }) {
   );
 }
 
-function Elenco({ inFeed }) {
+function Elenco() {
   const [zona, setZona] = useState("Tutte");
   const [attiva, setAttiva] = useState(null);
   const [eventi, setEventi] = useState([]);
@@ -106,18 +107,14 @@ function Elenco({ inFeed }) {
 
   return (
     <>
-      {!inFeed && (
-        <>
-          <section className="testata">
-            <img src="/img/strada-bianca.jpg" alt="Strada bianca tra le vigne" />
-            <div>
-              <p className="eyebrow">Le cantine</p>
-              <h1>Piccoli produttori, scelti uno a uno</h1>
-            </div>
-          </section>
-          <p className="muted">Andiamo a conoscerle di persona, a ognuna chiediamo qual è il suo vino più toscano. Si parte dalle colline pisane, intorno a Terricciola, e la mappa cresce a ogni visita.</p>
-        </>
-      )}
+      <section className="testata">
+        <img src="/img/strada-bianca.jpg" alt="Strada bianca tra le vigne" />
+        <div>
+          <p className="eyebrow">Le cantine</p>
+          <h1>Piccoli produttori, scelti uno a uno</h1>
+        </div>
+      </section>
+      <p className="muted">Andiamo a conoscerle di persona, a ognuna chiediamo qual è il suo vino più toscano. Si parte dalle colline pisane, intorno a Terricciola, e la mappa cresce a ogni visita.</p>
 
       <MappaCantine cantine={lista} attiva={attiva} onScegli={scegli} />
 
@@ -157,7 +154,6 @@ function Elenco({ inFeed }) {
         })}
       </div>
 
-      {!inFeed && (
       <section className="card card--plum">
         <strong>Sei una cantina, o ne conosci una che merita?</strong>
         <p>Scrivici: veniamo a conoscervi. Se avete un evento in programma, segnalatelo, è gratis.</p>
@@ -166,7 +162,6 @@ function Elenco({ inFeed }) {
           <a className="link light" href={`mailto:${CONTACT_EMAIL}?subject=Una%20cantina%20per%20Bevotoscano`}>{CONTACT_EMAIL}</a>
         </div>
       </section>
-      )}
     </>
   );
 }

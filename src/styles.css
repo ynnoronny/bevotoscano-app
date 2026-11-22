@@ -263,90 +263,180 @@ button.badge { cursor: pointer; align-self: flex-start; }
 .board-pts small { font-family: var(--sans); font-weight: 400; font-size: 11px; color: var(--muted); }
 .classifiche { display: flex; flex-direction: column; gap: 10px; }
 
-/* Schermata unica (feed): niente più tab in basso, una testata fissa con i chip delle sezioni */
-.app { padding-bottom: env(safe-area-inset-bottom); }
-.testa { position: sticky; top: 0; z-index: 500; background: var(--plum); color: #fff; }
-.testa-riga { height: 52px; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.testa-chips { display: flex; gap: 2px; overflow-x: auto; padding: 0 14px 10px; scrollbar-width: none; }
-.testa-chips::-webkit-scrollbar { display: none; }
-.testa-chip { flex: none; height: 34px; padding: 0 14px; border-radius: 999px; display: flex; align-items: center; font-size: 14px; font-weight: 700; color: rgba(255, 255, 255, 0.75); transition: background 0.2s, color 0.2s; }
-.testa-chip--on { background: #fff; color: var(--plum); }
-.feed { display: flex; flex-direction: column; padding-bottom: 8px; }
-.feed-hero { min-height: 320px; }
-.feed-hero h1 { font-size: 48px; }
-.feed-pad { padding: 0 20px; }
-.feed-sez { display: flex; flex-direction: column; gap: 14px; padding-top: 30px; scroll-margin-top: 104px; }
-.feed-head { display: flex; justify-content: space-between; align-items: baseline; padding: 0 20px; }
-.feed-h2 { font-family: var(--serif); font-weight: 700; font-size: 31px; line-height: 1; color: var(--plum); }
-.feed-card { margin: 0 16px; width: auto; }
-.feed-rail { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding: 0 20px; padding: 4px 20px 14px; scrollbar-width: none; }
-.feed-rail::-webkit-scrollbar { display: none; }
-.feed-rail--chips { gap: 6px; scroll-snap-type: none; padding-bottom: 4px; }
-.feed-filtri { display: flex; gap: 6px; padding: 0 20px; overflow-x: auto; scrollbar-width: none; }
-.feed-filtri button { flex: none; height: 38px; padding: 0 15px; border-radius: 999px; border: 1px solid var(--line); background: var(--paper); font-size: 14px; font-weight: 700; color: var(--plum); }
-.feed-filtri button.on { background: var(--plum); color: #fff; border-color: var(--plum); }
-.feed-dentro { display: flex; flex-direction: column; gap: 14px; }
-.feed-fine { gap: 14px; padding-bottom: 20px; }
+/* ==========================================================================
+   Tema "Mappa di notte" (novembre 2026): fondo scuro, rosato acceso, Unbounded e Inter.
+   Le variabili qui sotto sostituiscono quelle in cima al file per tutta l'app.
+   ========================================================================== */
+:root {
+  --plum: #FF5C7A;       /* accento: rosato acceso */
+  --plum-dark: #0D1411;  /* notte */
+  --wine: #FF8BA0;       /* rosato chiaro, per link e piccoli accenti */
+  --gold: #E9C46A;
+  --cream: #EEE9DD;      /* testo chiaro su fondi colorati */
+  --paper: #16201B;      /* pannelli e schede */
+  --text: #EEE9DD;
+  --muted: #A3B3AA;
+  --line: rgba(238, 233, 221, 0.14);
+  --notte: #0D1411;
+  --bordo: #2F4539;
+  --serif: 'Unbounded', system-ui, sans-serif;
+  --sans: 'Inter', system-ui, sans-serif;
+}
+html, body { background: var(--notte); color: var(--text); }
+.app { max-width: 760px; padding-bottom: 32px; }
+.page { padding: 24px 20px; }
+.page-title { font-size: 30px; line-height: 1.12; letter-spacing: -0.5px; color: var(--text); }
+.section-title, .evento-titolo, .cantina-nome, .chi-title, .mese { color: var(--text); }
+.eyebrow { color: var(--wine); font-style: normal; font-weight: 600; }
+.link { color: var(--wine); }
+.card { border-color: var(--bordo); border-radius: 16px; box-shadow: none; }
+.btn--primary, .chip--on, .seg .seg--on, .card--game, .card--plum, .btn--gold { color: var(--notte); }
+.card--game small, .card--plum p, .card--plum small { color: rgba(13, 20, 17, 0.78); }
+.card--plum .link.light { color: var(--notte); }
+.btn--light { background: var(--notte); color: var(--text); }
+.card--soon { color: var(--text); }
+.card--quote { background: var(--paper); border: 1px solid var(--bordo); color: var(--text); }
+.card--quote small { color: var(--muted); }
+.avatar { background: var(--notte); color: var(--plum); border-color: var(--bordo); }
+.badge { background: rgba(238, 233, 221, 0.08); border-color: var(--bordo); }
+.badge--gold { background: rgba(255, 92, 122, 0.16); border-color: var(--plum); color: var(--text); }
+.input, select.input { background-color: #0F1813; color: var(--text); border-color: var(--bordo); }
+.input::placeholder { color: #7F8F86; }
+.option { background: var(--paper); color: var(--text); }
+.option--on { background: rgba(255, 92, 122, 0.16); }
+.option--right { color: #1B2A10; }
+.game { background: var(--notte); }
+.game-brand { font-weight: 800; color: var(--text); }
+.game-back { color: var(--wine); }
+.zodiac-ring span { color: var(--plum); }
+.rule { color: var(--wine); background: rgba(255, 92, 122, 0.1); }
+.glass-form .board li, .oro-mese { color: #1E1A16; }
+.oro-mese .eyebrow { color: #B8203F; }
+.oro-mese-titolo, .oro-mese-vino { color: #1E1A16; }
+.board li { border-color: var(--bordo); }
+.mappa { border-color: var(--bordo); border-radius: 16px; }
+.leaflet-container { background: #0D1411; font-family: var(--sans); }
+.leaflet-control-attribution { background: rgba(13, 20, 17, 0.7) !important; color: #7F8F86; }
+.leaflet-control-attribution a { color: #A3B3AA; }
+.leaflet-bar a { background: var(--paper); color: var(--text); border-color: var(--bordo); }
+.leaflet-tooltip { background: var(--paper); color: var(--text); border: 1px solid var(--bordo); box-shadow: none; }
+.leaflet-tooltip-top::before { border-top-color: var(--bordo); }
+.notte-tip { font-weight: 600; }
 
-/* Storie */
-.storie { gap: 6px; padding-top: 18px; padding-bottom: 4px; scroll-snap-type: none; }
-.storia { flex: none; width: 74px; display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--plum); text-align: center; }
-.storia-ring { width: 66px; height: 66px; border-radius: 50%; padding: 3px; border: 2.5px solid var(--gold); display: block; }
-.storia-ring--grigio { border-color: #D9CFD8; }
-.storia-in { width: 100%; height: 100%; border-radius: 50%; background: var(--plum); display: flex; align-items: center; justify-content: center; font-size: 25px; overflow: hidden; }
-.storia-in img { width: 100%; height: 100%; object-fit: cover; }
-.storia-in--wine { background: var(--wine); }
-.storia-in--dark { background: var(--plum-dark); }
-.storia-in--gold { background: var(--gold); }
-.storia-in--bianco { background: var(--paper); border: 1px solid var(--line); }
+/* Testata delle pagine a sé */
+.notte-testa { position: sticky; top: 0; z-index: 500; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 20px; background: rgba(13, 20, 17, 0.92); backdrop-filter: blur(8px); border-bottom: 1px solid var(--bordo); }
+.notte-testa nav { display: flex; gap: 4px; }
+.notte-testa nav a { padding: 10px 12px; border-radius: 999px; font-size: 14px; font-weight: 600; color: var(--muted); }
+.notte-testa nav a.on { background: var(--plum); color: var(--notte); }
+.notte-logo { font-family: 'Unbounded', sans-serif; font-weight: 800; font-size: 22px; letter-spacing: -0.5px; color: var(--text); }
 
-/* Eventi a schede grandi */
-.ev-card { flex: none; width: 82%; max-width: 300px; scroll-snap-align: start; background: var(--paper); border-radius: 16px; overflow: hidden; box-shadow: 0 6px 24px rgba(67, 37, 67, 0.1); display: flex; flex-direction: column; }
-.ev-card-top { height: 128px; padding: 16px 18px; color: #fff; display: flex; justify-content: space-between; align-items: flex-start; }
-.ev-card-top--plum { background: var(--plum); }
-.ev-card-top--wine { background: var(--wine); }
-.ev-card-top--dark { background: var(--plum-dark); }
-.ev-card-giorno { display: block; font-family: var(--serif); font-weight: 800; font-size: 62px; line-height: 0.85; }
-.ev-card-quando { display: block; margin-top: 8px; font-size: 12.5px; font-weight: 900; letter-spacing: 1.2px; text-transform: uppercase; opacity: 0.85; }
-.ev-card-prezzo { font-size: 13px; font-weight: 700; background: rgba(255, 255, 255, 0.16); border-radius: 999px; padding: 5px 10px; white-space: nowrap; }
-.ev-card-body { padding: 14px 18px 16px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
-.ev-card-tit { font-family: var(--serif); font-weight: 700; font-size: 22px; line-height: 1.1; color: var(--plum); }
-.ev-card-meta { font-size: 13.5px; color: var(--muted); }
-.ev-card-bus { align-self: flex-start; }
-.ev-card-act { display: flex; gap: 8px; margin-top: auto; padding-top: 6px; }
-.ev-card-act .btn { flex: 1; padding: 12px 16px; }
-.ev-card-share { width: 46px; height: 46px; flex: none; border-radius: 50%; background: var(--cream); color: var(--plum); display: flex; align-items: center; justify-content: center; }
-.ev-card--tutti { width: 140px; align-items: center; justify-content: center; gap: 4px; text-align: center; padding: 12px; background: transparent; border: 1.5px dashed rgba(67, 37, 67, 0.3); box-shadow: none; color: var(--plum); }
-.ev-card--tutti strong { font-family: var(--serif); font-size: 20px; }
-.ev-card--tutti small { font-size: 12px; color: var(--muted); }
+/* La schermata mappa */
+.notte { position: fixed; inset: 0; overflow: hidden; background: var(--notte); color: var(--text); font-family: var(--sans); }
+.notte-mappa { position: absolute; inset: 0; z-index: 0; }
+.notte-top { position: absolute; z-index: 10; top: 0; left: 0; right: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 14px 16px; pointer-events: none; background: linear-gradient(180deg, rgba(13, 20, 17, 0.92) 40%, rgba(13, 20, 17, 0)); }
+.notte-top > * { pointer-events: auto; }
+.notte-parto { display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 6px 0 14px; border-radius: 999px; background: var(--paper); border: 1px solid var(--bordo); font-size: 14px; color: var(--muted); }
+.notte-parto select { appearance: none; background: transparent; border: none; color: var(--text); font: inherit; font-weight: 700; padding: 0 10px 0 0; height: 100%; cursor: pointer; }
+.notte-parto select option { background: var(--paper); color: var(--text); }
+.notte-parto small { color: var(--wine); }
+.notte-filtri { display: flex; gap: 6px; }
+.notte-filtri button { height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--bordo); background: var(--paper); color: var(--text); font-weight: 600; font-size: 14px; }
+.notte-filtri button.on { background: var(--plum); border-color: var(--plum); color: var(--notte); font-weight: 700; }
+.notte-segnala { margin-left: auto; font-size: 14px; font-weight: 600; color: var(--wine); padding: 10px 4px; }
 
-/* La domanda del giorno */
-.gioca-card { margin: 0 16px; padding: 22px 18px; border-radius: 20px; background: var(--plum); color: #fff; display: flex; flex-direction: column; gap: 14px; }
-.gioca-eyebrow { font-size: 12px; font-weight: 900; letter-spacing: 1.6px; text-transform: uppercase; color: #D9BE8E; }
-.gioca-q { font-family: var(--serif); font-weight: 700; font-size: 26px; line-height: 1.15; }
-.gioca-opz { display: flex; flex-direction: column; gap: 8px; }
-.gioca-o { width: 100%; min-height: 48px; border-radius: 12px; padding: 12px 14px; background: rgba(255, 255, 255, 0.1); border: 1.5px solid rgba(255, 255, 255, 0.2); color: #fff; font-size: 15px; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s; }
-.gioca-o--ok { background: #E9F0DC; border-color: #E9F0DC; color: #2F3D17; font-weight: 700; }
-.gioca-o--no { background: rgba(199, 91, 57, 0.28); border-color: #E08A6E; }
-.gioca-o--dim { opacity: 0.45; }
-.gioca-esito { font-size: 14px; line-height: 1.5; color: rgba(255, 255, 255, 0.88); }
-.gioca-act { display: flex; gap: 8px; flex-wrap: wrap; }
-.gioca-act .btn { flex: 1; align-self: auto; padding: 13px 18px; }
+.notte-pannello { position: absolute; z-index: 20; display: flex; flex-direction: column; background: var(--paper); border: 1px solid var(--bordo); }
+.notte-maniglia { display: none; }
+.notte-tab { display: flex; gap: 4px; padding: 14px 16px 0; }
+.notte-tab a { flex: 1; height: 42px; display: flex; align-items: center; justify-content: center; border-radius: 999px; font-size: 14px; font-weight: 700; color: var(--muted); }
+.notte-tab a.on { background: var(--notte); color: var(--text); }
+.notte-corpo { flex: 1; overflow-y: auto; padding: 18px 20px 24px; display: flex; flex-direction: column; gap: 14px; overscroll-behavior: contain; }
+.notte-h1 { font-family: 'Unbounded', sans-serif; font-weight: 700; font-size: 28px; line-height: 1.08; letter-spacing: -0.5px; }
+.notte-h1 span { color: var(--plum); }
+.notte-sotto { font-size: 14px; color: var(--muted); margin-top: -4px; }
+.notte-lista { display: flex; flex-direction: column; gap: 6px; }
+.notte-ev { display: grid; grid-template-columns: 58px 1fr auto; gap: 12px; align-items: center; padding: 10px; border-radius: 16px; transition: background 0.15s; }
+.notte-ev:hover, .notte-ev--on { background: #22342B; }
+.notte-ev-data { width: 58px; height: 58px; border-radius: 12px; background: var(--notte); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.notte-ev-data b { font-family: 'Unbounded', sans-serif; font-size: 20px; line-height: 1; }
+.notte-ev-data small { font-size: 11px; font-weight: 700; color: var(--muted); margin-top: 3px; }
+.notte-ev--on .notte-ev-data { background: var(--plum); color: var(--notte); }
+.notte-ev--on .notte-ev-data small { color: var(--notte); }
+.notte-ev-testo { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.notte-ev-testo strong { font-size: 15.5px; line-height: 1.25; }
+.notte-ev-testo small { font-size: 13px; color: var(--muted); }
+.notte-ev-testo small.notte-ev-bus { color: var(--wine); }
+.notte-ci { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--muted); }
+.notte-ci.on { color: var(--plum); }
+.notte-cant { grid-template-columns: 58px 1fr; }
+.notte-cant-ini { font-family: 'Unbounded', sans-serif; font-weight: 800; font-size: 22px; color: var(--plum); }
+.notte-ig { display: flex; flex-direction: column; gap: 4px; padding: 16px; border-radius: 16px; background: var(--notte); border: 1px solid var(--bordo); }
+.notte-ig strong { font-family: 'Unbounded', sans-serif; font-weight: 600; font-size: 16px; line-height: 1.3; }
+.notte-ig small { font-size: 13px; color: var(--muted); }
 
-/* Oroscopo nel feed */
-.segno { flex: none; height: 38px; padding: 0 14px; border-radius: 999px; font-size: 14px; font-weight: 700; color: var(--plum); background: var(--paper); border: 1px solid var(--line); display: flex; align-items: center; }
-.segno--on { background: var(--plum); color: #fff; border-color: var(--plum); }
-.oro-card { margin: 0 16px; background: var(--paper); border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 6px 24px rgba(67, 37, 67, 0.08); }
-.oro-card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
-.oro-card-head > b { font-size: 12px; font-weight: 900; letter-spacing: 1.4px; text-transform: uppercase; color: var(--wine); }
-.oro-card-head small { font-size: 13px; color: var(--muted); }
-.oro-card-head small b { color: var(--plum); }
-.oro-card h3 { font-family: var(--serif); font-weight: 700; font-size: 24px; line-height: 1.15; color: var(--plum); }
-.oro-card p { font-size: 15px; line-height: 1.55; }
-.oro-card .oro-card-vino { font-weight: 700; color: var(--plum); }
+.notte-carte { position: absolute; z-index: 10; right: 20px; bottom: 40px; width: 340px; display: flex; flex-direction: column; gap: 10px; }
+.notte-carta { display: flex; flex-direction: column; gap: 8px; padding: 18px; border-radius: 18px; }
+.notte-carta small { font-size: 11.5px; font-weight: 800; letter-spacing: 1px; }
+.notte-carta > b { font-family: 'Unbounded', sans-serif; font-weight: 700; font-size: 16px; line-height: 1.3; }
+.notte-carta--quiz { background: var(--plum); color: var(--notte); }
+.notte-opz { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.notte-opz button { min-height: 44px; padding: 8px 10px; border-radius: 12px; border: 1.5px solid rgba(13, 20, 17, 0.35); font-size: 14px; font-weight: 600; color: var(--notte); text-align: center; }
+.notte-opz button.ok { background: var(--notte); color: var(--text); border-color: var(--notte); }
+.notte-opz button.no { text-decoration: line-through; }
+.notte-opz button.spento { opacity: 0.45; }
+.notte-carta p { font-size: 14px; font-weight: 600; }
+.notte-carta-link { display: flex; gap: 16px; }
+.notte-carta-link a { font-size: 14px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; padding: 4px 0; }
+.notte-carta--oro { flex-direction: row; justify-content: space-between; align-items: center; background: var(--paper); border: 1px solid var(--bordo); }
+.notte-carta--oro span { display: flex; flex-direction: column; gap: 4px; }
+.notte-carta--oro small { color: var(--muted); }
+.notte-carta--oro b { font-family: 'Unbounded', sans-serif; font-weight: 700; font-size: 16px; }
+.notte-bevi { position: absolute; z-index: 5; left: 50%; bottom: 8px; transform: translateX(-50%); font-size: 11.5px; color: #7F8F86; white-space: nowrap; pointer-events: none; }
 
-/* Cantine nel feed */
-.cant { flex: none; width: 96px; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; scroll-snap-align: start; }
-.cant-av { width: 64px; height: 64px; border-radius: 50%; background: var(--paper); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; font-family: var(--serif); font-weight: 800; font-size: 28px; color: var(--plum); }
-.cant b { font-size: 12.5px; line-height: 1.2; }
-.cant small { font-size: 11.5px; color: var(--muted); }
+.notte-oro, .notte-chi { display: flex; flex-direction: column; gap: 10px; padding: 18px; border-radius: 18px; background: var(--notte); border: 1px solid var(--bordo); }
+.notte-oro small, .notte-chi small { font-size: 11.5px; font-weight: 800; letter-spacing: 1px; color: var(--muted); }
+.notte-oro > b, .notte-chi > b { font-family: 'Unbounded', sans-serif; font-weight: 700; font-size: 19px; line-height: 1.2; }
+.notte-oro p, .notte-chi p { font-size: 14.5px; line-height: 1.55; color: #D6D1C5; }
+.notte-oro .notte-oro-vino { font-weight: 700; color: var(--text); }
+.notte-oro-vit { font-size: 14px; font-weight: 700; color: var(--plum); }
+.notte-segni { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 0 -18px; padding: 0 18px; }
+.notte-segni::-webkit-scrollbar { display: none; }
+.notte-segni button { flex: none; height: 38px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--bordo); font-size: 13.5px; font-weight: 600; color: var(--text); }
+.notte-segni button.on { background: var(--plum); border-color: var(--plum); color: var(--notte); }
+.notte-bottone { align-self: flex-start; padding: 12px 18px; border-radius: 999px; background: var(--plum); color: var(--notte); font-weight: 700; font-size: 14px; }
+.notte-solo-tel { display: none; }
+
+/* Computer: pannello fisso a sinistra, carte di gioco a destra */
+@media (min-width: 900px) {
+  .notte-top { padding: 20px 28px; gap: 14px 20px; }
+  .notte-logo { font-size: 26px; margin-right: 12px; }
+  .notte-pannello { top: 92px; left: 28px; bottom: 28px; width: 420px; border-radius: 24px; }
+  .notte-bevi { left: auto; right: 380px; transform: none; }
+}
+@media (min-width: 900px) and (max-height: 640px) { .notte-carte { display: none; } }
+
+/* Telefono e tablet: il pannello è un foglio che sale dal basso */
+@media (max-width: 899px) {
+  .notte-top { padding: 10px 12px 18px; gap: 8px; }
+  .notte-logo { font-size: 21px; flex: 1; }
+  .notte-segnala { display: none; }
+  .notte-parto { order: 3; height: 40px; font-size: 13px; }
+  .notte-filtri { order: 4; }
+  .notte-filtri button { height: 40px; padding: 0 13px; font-size: 13px; }
+  .notte-carte { display: none; }
+  .notte-solo-tel { display: block; }
+  .notte-pannello { left: 0; right: 0; bottom: 0; height: 48%; border-radius: 24px 24px 0 0; border-bottom: none; transition: height 0.3s ease; box-shadow: 0 -20px 50px rgba(0, 0, 0, 0.4); }
+  .notte-pannello--su { height: calc(100% - 70px); }
+  .notte-maniglia { display: flex; justify-content: center; align-items: center; height: 26px; flex: none; }
+  .notte-maniglia span { width: 44px; height: 5px; border-radius: 3px; background: var(--bordo); }
+  .notte-tab { padding-top: 2px; }
+  .notte-h1 { font-size: 23px; }
+  .notte-bevi { display: none; }
+  .notte-pannello .notte-carta { margin-top: 6px; }
+}
+.notte .leaflet-top.leaflet-right { top: 84px; right: 10px; }
+@media (max-width: 899px) {
+  .notte .leaflet-control-zoom { display: none; }
+  .notte-testa { padding: 10px 12px; }
+  .notte-testa .notte-logo { font-size: 18px; }
+  .notte-testa nav a { padding: 8px 9px; font-size: 13px; }
+}
