@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { INSTAGRAM_URL, RYB_URL } from "../data.js";
 import { eventiPubblici } from "../eventi/api.js";
-import { senzaAuto } from "../eventi/shared.js";
+import { senzaAuto, prezzoEv, conNavetta } from "../eventi/shared.js";
 import Eventi from "../eventi/Eventi.jsx";
 import Mappa from "../eventi/Mappa.jsx";
 import { km, fmtKm, posizioneAttuale, CITTA } from "../eventi/geo.js";
@@ -15,6 +15,7 @@ import { Classifica } from "../games/Classifiche.jsx";
 import Link from "../Link.jsx";
 import Benvenuto, { segnoMio } from "./Benvenuto.jsx";
 import AggiungiCalendario, { Indicazioni } from "../eventi/Calendario.jsx";
+import CondividiEvento from "../eventi/Condividi.jsx";
 import { conProvincia } from "../province.js";
 import { Filtri, Riga, Scelta, Interruttore } from "./Filtri.jsx";
 import { go } from "../nav.js";
@@ -105,16 +106,6 @@ function quandoEv(e) {
     : `${a.getDate()} ${MESI_L[a.getMonth()]} – ${b.getDate()} ${MESI_L[b.getMonth()]}`;
   return `${giorni} · dalle ${hm(a)}`;
 }
-// Il prezzo è l'informazione che conta di più: "Gratis" in evidenza, "da 20 €" se ci sono più prezzi.
-function prezzoEv(e) {
-  const p = (e.prezzo || "").trim();
-  if (!p) return { testo: "Prezzo sul sito", vuoto: true };
-  if (/grat|libero|free|offerta/i.test(p)) return { testo: "Gratis", gratis: true };
-  const cifre = [...p.matchAll(/\d+(?:[.,]\d+)?/g)].map((m) => parseFloat(m[0].replace(",", ".")));
-  if (!cifre.length) return { testo: "A pagamento" };
-  const min = Math.min(...cifre);
-  return { testo: `${cifre.length > 1 || /\bda\b/i.test(p) ? "da " : ""}${String(min).replace(".", ",")} €` };
-}
 const inCorso = (e) => g(e.inizio) <= new Date() && (!e.fine || g(e.fine) >= new Date());
 function comeArrivi(e, centro) {
   const pk = [...(e.pickup || [])].map((p) => ({ ...p, d: km(centro, p) })).sort((a, b) => (a.d ?? 0) - (b.d ?? 0))[0];
@@ -123,17 +114,6 @@ function comeArrivi(e, centro) {
   if ((e.accesso || []).includes("piedi")) return "A piedi";
   return "";
 }
-async function condividi(titolo, percorso) {
-  const url = `${window.location.origin}/${percorso}`;
-  try {
-    if (navigator.share) await navigator.share({ title: titolo, url });
-    else { await navigator.clipboard.writeText(url); alert("Link copiato"); }
-  } catch { /* annullato */ }
-}
-
-// Eventi con un passaggio organizzato: bus o navetta con punti di raccolta.
-const conNavetta = (e) => (e.pickup || []).length > 0 || (e.accesso || []).includes("bus");
-
 const QUANDO = [["tutte", "Tutte le date"], ["oggi", "Oggi"], ["weekend", "Questo weekend"], ["7", "Prossimi 7 giorni"], ["30", "Prossimi 30 giorni"]];
 // Un evento è "nel periodo" se si svolge anche solo in parte in quei giorni (vale anche per quelli in corso).
 function nelQuando(e, q) {
@@ -206,9 +186,7 @@ function FeedEventi({ filtro }) {
                 <AggiungiCalendario e={e} percorso={eventoPercorso(e)} compatto />
                 <span className="ev-azioni">
                   <Indicazioni e={e} />
-                  <button className="ev-share" aria-label="Condividi" onClick={() => condividi(e.titolo, eventoPercorso(e))}>
-                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5" /></svg>
-                  </button>
+                  <CondividiEvento e={e} />
                 </span>
               </div>
             </article>
