@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { TILE_SCURE, TILE_ATTR } from "../tema.js";
+import { TILE, TILE_ATTR } from "../tema.js";
 import { CANTINE, CONTACT_EMAIL } from "../data.js";
 import { eventiPubblici } from "../eventi/api.js";
 import { go } from "../nav.js";
@@ -17,7 +17,7 @@ function MappaCantine({ cantine, attiva, onScegli }) {
   const layer = useRef(null);
   useEffect(() => {
     map.current = L.map(box.current, { scrollWheelZoom: false }).setView([43.55, 10.7], 10);
-    L.tileLayer(TILE_SCURE, { subdomains: "abcd", maxZoom: 16, attribution: TILE_ATTR, }).addTo(map.current);
+    L.tileLayer(TILE, { className: "tile-calde", maxZoom: 16, attribution: TILE_ATTR, }).addTo(map.current);
     layer.current = L.layerGroup().addTo(map.current);
     return () => map.current.remove();
   }, []);
@@ -30,7 +30,7 @@ function MappaCantine({ cantine, attiva, onScegli }) {
       // piccolo scostamento per le cantine dello stesso comune, così non si sovrappongono
       const q = [p[0] + (i % 3) * 0.004, p[1] + (i % 2) * 0.006];
       const on = c.id === attiva;
-      L.circleMarker(q, { radius: on ? 11 : 8, color: "#0D1411", weight: 2, fillColor: on ? "#FF5C7A" : "#EEE9DD", fillOpacity: 1 })
+      L.circleMarker(q, { radius: on ? 11 : 8, color: "#FFFDF8", weight: 2, fillColor: on ? "#B3243B" : "#432543", fillOpacity: 1 })
         .bindTooltip(c.nome).on("click", () => onScegli(c.id)).addTo(layer.current);
       punti.push(q);
     });

@@ -14,11 +14,11 @@ import Link from "../Link.jsx";
 import { go } from "../nav.js";
 import { eventoPercorso, cantinaPercorso } from "../seo.js";
 
-// "Mappa di notte": tutta Bevotoscano in una sola schermata. La Toscana è lo sfondo,
+// "Mappa del vino": tutta Bevotoscano in una sola schermata. La Toscana è lo sfondo,
 // gli eventi sono i punti accesi, e sopra galleggiano l'elenco, il quiz e l'oroscopo.
 // Su computer il pannello sta a sinistra; sul telefono è un foglio che sale dal basso.
 
-import { TILE_SCURE, TILE_ATTR, ROSATO, CREMA } from "../tema.js";
+import { TILE, TILE_ATTR, VINO, VIOLA, SOLE, BIANCO } from "../tema.js";
 
 const POS_KEY = "bevotoscano-posizione";
 const SALVATI = "bevotoscano-ci-vado";
@@ -52,7 +52,7 @@ function useMappa(box) {
   const ref = useRef(null);
   useEffect(() => {
     const m = L.map(box.current, { zoomControl: false, attributionControl: true }).setView([43.45, 11.0], 8);
-    L.tileLayer(TILE_SCURE, { maxZoom: 18, subdomains: "abcd", attribution: TILE_ATTR }).addTo(m);
+    L.tileLayer(TILE, { maxZoom: 18, attribution: TILE_ATTR, className: "tile-calde" }).addTo(m);
     L.control.zoom({ position: "topright" }).addTo(m);
     ref.current = { m, eventi: L.layerGroup().addTo(m), cantine: L.layerGroup().addTo(m), centro: L.layerGroup().addTo(m) };
     return () => m.remove();
@@ -98,13 +98,13 @@ export default function Notte({ tab = "eventi", filtro }) {
       if (f.senzaAuto) {
         (e.pickup || []).forEach((p) => {
           if (p.lat == null) return;
-          L.polyline([[p.lat, p.lng], [e.lat, e.lng]], { color: ROSATO, weight: 2, opacity: 0.7, dashArray: "4 7" }).addTo(g.eventi);
-          L.circleMarker([p.lat, p.lng], { radius: 5, color: ROSATO, weight: 2, fillColor: "#0D1411", fillOpacity: 1 })
+          L.polyline([[p.lat, p.lng], [e.lat, e.lng]], { color: VIOLA, weight: 2.5, opacity: 0.8, dashArray: "2 7", lineCap: "round" }).addTo(g.eventi);
+          L.circleMarker([p.lat, p.lng], { radius: 6, color: VIOLA, weight: 2.5, fillColor: SOLE, fillOpacity: 1 })
             .bindTooltip(`Bus da ${p.nome}${p.orario ? `, ${p.orario}` : ""}`).addTo(g.eventi);
         });
       }
-      L.circleMarker([e.lat, e.lng], { radius: on ? 22 : 16, stroke: false, fillColor: ROSATO, fillOpacity: on ? 0.25 : 0.14, interactive: false }).addTo(g.eventi);
-      L.circleMarker([e.lat, e.lng], { radius: on ? 10 : 7, color: "#0D1411", weight: 2, fillColor: ROSATO, fillOpacity: 1 })
+      L.circleMarker([e.lat, e.lng], { radius: on ? 22 : 16, stroke: false, fillColor: VINO, fillOpacity: on ? 0.3 : 0.18, interactive: false }).addTo(g.eventi);
+      L.circleMarker([e.lat, e.lng], { radius: on ? 11 : 8, color: BIANCO, weight: 3, fillColor: VINO, fillOpacity: 1 })
         .bindTooltip(e.titolo, { direction: "top", offset: [0, -8], permanent: on, className: "notte-tip" })
         .on("click", () => scegli(e.id))
         .addTo(g.eventi);
@@ -125,7 +125,7 @@ export default function Notte({ tab = "eventi", filtro }) {
       const p = pos(c);
       if (!p) return;
       const q = [p[0] + (i % 3) * 0.004, p[1] + (i % 2) * 0.006];
-      L.circleMarker(q, { radius: tab === "cantine" ? 7 : 4, color: "#0D1411", weight: 1.5, fillColor: CREMA, fillOpacity: tab === "cantine" ? 1 : 0.7 })
+      L.circleMarker(q, { radius: tab === "cantine" ? 8 : 5, color: BIANCO, weight: 2, fillColor: VIOLA, fillOpacity: tab === "cantine" ? 1 : 0.75 })
         .bindTooltip(c.nome, { direction: "top", className: "notte-tip" })
         .on("click", () => go(cantinaPercorso(c)))
         .addTo(g.cantine);
@@ -138,7 +138,7 @@ export default function Notte({ tab = "eventi", filtro }) {
     const g = mappa.current;
     if (!g) return;
     g.centro.clearLayers();
-    if (centro) L.circleMarker([centro.lat, centro.lng], { radius: 7, color: CREMA, weight: 3, fillColor: "#0D1411", fillOpacity: 1 }).bindTooltip(centro.nome, { className: "notte-tip" }).addTo(g.centro);
+    if (centro) L.circleMarker([centro.lat, centro.lng], { radius: 8, color: VIOLA, weight: 3, fillColor: SOLE, fillOpacity: 1 }).bindTooltip(centro.nome, { className: "notte-tip" }).addTo(g.centro);
   }, [centro]);
 
   function scegli(id) {
@@ -157,7 +157,7 @@ export default function Notte({ tab = "eventi", filtro }) {
       <div ref={box} className="notte-mappa" aria-label="Mappa degli eventi e delle cantine in Toscana" />
 
       <header className="notte-top">
-        <Link to="home" className="notte-logo">bevotoscano</Link>
+        <Link to="home" className="notte-marchio"><span className="notte-logo">Bevotoscano</span><em>Il vino da vivere</em></Link>
         <Partenza centro={centro} setCentro={setCentro} />
         <div className="notte-filtri">
           <button className={f.senzaAuto ? "on" : ""} aria-pressed={f.senzaAuto} onClick={() => setF((x) => ({ ...x, senzaAuto: !x.senzaAuto }))}>Senza auto</button>
@@ -177,10 +177,10 @@ export default function Notte({ tab = "eventi", filtro }) {
         <div className="notte-corpo" ref={lista}>
           {tab === "eventi" && (
             <>
-              <h1 className="notte-h1">Il vino da vivere, <span>{centro ? "vicino a te." : "in Toscana."}</span></h1>
+              <h1 className="notte-h1">Dove si beve, <span>{centro ? "vicino a te?" : "in Toscana?"}</span></h1>
               <p className="notte-sotto">
                 {!eventi ? "Carico gli eventi…" : visibili.length === 0 ? "Nessun evento con questi filtri, per ora." :
-                  `${visibili.length} ${visibili.length === 1 ? "evento" : "eventi"}${centro ? ` da ${centro.nome}` : ""}, ${conAuto} senza auto`}
+                  `${visibili.length} ${visibili.length === 1 ? "evento" : "eventi"}${centro ? ` da ${centro.nome}` : ""}, ${conAuto} ci arrivi anche senza auto`}
               </p>
               <div className="notte-lista">
                 {visibili.map((e) => (
@@ -226,7 +226,7 @@ export default function Notte({ tab = "eventi", filtro }) {
 
           {tab === "gioca" && (
             <>
-              <h1 className="notte-h1">Gioca col <span>vino toscano.</span></h1>
+              <h1 className="notte-h1">Gioca col <span>vino toscano!</span></h1>
               <Gioco />
               <Oroscopo />
               <ChiSiamo />
@@ -342,7 +342,7 @@ function ChiSiamo() {
 export function TestataNotte({ attiva }) {
   return (
     <header className="notte-testa">
-      <Link to="home" className="notte-logo">bevotoscano</Link>
+      <Link to="home" className="notte-logo">Bevotoscano</Link>
       <nav aria-label="Sezioni">
         <Link to="eventi" className={attiva === "eventi" ? "on" : ""}>Eventi</Link>
         <Link to="cantine" className={attiva === "cantine" ? "on" : ""}>Cantine</Link>
