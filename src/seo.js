@@ -3,6 +3,8 @@
 // momento della pubblicazione (scripts/prerender.mjs) e le funzioni Vercel in api/.
 // Per cambiare titolo o descrizione di una pagina, modifica PAGINE qui sotto.
 
+import { ARTICOLI } from "./blog.js";
+
 export const SITO = "https://bevotoscano.com";
 export const IMMAGINE = `${SITO}/og.jpg`; // anteprima quando si condivide un link
 const NOME = "Bevotoscano";
@@ -23,11 +25,11 @@ export const PAGINE = {
   },
   gioca: {
     title: "Giochi sul vino toscano: quiz e oroscopo | Bevotoscano",
-    description: "Impara il vino toscano giocando: il quiz a tempo con la classifica All Time e l'oroscopo del vino con il tuo vitigno toscano.",
+    description: "La classifica del quiz infinito sul vino toscano: ogni 3 risposte giuste una vita, sbagli senza vite e sei fuori. Più l'oroscopo del vino con il tuo vitigno.",
   },
   "gioca/quiz": {
     title: "Quiz: quanto ne sai di vino toscano? | Bevotoscano",
-    description: "Il quiz a tempo sul vino toscano: vitigni, denominazioni, territori. Gioca la Sfida da 10 o l'All Time a oltranza e scala la classifica.",
+    description: "Il quiz infinito sul vino toscano: vitigni, denominazioni, territori. Ogni 3 risposte giuste guadagni una vita: quante ne fai prima di cadere?",
   },
   "gioca/oroscopo": {
     title: "L'oroscopo del vino: quale vitigno toscano sei? | Bevotoscano",
@@ -35,8 +37,13 @@ export const PAGINE = {
   },
   "gioca/classifica": {
     title: "Classifica del quiz sul vino toscano | Bevotoscano",
-    description: "Chi ne sa di più di vino toscano? La classifica All Time e quella della Sfida da 10 del quiz Bevotoscano.",
+    description: "Chi ne sa di più di vino toscano? La classifica del quiz infinito Bevotoscano: conta quante risposte giuste fai prima di cadere.",
   },
+  blog: {
+    title: "Blog: storie di vino toscano e piccole cantine | Bevotoscano",
+    description: "Storie di vino toscano: vitigni rari, piccole cantine, Terricciola e la domanda che facciamo a tutti, qual è il vino più toscano che hai?",
+  },
+  ...Object.fromEntries(ARTICOLI.map((a) => [`blog/${a.id}`, { title: `${a.titolo} | Bevotoscano`, description: a.sottotitolo }])),
   esperienze: {
     title: "Esperienze del vino in Toscana | Bevotoscano",
     description: "Cantina Diffusa, visite e degustazioni con chi il vino lo fa: le esperienze Bevotoscano con le piccole cantine toscane.",
@@ -289,9 +296,37 @@ export function briciole(voci) {
   };
 }
 
+// ---------- blog ----------
+export const articoloPercorso = (a) => `blog/${a.id}`;
+export function articoloLd(a) {
+  return [
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      headline: a.titolo,
+      description: a.sottotitolo,
+      datePublished: a.data,
+      author: { "@type": "Organization", name: NOME, url: SITO },
+      publisher: { "@type": "Organization", name: NOME, url: SITO },
+      image: IMMAGINE,
+      url: `${SITO}/${articoloPercorso(a)}`,
+      mainEntityOfPage: `${SITO}/${articoloPercorso(a)}`,
+    },
+    briciole([["Blog", "blog"], [a.titolo, articoloPercorso(a)]]),
+  ];
+}
+export function articoloCorpo(a) {
+  return `<div class="app"><main class="page"><a class="link" href="/blog">← Tutti gli articoli</a>
+<p class="eyebrow">${esc(a.tag)} · <time datetime="${a.data}">${esc(a.data.split("-").reverse().join("/"))}</time></p>
+<h1 class="page-title">${esc(a.titolo)}</h1>
+<p><em>${esc(a.sottotitolo)}</em></p>
+${a.paragrafi.map((t) => `<p>${esc(t)}</p>`).join("\n")}
+<p><a href="/eventi">Guarda gli eventi del vino in Toscana</a></p></main></div>`;
+}
+
 export function cantinaCorpo(c) {
   return `<div class="app"><main class="page"><a class="link" href="/cantine">← Tutte le cantine</a>
-<p class="eyebrow">${esc(c.comune)} · ${esc(c.zona)}</p>
+<p class="eyebrow">${esc(c.comune)}${c.provincia ? ` (provincia di ${esc(c.provincia)})` : ""} · ${esc(c.zona)}</p>
 <h1 class="page-title">${esc(c.nome)}</h1>
 <p>${esc(cantinaMeta(c).description)}</p>
 ${c.sito ? `<p><a href="${esc(c.sito)}" rel="noopener">Sito della cantina</a></p>` : ""}</main></div>`;

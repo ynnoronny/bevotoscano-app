@@ -1,24 +1,41 @@
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { TILE, TILE_ATTR } from "../tema.js";
+import { ZONE, zonaDi } from "../zone.js";
 
-// Mappa OpenStreetMap: pallini vino = dove si tiene l'evento, pallini oro = punti di raccolta.
+// Mappa OpenStreetMap divisa per zone del vino (tocca una zona per avvicinarti).
+// Pallini vino = dove si tiene l'evento, pallini oro = punti di raccolta.
 export default function Mappa({ eventi, centro, onApri }) {
   const box = useRef(null);
   const map = useRef(null);
   const layer = useRef(null);
+  const zone = useRef(null);
 
   useEffect(() => {
     map.current = L.map(box.current, { zoomControl: true, attributionControl: true }).setView([43.45, 11.1], 8);
-    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    L.tileLayer(TILE, { className: "tile-calde",
       maxZoom: 18,
-      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      attribution: TILE_ATTR,
     }).addTo(map.current);
+    zone.current = L.layerGroup().addTo(map.current);
     layer.current = L.layerGroup().addTo(map.current);
     return () => map.current.remove();
   }, []);
 
   useEffect(() => {
+    // le zone: piene se ci sono eventi, appena accennate se no
+    zone.current.clearLayers();
+    const quanti = {};
+    eventi.forEach((e) => { const z = e.lat != null && zonaDi([e.lat, e.lng]); if (z) quanti[z] = (quanti[z] || 0) + 1; });
+    ZONE.forEach((z) => {
+      const n = quanti[z.zona] || 0;
+      const c = L.circle(z.centro, { radius: z.km * 1000, color: "#432543", weight: n ? 1.8 : 1, dashArray: "5 6", fillColor: n ? "#F2B33D" : "#432543", fillOpacity: n ? 0.18 : 0.03, opacity: n ? 0.9 : 0.4 })
+        .on("click", () => map.current.fitBounds(c.getBounds(), { padding: [8, 8] }))
+        .addTo(zone.current);
+      if (n) c.bindTooltip(`${z.zona} · ${n}`, { permanent: true, direction: "top", className: "zona-tip", offset: [0, -6] });
+      else c.bindTooltip(z.zona, { className: "zona-tip zona-tip--vuota" });
+    });
     const g = layer.current;
     g.clearLayers();
     const punti = [];
@@ -35,7 +52,7 @@ export default function Mappa({ eventi, centro, onApri }) {
         punti.push([p.lat, p.lng]);
       });
       if (e.lat == null) return;
-      L.circleMarker([e.lat, e.lng], { radius: 9, color: "#432543", fillColor: "#722F37", fillOpacity: 1, weight: 2 })
+      L.circleMarker([e.lat, e.lng], { radius: 9, color: "#FFFDF8", fillColor: "#B3243B", fillOpacity: 1, weight: 2 })
         .bindTooltip(e.titolo).on("click", () => onApri(e)).addTo(g);
       punti.push([e.lat, e.lng]);
     });

@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { eventiPubblici } from "./api.js";
 import { km, fmtKm, cercaLuogo, posizioneAttuale, CITTA } from "./geo.js";
-import { ACCESSI, senzaAuto, fmtData } from "./shared.js";
+import { ACCESSI, senzaAuto, fmtData, conNavetta } from "./shared.js";
 import Mappa from "./Mappa.jsx";
+import CondividiEvento from "./Condividi.jsx";
 
 import { go } from "../nav.js";
 import Link from "../Link.jsx";
+import AggiungiCalendario, { indicazioniUrl } from "./Calendario.jsx";
+import { conProvincia } from "../province.js";
 import { eventoPercorso, idDaPercorso, eventoMeta, eventoJsonLd, briciole, applicaMeta } from "../seo.js";
 const POS_KEY = "bevotoscano-posizione";
 
@@ -17,7 +20,7 @@ const QUANDO = [
 ];
 const RAGGIO = [["0", "Ovunque"], ["15", "Entro 15 km"], ["30", "Entro 30 km"], ["60", "Entro 60 km"]];
 
-function nelPeriodo(e, quando) {
+export function nelPeriodo(e, quando) {
   if (quando === "tutte") return true;
   const t = new Date(e.inizio), ora = new Date();
   if (quando === "weekend") {
@@ -181,7 +184,7 @@ function Partenza({ centro, setCentro, subito }) {
 function Badges({ e }) {
   return (
     <div className="badges">
-      {senzaAuto(e) && <span className="badge badge--gold">🚌 Senza auto</span>}
+      {conNavetta(e) && <span className="badge badge--gold">🚐 Con navetta</span>}
       {e.guidato && <span className="badge">🧭 Con guida</span>}
       {e.prezzo && <span className="badge">{e.prezzo}</span>}
       {e.esempio && <span className="badge badge--demo">Esempio</span>}
@@ -224,10 +227,13 @@ function Dettaglio({ e, centro }) {
   const maps = e.lat != null ? `https://www.openstreetmap.org/?mlat=${e.lat}&mlon=${e.lng}#map=14/${e.lat}/${e.lng}` : null;
   return (
     <>
-      <Link className="link" to="eventi">← Tutti gli eventi</Link>
-      <p className="eyebrow">{fmtData(e.inizio)}{e.fine ? ` → ${new Date(e.fine).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}` : ""}</p>
+      <p className="eyebrow">{e.fine && new Date(e.fine).toDateString() !== new Date(e.inizio).toDateString()
+        ? `Dal ${fmtData(e.inizio, false)} al ${fmtData(e.fine, false)}`
+        : `${fmtData(e.inizio)}${e.fine ? ` → ${new Date(e.fine).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}` : ""}`}</p>
       <h1 className="page-title">{e.titolo}</h1>
       <Badges e={e} />
+      <AggiungiCalendario e={e} percorso={eventoPercorso(e)} className="cal--pagina" />
+      <CondividiEvento e={e} grande />
       {e.altre_date && <p className="muted">Altre date: {e.altre_date}</p>}
       {e.descrizione && <p>{e.descrizione}</p>}
       {e.vini && <p className="cantina-wine">Nel bicchiere: <b>{e.vini}</b></p>}
@@ -248,7 +254,7 @@ function Dettaglio({ e, centro }) {
             ))}
           </div>
         )}
-        <div className="pickup"><span>🍷 {e.luogo_nome}, {e.indirizzo ? `${e.indirizzo}, ` : ""}{e.comune}</span>{maps && <a className="link" href={maps} target="_blank" rel="noopener">Mappa</a>}</div>
+        <div className="pickup"><span>🍷 {e.luogo_nome}, {e.indirizzo ? `${e.indirizzo}, ` : ""}{conProvincia(e.comune)}</span>{indicazioniUrl(e) && <a className="link" href={indicazioniUrl(e)} target="_blank" rel="noopener">Indicazioni</a>}</div>
       </section>
 
       <section className="card">

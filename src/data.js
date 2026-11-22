@@ -1,19 +1,26 @@
 // Contenuti dell'app. Modifica qui testi, cantine ed esperienze senza toccare il resto del codice.
 
 export const INSTAGRAM_URL = "https://www.instagram.com/bevotoscano/"; // verifica che sia il profilo giusto
+// Il sito di chi ha fatto l'app (il "made by ryb" in fondo alle pagine). Vuoto = scritta senza link.
+export const RYB_URL = "https://ry-b.it";
 export const CONTACT_EMAIL = "info@bevotoscano.com"; // cambia con la mail che usi su Aruba
 
 // Le cantine: per ora solo nome, zona e sito. Aggiungi `vinoPiuToscano` quando hai la loro risposta
 // alla domanda del format, e `reel` col link al video su Instagram.
+// Le cantine. Campi facoltativi:
+//   foto: "/img/cantine/<id>.jpg" (metti il file in public/img/cantine/)
+//   intervistata: true quando l'intervista è uscita (reel: link al post Instagram)
+//   premi: ["Miglior rosso 2026 (Guida X)", …] dal più importante; in elenco si vedono i primi 3
+//   vinoPiuToscano: la risposta alla nostra domanda
 export const CANTINE = [
-  { id: "la-regola", nome: "Podere La Regola", comune: "Riparbella", zona: "Costa pisana" },
-  { id: "agona", nome: "L'Agona", comune: "Terricciola", zona: "Colline pisane", sito: "https://www.lagonavini.com/" },
-  { id: "fibbiano", nome: "Fattoria Fibbiano", comune: "Terricciola", zona: "Colline pisane", sito: "https://www.fattoria-fibbiano.it/" },
-  { id: "gimonda", nome: "La Gimonda", comune: "Terricciola", zona: "Colline pisane", sito: "https://www.lagimonda.it/" },
-  { id: "castelvecchio", nome: "Tenuta Castelvecchio", comune: "Terricciola", zona: "Colline pisane", sito: "https://agricastelvecchio.com/" },
-  { id: "pellicciano", nome: "Podere Pellicciano", comune: "San Miniato", zona: "Valdarno inferiore", sito: "https://www.poderepellicciano.it/" },
-  { id: "montefoscoli", nome: "Tenuta di Montefoscoli", comune: "Montefoscoli", zona: "Colline pisane", sito: "https://tenutadimontefoscoli.com" },
-  { id: "ghizzano", nome: "Tenuta di Ghizzano", comune: "Ghizzano", zona: "Colline pisane", sito: "https://www.tenutadighizzano.com/" },
+  { id: "la-regola", nome: "Podere La Regola", comune: "Riparbella", provincia: "Pisa", zona: "Costa pisana" },
+  { id: "agona", nome: "L'Agona", comune: "Terricciola", provincia: "Pisa", zona: "Colline pisane", sito: "https://www.lagonavini.com/" },
+  { id: "fibbiano", nome: "Fattoria Fibbiano", comune: "Terricciola", provincia: "Pisa", zona: "Colline pisane", sito: "https://www.fattoria-fibbiano.it/" },
+  { id: "gimonda", nome: "La Gimonda", comune: "Terricciola", provincia: "Pisa", zona: "Colline pisane", sito: "https://www.lagimonda.it/" },
+  { id: "castelvecchio", nome: "Tenuta Castelvecchio", comune: "Terricciola", provincia: "Pisa", zona: "Colline pisane", sito: "https://agricastelvecchio.com/" },
+  { id: "pellicciano", nome: "Podere Pellicciano", comune: "San Miniato", provincia: "Pisa", zona: "Valdarno inferiore", sito: "https://www.poderepellicciano.it/", foto: "https://poderepellicciano.it/wp-content/uploads/2023/07/Podere-Pellicciano-winery-scaled.jpg" },
+  { id: "montefoscoli", nome: "Tenuta di Montefoscoli", comune: "Montefoscoli", provincia: "Pisa", zona: "Colline pisane", sito: "https://tenutadimontefoscoli.com", foto: "https://www.tenutadimontefoscoli.com/wp-content/uploads/2026/02/Tenuta-di-Montefoscoli_Home.jpg" },
+  { id: "ghizzano", nome: "Tenuta di Ghizzano", comune: "Ghizzano", provincia: "Pisa", zona: "Colline pisane", sito: "https://www.tenutadighizzano.com/" },
 ];
 
 // Le esperienze: format Bevotoscano. Stato "presto" = raccogli interesse, "aperto" = prenotabile.

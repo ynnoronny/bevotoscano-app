@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { online, accedi, esci, sessione, tuttiGliEventi, salvaEvento, eliminaEvento, pickupPoints, salvaPickup } from "./api.js";
+import { online, accedi, esci, sessione, tuttiGliEventi, salvaEvento, eliminaEvento, pickupPoints, salvaPickup, tutteLeProposte, decidiProposta } from "./api.js";
 import { cercaLuogo } from "./geo.js";
 import { TIPI_ORG, fmtData, senzaAuto } from "./shared.js";
 import { CampiEvento, Campo } from "./Segnala.jsx";
@@ -28,9 +28,12 @@ export default function Admin() {
     <>
       <div className="chips">
         <button className={`chip ${area === "eventi" ? "chip--on" : ""}`} onClick={() => setArea("eventi")}>Eventi</button>
+        <button className={`chip ${area === "proposte" ? "chip--on" : ""}`} onClick={() => setArea("proposte")}>Cantine ed enoteche</button>
         <button className={`chip ${area === "posta" ? "chip--on" : ""}`} onClick={() => setArea("posta")}>Posta info@</button>
       </div>
-      {area === "eventi" ? <Moderazione email={s?.email} onEsci={fuori} /> : <Posta onSessione={fuori} />}
+      {area === "eventi" && <Moderazione email={s?.email} onEsci={fuori} />}
+      {area === "proposte" && <Proposte onEsci={fuori} />}
+      {area === "posta" && <Posta onSessione={fuori} />}
     </>
   );
 }
@@ -191,6 +194,10 @@ function Editor({ ev, pickups, onAnnulla, onSalva, onPickupSalvato, err }) {
         <Campo label="Coordinate del luogo" hint={v.lat != null ? `✓ ${v.lat.toFixed(4)}, ${v.lng.toFixed(4)}` : "Servono per la mappa e le distanze"}>
           <Trova testo={[v.luogo_nome, v.indirizzo, v.comune].filter(Boolean).join(", ")} onTrovato={(r) => setV((x) => ({ ...x, lat: r.lat, lng: r.lng }))} />
         </Campo>
+        <Campo label="Foto (link a un'immagine)" hint="Va in cima alla scheda dell'evento. Usa la foto ufficiale dal sito dell'evento.">
+          <input className="input" type="url" maxLength={300} value={v.immagine || ""} onChange={(e) => set("immagine", e.target.value.trim() || null)} placeholder="https://…jpg" />
+        </Campo>
+        {v.immagine && <img src={v.immagine} alt="" style={{ width: "100%", maxHeight: 180, objectFit: "cover", borderRadius: 12 }} />}
         <Campo label="Note interne"><textarea className="input" rows={2} value={v.note_admin || ""} onChange={(e) => set("note_admin", e.target.value)} /></Campo>
       </section>
       {err && <p className="error">{err}</p>}
@@ -199,5 +206,54 @@ function Editor({ ev, pickups, onAnnulla, onSalva, onPickupSalvato, err }) {
         <button className="btn btn--outline" onClick={() => salva(false)}>Salva senza pubblicare</button>
       </div>
     </div>
+  );
+}
+
+// Le cantine e le enoteche proposte dal pulsante "Segnala": si approvano o si scartano.
+// Approvare non le pubblica da sola: segna che vanno inserite nell'app.
+function Proposte({ onEsci }) {
+  const [lista, setLista] = useState(null);
+  const [tab, setTab] = useState("in_attesa");
+  const [err, setErr] = useState("");
+  const carica = () => tutteLeProposte().then(setLista).catch((e) => {
+    if (e.message === "sessione") return onEsci();
+    setLista([]);
+    setErr(/proposte/.test(e.message) ? "La coda delle proposte non è ancora attiva nel database." : e.message);
+  });
+  useEffect(() => { carica(); }, []);
+  const decidi = async (id, stato) => {
+    setErr("");
+    try { await decidiProposta(id, stato); carica(); } catch (e) { e.message === "sessione" ? onEsci() : setErr(e.message); }
+  };
+  const conta = (st) => (lista || []).filter((p) => p.stato === st).length;
+  const vista = (lista || []).filter((p) => p.stato === tab);
+  return (
+    <>
+      <h1 className="page-title">Cantine ed enoteche proposte</h1>
+      <div className="chips">
+        {[["in_attesa", "Da valutare"], ["approvata", "Approvate"], ["scartata", "Scartate"]].map(([k, l]) => (
+          <button key={k} className={`chip ${tab === k ? "chip--on" : ""}`} onClick={() => setTab(k)}>{l} ({conta(k)})</button>
+        ))}
+      </div>
+      {err && <p className="error">{err}</p>}
+      {!lista && <p className="muted">Carico…</p>}
+      {lista && vista.length === 0 && !err && <p className="muted">Niente qui.</p>}
+      <div className="list">
+        {vista.map((p) => (
+          <article key={p.id} className="card">
+            <small className="evento-data">{p.tipo === "cantina" ? "🍇 Cantina" : "🍷 Enoteca"} · {p.comune} · {fmtData(p.creato)}</small>
+            <strong className="evento-titolo">{p.nome}</strong>
+            {p.sito && <a className="link" href={p.sito.startsWith("http") ? p.sito : `https://${p.sito}`} target="_blank" rel="noopener">{p.sito}</a>}
+            <small>{p.ruolo === "titolare" ? "La propone chi ci lavora" : "La consiglia un cliente"}{p.referente ? `: ${p.referente}` : ""} · <a className="link" href={`mailto:${p.email}`}>{p.email}</a></small>
+            {p.note && <p className="muted">{p.note}</p>}
+            <div className="row">
+              {p.stato !== "approvata" && <button className="btn btn--primary" onClick={() => decidi(p.id, "approvata")}>Approva</button>}
+              {p.stato !== "scartata" && <button className="btn btn--outline" onClick={() => decidi(p.id, "scartata")}>Scarta</button>}
+              {p.stato !== "in_attesa" && <button className="link" onClick={() => decidi(p.id, "in_attesa")}>Rimetti da valutare</button>}
+            </div>
+          </article>
+        ))}
+      </div>
+    </>
   );
 }

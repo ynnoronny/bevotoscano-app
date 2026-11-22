@@ -1,16 +1,13 @@
 import { useEffect, useState } from "react";
-import { ESPERIENZE, CASSA, GIOCHI, INSTAGRAM_URL, CONTACT_EMAIL } from "./data.js";
+import { ESPERIENZE, CASSA, INSTAGRAM_URL } from "./data.js";
 import { saveLead, isEmail } from "./leads.js";
 import Oroscopo from "./games/Oroscopo.jsx";
 import QuizToscana from "./games/QuizToscana.jsx";
-import Eventi from "./eventi/Eventi.jsx";
-import Segnala from "./eventi/Segnala.jsx";
 import Admin from "./eventi/Admin.jsx";
-import Home from "./home/Home.jsx";
-import Cantine from "./home/Cantine.jsx";
-import Link from "./Link.jsx";
+import Shell from "./home/Shell.jsx";
 import { go, percorsoAttuale, suCambioPercorso } from "./nav.js";
-import { metaPercorso, applicaMeta } from "./seo.js";
+import { metaPercorso, applicaMeta, articoloLd } from "./seo.js";
+import { articolo } from "./blog.js";
 
 // Indirizzi veri per ogni sezione: bevotoscano.com/gioca/quiz porta dritto al quiz.
 function useRoute() {
@@ -20,20 +17,14 @@ function useRoute() {
   return route;
 }
 
-const TABS = [
-  { id: "home", label: "Scopri", icon: "🏡" },
-  { id: "eventi", label: "Eventi", icon: "📅" },
-  { id: "cantine", label: "Cantine", icon: "🍷" },
-  { id: "gioca", label: "Gioca", icon: "🎲" },
-];
-
 export default function App() {
   const [section, sub] = useRoute();
 
   // Titolo e descrizione della pagina (la scheda di un evento imposta i suoi).
   useEffect(() => {
     const m = metaPercorso([section, sub].filter(Boolean).join("/"));
-    if (m) applicaMeta(m);
+    const a = section === "blog" && sub && articolo(sub);
+    if (m) applicaMeta(m, a ? articoloLd(a) : undefined);
   }, [section, sub]);
 
   // Un minigioco aperto prende tutto lo schermo.
@@ -47,46 +38,16 @@ export default function App() {
     return <QuizToscana iniziale="classifica" onExit={() => go("gioca")} />;
   }
 
+  if (section === "admin") return <div className="app"><main className="page"><Admin /></main></div>;
+
+  // Tutto il resto vive nella schermata fissa: pills in alto, sotto scorre solo il contenuto.
+  const aParte = section === "esperienze" ? <Esperienze /> : section === "cassa" ? <Cassa /> : null;
   return (
-    <div className="app">
-      <header className="topbar">
-        <Link className="logo" to="home">Bevotoscano</Link>
-        <span className="logo-claim">Il vino da vivere</span>
-      </header>
-      <main className="page fade" key={section}>
-        {section === "home" && <Home />}
-        {section === "cantine" && <Cantine apri={sub} />}
-        {section === "esperienze" && <Esperienze />}
-        {section === "cassa" && <Cassa />}
-        {section === "gioca" && <Giochi />}
-        {section === "eventi" && <Eventi apri={sub} />}
-        {section === "segnala" && <Segnala />}
-        {section === "admin" && <Admin />}
-        {!TABS.some((t) => t.id === section) && !["esperienze", "cassa", "segnala", "admin"].includes(section) && <Home />}
-      </main>
-      <nav className="tabbar">
-        {TABS.map((t) => (
-          <Link key={t.id} className={`tab ${section === t.id ? "tab--on" : ""}`} to={t.id}>
-            <span className="tab-icon">{t.icon}</span>
-            <span>{t.label}</span>
-          </Link>
-        ))}
-      </nav>
-    </div>
+    <Shell section={section || "home"} sub={sub}>
+      {aParte && <div className="page shell-pagina">{aParte}</div>}
+    </Shell>
   );
 }
-
-
-function Tile({ icon, title, text, onClick }) {
-  return (
-    <button className="tile" onClick={onClick}>
-      <span className="tile-icon">{icon}</span>
-      <strong>{title}</strong>
-      <small>{text}</small>
-    </button>
-  );
-}
-
 
 function Esperienze() {
   return (
@@ -132,32 +93,6 @@ function Cassa() {
         <p className="muted">La prima cassa esce presto. Chi è in lista la vede per primo.</p>
         <InterestForm tipo="cassa" cta="Voglio la cassa" done="Sei in lista! Ti avvisiamo per primo 📦" />
       </section>
-    </>
-  );
-}
-
-function Giochi() {
-  return (
-    <>
-      <h1 className="page-title">Gioca</h1>
-      <p className="muted">La parte gaming di Bevotoscano: impari il vino toscano giocando, e sfidi il mondo.</p>
-      <div className="list">
-        {GIOCHI.map((g) => {
-          const dentro = (
-            <>
-              <span className="card-emoji">{g.emoji}</span>
-              <span>
-                <strong>{g.titolo}</strong>
-                <small>{g.pronto ? g.sottotitolo : "Prossimamente"}</small>
-              </span>
-              <span className="chev">{g.pronto ? "→" : "🔒"}</span>
-            </>
-          );
-          return g.pronto
-            ? <Link key={g.id} className="card card--game" to={`gioca/${g.id}`}>{dentro}</Link>
-            : <button key={g.id} className="card card--game card--soon" disabled>{dentro}</button>;
-        })}
-      </div>
     </>
   );
 }

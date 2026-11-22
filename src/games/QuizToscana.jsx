@@ -1,48 +1,58 @@
 import { useEffect, useRef, useState } from "react";
-import { DOMANDE, DOMANDE_PER_PARTITA, SECONDI_PER_DOMANDA } from "./quizData.js";
-import { inviaPunteggio, PAESI, MODALITA } from "../leaderboard.js";
-import Classifiche from "./Classifiche.jsx";
+import { DOMANDE, SECONDI_PER_DOMANDA } from "./quizData.js";
+import { inviaPunteggio, PAESI } from "../leaderboard.js";
+import { Classifica } from "./Classifiche.jsx";
 import ShareButton from "./ShareButton.jsx";
+
+// Il quiz. Si può partire anche dalla domanda del giorno in home: quella risposta conta già.
+// Il quiz infinito. Si parte con 0 vite, ogni 3 risposte giuste se ne guadagna una.
+// Una risposta sbagliata toglie una vita; sbagliare con 0 vite chiude la partita.
+// La classifica conta quante risposte giuste fai prima di cadere.
+const OGNI_QUANTE_UNA_VITA = 3;
 
 const shuffle = (a) => { const b = [...a]; for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
 const prepara = (q) => ({ ...q, giusta: q.r[0], opzioni: shuffle(q.r) });
 const perLivello = (l) => shuffle(DOMANDE.filter((q) => q.livello === l));
+// Primo giro dalle facili alle difficili; quando il mazzo finisce si rimescola tutto.
+const primoGiro = () => [...perLivello(1), ...perLivello(2), ...perLivello(3)].map(prepara);
+const altroGiro = () => shuffle(DOMANDE).map(prepara);
 
-// Sfida da 10: 3 facili, 4 medie, 3 difficili.
-const partitaClassica = () => [...perLivello(1).slice(0, 3), ...perLivello(2).slice(0, 4), ...perLivello(3).slice(0, 3)].slice(0, DOMANDE_PER_PARTITA).map(prepara);
-// All Time: tutte le domande, dalle facili alle difficili, finché non cadi.
-const partitaAllTime = () => [...perLivello(1), ...perLivello(2), ...perLivello(3)].map(prepara);
+const GRADIENTE = "linear-gradient(170deg, #432543 0%, #6B2440 45%, #B3243B 80%, #F2B33D 100%)";
 
-const GRADIENTE = "linear-gradient(170deg, #2A1530 0%, #432543 45%, #722F37 80%, #C9A96E 100%)";
-
-const titoloClassica = (c) =>
-  c >= 9 ? ["Gran Sommelier di Toscana", "🏆"] : c >= 7 ? ["Enologo di bottega", "🍷"] : c >= 4 ? ["Bevitore curioso", "🍇"] : ["Turista del vino", "🧳"];
-const titoloAllTime = (c, finite) =>
-  finite ? ["Leggenda del vino toscano", "👑"] :
+const titolo = (c) =>
   c >= 80 ? ["Leggenda del vino toscano", "👑"] : c >= 50 ? ["Gran Sommelier di Toscana", "🏆"] : c >= 25 ? ["Enologo di bottega", "🍷"] : c >= 10 ? ["Bevitore curioso", "🍇"] : ["Turista del vino", "🧳"];
 
+// La domanda del giorno (home) lascia qui la sua risposta, così il quiz riparte da lì.
+export const DAL_GIORNO = "bevotoscano-dal-giorno";
+function leggiDalGiorno() {
+  try { return JSON.parse(sessionStorage.getItem(DAL_GIORNO)); } catch { return null; }
+}
+
 export default function QuizToscana({ onExit, iniziale = "start" }) {
-  const [fase, setFase] = useState(iniziale); // start | gioco | fine | classifica
-  const [modalita, setModalita] = useState("classica");
+  const [dalGiorno] = useState(() => (iniziale === "start" ? leggiDalGiorno() : null));
+  const [fase, setFase] = useState(dalGiorno ? "gioco" : iniziale); // start | gioco | fine | classifica
   const [domande, setDomande] = useState([]);
   const [i, setI] = useState(0);
   const [tempo, setTempo] = useState(SECONDI_PER_DOMANDA);
   const [scelta, setScelta] = useState(null); // risposta data, o "__tempo" / "__uscito"
-  const [punti, setPunti] = useState(0);
   const [corrette, setCorrette] = useState(0);
-  const [ultimiPunti, setUltimiPunti] = useState(0);
-  const [erroriDiFila, setErroriDiFila] = useState(0);
-  const [ultimaChance, setUltimaChance] = useState(false);
-  const [finite, setFinite] = useState(false); // All Time: risposto a tutto il mazzo
+  const [vite, setVite] = useState(0);
+  const [nota, setNota] = useState(""); // "+1 vita", "-1 vita"
+  const [finita, setFinita] = useState(false);
   const inizio = useRef(0);
 
-  const parti = (mod) => {
-    setModalita(mod);
-    setDomande(mod === "alltime" ? partitaAllTime() : partitaClassica());
-    setI(0); setPunti(0); setCorrette(0); setScelta(null);
-    setErroriDiFila(0); setUltimaChance(false); setFinite(false);
+  // da: la domanda del giorno già risposta in home ({ d, ok }): non si ripete e, se giusta, conta.
+  const parti = (da) => {
+    setDomande(primoGiro().filter((q) => !da || q.d !== da.d));
+    setI(0); setCorrette(da?.ok ? 1 : 0); setVite(0); setScelta(null); setFinita(false);
+    setNota(da ? (da.ok ? "Hai già 1 giusta dalla domanda del giorno" : "La domanda del giorno non conta: si parte da qui") : "");
     setFase("gioco");
   };
+  useEffect(() => {
+    if (!dalGiorno) return;
+    try { sessionStorage.removeItem(DAL_GIORNO); } catch { /* niente */ }
+    parti(dalGiorno);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (fase !== "gioco" || scelta) return;
@@ -68,41 +78,33 @@ export default function QuizToscana({ onExit, iniziale = "start" }) {
     if (scelta) return;
     const q = domande[i];
     const giusta = r === q.giusta;
-    let guadagno = 0;
-    let finita = false;
-
-    if (modalita === "classica") {
-      if (giusta) {
-        const rest = Math.max(0, SECONDI_PER_DOMANDA - (performance.now() - inizio.current) / 1000);
-        guadagno = 50 * q.livello + Math.round((100 * rest) / SECONDI_PER_DOMANDA);
-      }
-      finita = i + 1 >= domande.length;
+    let fine = false;
+    if (giusta) {
+      const c = corrette + 1;
+      setCorrette(c);
+      if (c % OGNI_QUANTE_UNA_VITA === 0) { setVite((v) => v + 1); setNota("+1 vita"); } else setNota("");
+    } else if (vite > 0) {
+      setVite(vite - 1);
+      setNota("-1 vita");
     } else {
-      if (giusta) {
-        guadagno = 1;
-        setErroriDiFila(0);
-        setUltimaChance(false);
-      } else if (ultimaChance) {
-        finita = true; // sbagliata anche l'ultima chance
-      } else {
-        const e = erroriDiFila + 1;
-        setErroriDiFila(e);
-        if (e >= 2) setUltimaChance(true);
-      }
-      if (!finita && i + 1 >= domande.length) { finita = true; setFinite(true); }
+      fine = true;
+      setNota("");
     }
-
-    if (giusta) setCorrette((c) => c + 1);
-    setUltimiPunti(guadagno);
-    setPunti((p) => p + guadagno);
+    setFinita(fine);
     setScelta(r);
-    setTimeout(() => {
-      if (finita) setFase("fine");
-      else { setI(i + 1); setScelta(null); }
-    }, 1300);
+  }
+
+  // Dopo la risposta resta la spiegazione: si va avanti quando si vuole.
+  function avanti() {
+    if (finita) return setFase("fine");
+    if (i + 1 >= domande.length) setDomande((d) => [...d, ...altroGiro()]);
+    setI(i + 1);
+    setScelta(null);
+    setNota("");
   }
 
   const q = domande[i];
+  const versoVita = OGNI_QUANTE_UNA_VITA - (corrette % OGNI_QUANTE_UNA_VITA);
 
   return (
     <div className={`game ${fase === "fine" ? "game--result" : ""}`} style={fase === "fine" ? { background: GRADIENTE } : undefined}>
@@ -117,47 +119,28 @@ export default function QuizToscana({ onExit, iniziale = "start" }) {
         <div className="game-center fade">
           <div className="big-emoji">🍷</div>
           <h1 className="game-title">Quanto ne sai di <em>vino toscano</em>?</h1>
-          <p className="rule">🚫 Niente aiutini: {SECONDI_PER_DOMANDA} secondi a domanda, e se esci dall'app per cercare la risposta la domanda è persa.</p>
-          <div className="modes">
-            <button className="mode" onClick={() => parti("alltime")}>
-              <span className="mode-emoji">🏆</span>
-              <span>
-                <strong>All Time</strong>
-                <small>Domande a oltranza, sempre più difficili. Se ne sbagli due di fila hai un'ultima chance: sbagli anche quella e sei fuori. Quante ne fai?</small>
-              </span>
-            </button>
-            <button className="mode" onClick={() => parti("classica")}>
-              <span className="mode-emoji">⏱️</span>
-              <span>
-                <strong>Sfida da 10</strong>
-                <small>{DOMANDE_PER_PARTITA} domande: più sei veloce, più punti fai. Una partita in 3 minuti.</small>
-              </span>
-            </button>
+          <div className="regole">
+            <p><b>Le domande non finiscono mai.</b> Vai avanti finché resisti.</p>
+            <p><b>Parti con 0 vite.</b> Ogni 3 risposte giuste ne guadagni una.</p>
+            <p><b>Sbagli?</b> Perdi una vita. Se sbagli quando non ne hai, la partita finisce.</p>
+            <p><b>Niente aiutini:</b> {SECONDI_PER_DOMANDA} secondi a domanda, e se esci dall'app per cercare la risposta la domanda è persa.</p>
           </div>
-          <button className="link" onClick={() => setFase("classifica")}>Vedi le classifiche</button>
+          <button className="btn btn--primary wide" onClick={() => parti()}>Inizia</button>
+          <button className="link" onClick={() => setFase("classifica")}>Vedi la classifica</button>
         </div>
       )}
 
       {fase === "gioco" && q && (
         <div className="fade" key={i}>
           <div className="hud">
-            {modalita === "classica" ? (
-              <>
-                <span>Domanda {i + 1}/{domande.length}</span>
-                <span className="score">{punti} pt</span>
-              </>
-            ) : (
-              <>
-                <span className="lives" aria-label={`Errori di fila: ${erroriDiFila}`}>
-                  {ultimaChance ? <b className="last-chance">⚠️ Ultima chance</b> : <>{erroriDiFila >= 1 ? "🍂" : "🍇"}{erroriDiFila >= 2 ? "🍂" : "🍇"}</>}
-                </span>
-                <span className="score">{corrette} ✓</span>
-              </>
-            )}
+            <span className="lives" aria-label={`Vite: ${vite}`}>
+              {vite > 0 ? <>{"❤️".repeat(Math.min(vite, 5))}{vite > 5 && <b> ×{vite}</b>}</> : <b className="last-chance">0 vite</b>}
+            </span>
+            <span className="score">{corrette} ✓</span>
           </div>
           <div className={`timer ${tempo < 5 ? "timer--low" : ""}`}><div style={{ width: `${(tempo / SECONDI_PER_DOMANDA) * 100}%` }} /></div>
           <div className="tiny right">
-            {modalita === "alltime" && `Domanda ${i + 1} · `}{Math.ceil(tempo)}s · {"★".repeat(q.livello)}{"☆".repeat(3 - q.livello)}
+            Domanda {i + 1} · {Math.ceil(tempo)}s · {versoVita === 1 ? "la prossima giusta vale una vita" : `${versoVita} giuste alla prossima vita`}
           </div>
           <h2 className="q-text">{q.d}</h2>
           <div className="options">
@@ -166,39 +149,37 @@ export default function QuizToscana({ onExit, iniziale = "start" }) {
               return <button key={o} className={`option ${stato}`} onClick={() => rispondi(o)} disabled={!!scelta}>{o}</button>;
             })}
           </div>
+          {!scelta && nota && <p className="tiny avviso">{nota}</p>}
           {scelta && (
             <p className={`feedback ${scelta === q.giusta ? "ok" : "error"}`}>
-              {scelta === q.giusta
-                ? modalita === "classica" ? `Giusto! +${ultimiPunti}` : "Giusto!"
-                : scelta === "__tempo" ? "Tempo scaduto!" : scelta === "__uscito" ? "Sei uscito dall'app: domanda persa!" : "Sbagliato!"}
+              {scelta === q.giusta ? "Giusto!" : scelta === "__tempo" ? "Tempo scaduto!" : scelta === "__uscito" ? "Sei uscito dall'app: domanda persa!" : "Sbagliato!"}
+              {nota && ` ${nota}`}
             </p>
           )}
+          {scelta && q.p && <p className="spiega fade">{q.p}</p>}
+          {scelta && <button className="btn btn--primary wide avanti" onClick={avanti} autoFocus>{finita ? "Vedi il risultato" : "Avanti"}</button>}
         </div>
       )}
 
-      {fase === "fine" && (
-        <Fine modalita={modalita} punti={punti} corrette={corrette} totale={modalita === "classica" ? domande.length : null} finite={finite} onRigioca={() => parti(modalita)} onExit={onExit} />
-      )}
+      {fase === "fine" && <Fine corrette={corrette} onRigioca={() => parti()} onExit={onExit} />}
 
       {fase === "classifica" && (
         <div className="fade">
-          <h1 className="page-title">Classifiche</h1>
-          <Classifiche iniziale="alltime" />
-          <button className="btn btn--primary wide" style={{ marginTop: 20 }} onClick={() => setFase("start")}>Gioca</button>
+          <h1 className="page-title">Classifica</h1>
+          <p className="tiny">Conta quante risposte giuste fai prima di cadere.</p>
+          <Classifica limite={50} />
+          <button className="btn btn--primary wide" style={{ marginTop: 20 }} onClick={() => parti()}>Gioca</button>
         </div>
       )}
     </div>
   );
 }
 
-function Fine({ modalita, punti, corrette, totale, finite, onRigioca, onExit }) {
+function Fine({ corrette, onRigioca, onExit }) {
   const [nome, setNome] = useState(() => localStorage.getItem("bevotoscano-nome") || "");
   const [paese, setPaese] = useState(() => localStorage.getItem("bevotoscano-paese") || "IT");
   const [stato, setStato] = useState("");
-  const alltime = modalita === "alltime";
-  const [t, emoji] = alltime ? titoloAllTime(corrette, finite) : titoloClassica(corrette);
-  const titoloRisultato = alltime ? `${corrette} di fila` : `${punti} punti`;
-  const sopra = alltime ? (finite ? "Hai risposto a tutte le domande!" : "All Time · risposte giuste") : `${corrette} giuste su ${totale}`;
+  const [t, emoji] = titolo(corrette);
 
   const invia = async (e) => {
     e.preventDefault();
@@ -207,7 +188,7 @@ function Fine({ modalita, punti, corrette, totale, finite, onRigioca, onExit }) 
     try {
       localStorage.setItem("bevotoscano-nome", nome.trim());
       localStorage.setItem("bevotoscano-paese", paese);
-      await inviaPunteggio({ nome, paese, punti, corrette, modalita });
+      await inviaPunteggio({ nome, paese, punti: corrette, corrette, modalita: "alltime" });
       setStato("inviato");
     } catch {
       setStato("errore");
@@ -216,14 +197,14 @@ function Fine({ modalita, punti, corrette, totale, finite, onRigioca, onExit }) 
 
   return (
     <div className="game-center fade light">
-      <span className="eyebrow">{sopra}</span>
+      <span className="eyebrow">Partita finita</span>
       <div className="big-emoji">{emoji}</div>
-      <h2 className="result-name">{alltime ? <>{corrette} <small className="result-unit">risposte</small></> : `${punti} punti`}</h2>
+      <h2 className="result-name">{corrette} <small className="result-unit">{corrette === 1 ? "giusta" : "giuste"}</small></h2>
       <p className="result-tagline">{t}</p>
 
       {stato !== "inviato" ? (
         <form className="glass-form" onSubmit={invia}>
-          <span>Entra nella classifica {MODALITA[modalita].nome}</span>
+          <span>Entra in classifica</span>
           <input className="input" placeholder="Il tuo nome" maxLength={20} value={nome} onChange={(e) => setNome(e.target.value)} />
           <select className="input" value={paese} onChange={(e) => setPaese(e.target.value)} aria-label="Paese">
             {PAESI.map(([c, l]) => <option key={c} value={c}>{l}</option>)}
@@ -232,17 +213,17 @@ function Fine({ modalita, punti, corrette, totale, finite, onRigioca, onExit }) 
           <button className="btn btn--outline-light" type="submit" disabled={stato === "invio" || !nome.trim()}>{stato === "invio" ? "Salvo…" : "Salva il punteggio"}</button>
         </form>
       ) : (
-        <div className="glass-form"><Classifiche iniziale={modalita} evidenzia={nome.trim().slice(0, 20)} /></div>
+        <div className="glass-form"><Classifica evidenzia={nome.trim().slice(0, 20)} /></div>
       )}
 
       <ShareButton
         label="Sfida gli amici nelle stories ✨"
-        filename={`bevotoscano-quiz-${modalita}-${alltime ? corrette : punti}`}
-        card={{ gradient: GRADIENTE, eyebrow: alltime ? "Quiz All Time sul vino toscano" : "Quiz sul vino toscano", emoji, title: titoloRisultato, tagline: t, body: alltime ? "Risposte giuste di fila, senza aiutini. Riesci a fare meglio?" : `${corrette} risposte giuste su ${totale}. Riesci a battermi?` }}
+        filename={`bevotoscano-quiz-${corrette}`}
+        card={{ gradient: GRADIENTE, eyebrow: "Quiz infinito sul vino toscano", emoji, title: `${corrette} giuste`, tagline: t, body: "Domande senza fine, senza aiutini. Riesci a fare meglio?" }}
       />
       <div className="row">
         <button className="link light" onClick={onRigioca}>Rigioca</button>
-        <button className="link light" onClick={onExit}>Altri giochi</button>
+        <button className="link light" onClick={onExit}>Torna ai giochi</button>
       </div>
     </div>
   );
