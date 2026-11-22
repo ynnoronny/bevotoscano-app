@@ -207,7 +207,7 @@ function FineFeed() {
       <footer className="piede">
         <p>Bevi responsabilmente: se bevi, non guidare.</p>
         <div className="piede-riga">
-          {RYB_URL ? <a href={RYB_URL} target="_blank" rel="noopener">made by <b>ryb</b></a> : <span>made by <b>ryb</b></span>}
+          {RYB_URL ? <a href={RYB_URL} target="_blank" rel="noopener">made with <span className="piede-cuore" aria-label="amore">♡</span> by <b>RYB</b></a> : <span>made with ♡ by <b>RYB</b></span>}
           <span className="piede-beta" title="L'app è in prova: qualcosa può ancora cambiare">beta</span>
         </div>
       </footer>

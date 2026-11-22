@@ -528,6 +528,8 @@ html, body { height: 100%; }
 .piede-riga a, .piede-riga > span:first-child { color: var(--plum); font-weight: 600; letter-spacing: 0.3px; }
 .piede-riga b { font-family: var(--marchio); font-size: 16px; font-weight: 800; }
 .piede-riga a:hover { color: var(--wine); }
+.piede-cuore { display: inline-block; color: var(--wine); transition: transform 0.2s; }
+.piede-riga a:hover .piede-cuore { transform: scale(1.3); }
 .piede-beta { padding: 3px 9px 3px 8px; border-radius: 999px; background: var(--plum); color: var(--gold); font-size: 10.5px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase; display: inline-flex; align-items: center; gap: 5px; }
 .piede-beta::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--gold); animation: pulsa 2s ease-in-out infinite; }
 
