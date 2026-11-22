@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
 
   let azione = "", dati: Record<string, unknown> = {};
   try { ({ azione, ...dati } = await req.json()); } catch { return json({ errore: "Richiesta non valida" }, 400); }
-  const fn = { cartelle: posta.cartelle, lista: posta.lista, leggi: posta.leggi, allegato: posta.allegato, invia: posta.invia }[azione];
+  const fn = { cartelle: posta.cartelle, lista: posta.lista, leggi: posta.leggi, allegato: posta.allegato, invia: posta.invia, elimina: posta.elimina }[azione];
   if (!fn) return json({ errore: "Azione sconosciuta" }, 400);
 
   try {
