@@ -183,3 +183,34 @@ begin
 end $$;
 drop trigger if exists limita_proposte on proposte;
 create trigger limita_proposte before insert on proposte for each row execute function limita_proposte();
+
+-- ===================== SCANNER (vedi docs/SCANNER.md) =====================
+-- Le tabelle dello scanner (scanner_attori, notizie, scanner_*) e le sue funzioni le gestisce
+-- l'agente ricerca: qui solo le modifiche fatte lato app, già applicate al database il 22/11/2026.
+
+-- Vista pubblica degli eventi: aggiunti in coda i campi nuovi dello scanner.
+create or replace view public.eventi_pubblici as
+select id, titolo, descrizione, inizio, fine, altre_date, luogo_nome, indirizzo, comune, lat, lng, vini, guidato, accesso, pickup, prezzo, link, immagine, org_tipo, org_nome, org_social,
+  orari, provincia, prenotazione, categoria, orario_trovato
+from public.eventi
+where stato = 'pubblicato' and coalesce(fine, inizio) > now() - interval '1 day';
+
+-- Anti-spam sulle cantine/enoteche segnalate dagli utenti (solo origine = 'segnalazione').
+create or replace function public.limita_segnalazioni_attori() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if new.origine = 'segnalazione' then
+    if (new.segnalato_da_email is not null and (select count(*) from scanner_attori
+          where origine = 'segnalazione' and lower(segnalato_da_email) = lower(new.segnalato_da_email)
+            and creato > now() - interval '1 day') >= 5)
+       or (select count(*) from scanner_attori
+          where origine = 'segnalazione' and creato > now() - interval '1 hour') >= 30 then
+      raise exception 'troppe segnalazioni, riprova più tardi';
+    end if;
+  end if;
+  return new;
+end $$;
+revoke execute on function public.limita_segnalazioni_attori() from public, anon, authenticated;
+drop trigger if exists limita_segnalazioni_attori on public.scanner_attori;
+create trigger limita_segnalazioni_attori before insert on public.scanner_attori
+  for each row execute function public.limita_segnalazioni_attori();
