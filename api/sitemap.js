@@ -1,13 +1,15 @@
 // bevotoscano.com/sitemap.xml: l'elenco delle pagine da dare a Google, eventi compresi.
 // Si aggiorna da sola: ogni evento pubblicato nell'admin compare qui entro un'ora.
 import { leggiEventi } from "../scripts/eventi-db.mjs";
-import { SITO, PERCORSI_PUBBLICI, eventoPercorso, esc } from "../src/seo.js";
+import { SITO, PERCORSI_PUBBLICI, eventoPercorso, cantinaPercorso, esc } from "../src/seo.js";
+import { CANTINE } from "../src/data.js";
 
 export default async function handler(req, res) {
   let eventi = [];
   try { eventi = await leggiEventi(); } catch { /* senza eventi, solo le pagine fisse */ }
   const righe = [
     ...PERCORSI_PUBBLICI.map((p) => ({ loc: `${SITO}/${p}` })),
+    ...CANTINE.map((c) => ({ loc: `${SITO}/${cantinaPercorso(c)}` })),
     ...eventi.map((e) => ({ loc: `${SITO}/${eventoPercorso(e)}`, lastmod: e.aggiornato || e.creato })),
   ];
   const xml = `<?xml version="1.0" encoding="UTF-8"?>

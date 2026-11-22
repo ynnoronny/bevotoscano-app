@@ -67,6 +67,7 @@ export function metaPercorso(percorso) {
   let p = String(percorso || "").replace(/^\/+|\/+$/g, "");
   p = ALIAS[p] ?? p;
   const [a, b] = p.split("/");
+  if (a === "cantine" && b) return null;
   if (a === "eventi" && b) {
     if (!FILTRI_EVENTI.includes(b)) return null;
     p = "eventi";
@@ -250,4 +251,48 @@ export function applicaMeta(m, jsonLd) {
     s.textContent = JSON.stringify(jsonLd);
     document.head.appendChild(s);
   }
+}
+
+// ---------- cantine ----------
+// Ogni cantina ha la sua pagina: bevotoscano.com/cantine/fibbiano
+export const cantinaPercorso = (c) => `cantine/${c.id}`;
+
+export function cantinaMeta(c) {
+  const vino = c.vinoPiuToscano ? ` Il suo vino più toscano: ${c.vinoPiuToscano}.` : "";
+  return {
+    title: `${c.nome}, cantina a ${c.comune} (${c.zona}) | ${NOME}`,
+    description: taglia(`${c.nome} è una piccola cantina toscana a ${c.comune}, ${c.zona}. Visite, degustazioni ed eventi del vino con chi il vino lo fa.${vino}`, 160),
+    url: `${SITO}/${cantinaPercorso(c)}`,
+  };
+}
+
+// schema.org/Winery: nome, luogo, sito della cantina. Aiuta Google a capire di chi parliamo.
+export function cantinaJsonLd(c, pos) {
+  return JSON.parse(JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "Winery",
+    name: c.nome,
+    url: `${SITO}/${cantinaPercorso(c)}`,
+    sameAs: c.sito ? [c.sito] : undefined,
+    address: { "@type": "PostalAddress", addressLocality: c.comune, addressRegion: "Toscana", addressCountry: "IT" },
+    geo: pos ? { "@type": "GeoCoordinates", latitude: pos[0], longitude: pos[1] } : undefined,
+    description: cantinaMeta(c).description,
+  }));
+}
+
+// Briciole di pane: su Google il risultato mostra "Bevotoscano › Cantine › Fattoria Fibbiano".
+export function briciole(voci) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [["Bevotoscano", ""], ...voci].map(([name, p], i) => ({ "@type": "ListItem", position: i + 1, name, item: `${SITO}/${p}` })),
+  };
+}
+
+export function cantinaCorpo(c) {
+  return `<div class="app"><main class="page"><a class="link" href="/cantine">← Tutte le cantine</a>
+<p class="eyebrow">${esc(c.comune)} · ${esc(c.zona)}</p>
+<h1 class="page-title">${esc(c.nome)}</h1>
+<p>${esc(cantinaMeta(c).description)}</p>
+${c.sito ? `<p><a href="${esc(c.sito)}" rel="noopener">Sito della cantina</a></p>` : ""}</main></div>`;
 }

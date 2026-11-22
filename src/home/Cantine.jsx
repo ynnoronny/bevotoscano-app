@@ -4,18 +4,10 @@ import "leaflet/dist/leaflet.css";
 import { CANTINE, CONTACT_EMAIL } from "../data.js";
 import { eventiPubblici } from "../eventi/api.js";
 import { go } from "../nav.js";
-import { eventoPercorso } from "../seo.js";
+import Link from "../Link.jsx";
+import { pos } from "./luoghi.js";
+import { cantinaPercorso, cantinaMeta, cantinaJsonLd, briciole, applicaMeta, eventoPercorso } from "../seo.js";
 
-// Posizione indicativa per comune o frazione (la cantina è nei dintorni).
-// Per una cantina nuova: aggiungi qui il suo comune, oppure metti lat/lng direttamente in data.js.
-const COMUNI = {
-  Terricciola: [43.5254, 10.6789],
-  Riparbella: [43.3666, 10.5985],
-  "San Miniato": [43.6797, 10.8505],
-  Montefoscoli: [43.5603, 10.7322],
-  Ghizzano: [43.5533, 10.7650],
-};
-const pos = (c) => (c.lat != null ? [c.lat, c.lng] : COMUNI[c.comune]);
 const iniziale = (nome) => nome.replace(/^(Podere|Fattoria|Tenuta( di)?|La|L')\s*/i, "").charAt(0);
 
 function MappaCantine({ cantine, attiva, onScegli }) {
@@ -46,7 +38,54 @@ function MappaCantine({ cantine, attiva, onScegli }) {
   return <div ref={box} className="mappa mappa--bassa" />;
 }
 
-export default function Cantine() {
+export default function Cantine({ apri }) {
+  const scheda = apri && CANTINE.find((c) => c.id === apri);
+  if (scheda) return <Scheda c={scheda} />;
+  return <Elenco />;
+}
+
+// La pagina di una cantina: bevotoscano.com/cantine/fibbiano
+function Scheda({ c }) {
+  const [eventi, setEventi] = useState([]);
+  useEffect(() => { eventiPubblici().then(setEventi).catch(() => {}); }, []);
+  useEffect(() => {
+    applicaMeta(cantinaMeta(c), [cantinaJsonLd(c, pos(c)), briciole([["Cantine", "cantine"], [c.nome, cantinaPercorso(c)]])]);
+    window.scrollTo(0, 0);
+  }, [c.id]);
+  const ev = eventi.filter((e) => [e.org_nome, e.luogo_nome].some((n) => (n || "").toLowerCase() === c.nome.toLowerCase()));
+  const vicine = CANTINE.filter((x) => x.id !== c.id && (x.comune === c.comune || x.zona === c.zona)).slice(0, 4);
+  return (
+    <>
+      <Link className="link" to="cantine">← Tutte le cantine</Link>
+      <p className="eyebrow">{c.comune} · {c.zona}</p>
+      <h1 className="page-title">{c.nome}</h1>
+      <MappaCantine cantine={[c]} attiva={c.id} onScegli={() => {}} />
+      <section className="card">
+        {c.vinoPiuToscano
+          ? <p className="cantina-wine">Il suo vino più toscano: <b>{c.vinoPiuToscano}</b></p>
+          : <p className="muted">Una piccola cantina di {c.comune}, nella zona {c.zona}. Presto andiamo a trovarla e le chiediamo qual è il suo vino più toscano.</p>}
+        <div className="row">
+          {c.reel && <a className="link" href={c.reel} target="_blank" rel="noopener">Guarda il reel</a>}
+          {c.sito && <a className="link" href={c.sito} target="_blank" rel="noopener">Sito della cantina</a>}
+        </div>
+      </section>
+      {ev.length > 0 && (
+        <section className="card">
+          <strong>Eventi in arrivo</strong>
+          {ev.map((e) => <Link key={e.id} className="link" to={eventoPercorso(e)}>{e.titolo}</Link>)}
+        </section>
+      )}
+      {vicine.length > 0 && (
+        <section className="card">
+          <strong>Altre cantine qui vicino</strong>
+          {vicine.map((x) => <Link key={x.id} className="link" to={cantinaPercorso(x)}>{x.nome}, {x.comune}</Link>)}
+        </section>
+      )}
+    </>
+  );
+}
+
+function Elenco() {
   const [zona, setZona] = useState("Tutte");
   const [attiva, setAttiva] = useState(null);
   const [eventi, setEventi] = useState([]);
@@ -107,6 +146,7 @@ export default function Cantine() {
               <div className="row">
                 {c.reel && <a className="link" href={c.reel} target="_blank" rel="noopener">Guarda il reel</a>}
                 {c.sito && <a className="link" href={c.sito} target="_blank" rel="noopener">Sito della cantina</a>}
+                <Link className="link" to={cantinaPercorso(c)} onClick={(x) => x.stopPropagation()}>Scheda della cantina →</Link>
               </div>
             </article>
           );

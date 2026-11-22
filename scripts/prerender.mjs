@@ -4,7 +4,8 @@
 // Le schede dei singoli eventi le prepara al volo api/evento.js, così sono sempre aggiornate.
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
-import { PAGINE, metaPercorso, headHtml, inserisci, esc, eventoPercorso, SITO_JSON_LD } from "../src/seo.js";
+import { PAGINE, metaPercorso, headHtml, inserisci, esc, eventoPercorso, SITO_JSON_LD, cantinaPercorso, cantinaMeta, cantinaJsonLd, cantinaCorpo, briciole } from "../src/seo.js";
+import { pos } from "../src/home/luoghi.js";
 import { CANTINE, ESPERIENZE, CASSA, GIOCHI } from "../src/data.js";
 import { leggiEventi } from "./eventi-db.mjs";
 
@@ -41,7 +42,7 @@ const CORPI = {
   eventi: pagina("Eventi del vino in Toscana", "Gli eventi del vino toscano, con chi il vino lo fa: degustazioni, cene in cantina, sagre. Cerca vicino a te, nel weekend o senza auto, con i punti di raccolta dei bus.",
     listaEventi + '<p><a href="/segnala">Organizzi un evento? Segnalalo, è gratis</a></p>'),
   cantine: pagina("Piccoli produttori, scelti uno a uno", "Andiamo a conoscerle di persona e a ognuna chiediamo qual è il suo vino più toscano. Si parte dalle colline pisane, intorno a Terricciola.",
-    `<ul>${CANTINE.map((c) => `<li>${c.sito ? `<a href="${esc(c.sito)}" rel="noopener">${esc(c.nome)}</a>` : esc(c.nome)}, ${esc(c.comune)} (${esc(c.zona)})</li>`).join("")}</ul>`),
+    `<ul>${CANTINE.map((c) => `<li><a href="/${cantinaPercorso(c)}">${esc(c.nome)}</a>, ${esc(c.comune)} (${esc(c.zona)})</li>`).join("")}</ul>`),
   gioca: pagina("Gioca", "La parte gaming di Bevotoscano: impari il vino toscano giocando, e sfidi il mondo.", listaGiochi),
   "gioca/quiz": pagina("Quanto ne sai di vino toscano?", "Il quiz a tempo sul vino toscano: vitigni, denominazioni, territori. Sfida da 10 domande o All Time a oltranza, con la classifica."),
   "gioca/oroscopo": pagina("L'oroscopo del vino", "Inserisci giorno e mese di nascita e scopri il tuo vitigno toscano, con l'oroscopo del mese da condividere nelle stories."),
@@ -60,6 +61,12 @@ for (const p of Object.keys(PAGINE)) {
   mkdirSync(dirname(file.pathname), { recursive: true });
   writeFileSync(file, html);
 }
+// Una pagina per ogni cantina: dist/cantine/fibbiano.html → bevotoscano.com/cantine/fibbiano
+mkdirSync(new URL("cantine/", DIST), { recursive: true });
+for (const c of CANTINE) {
+  const ld = [cantinaJsonLd(c, pos(c)), briciole([["Cantine", "cantine"], [c.nome, cantinaPercorso(c)]])];
+  writeFileSync(new URL(`${cantinaPercorso(c)}.html`, DIST), inserisci(base, headHtml(cantinaMeta(c), ld), cantinaCorpo(c)));
+}
 // Modello per le schede evento (api/evento.js): l'app senza contenuto, con i meta di /eventi.
 writeFileSync(new URL("_evento.html", DIST), inserisci(base, headHtml(metaPercorso("eventi")), ""));
-console.log(`prerender: ${Object.keys(PAGINE).length} pagine, ${eventi.length} eventi in elenco`);
+console.log(`prerender: ${Object.keys(PAGINE).length} pagine, ${CANTINE.length} cantine, ${eventi.length} eventi in elenco`);
