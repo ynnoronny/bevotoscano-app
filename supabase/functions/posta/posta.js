@@ -24,7 +24,31 @@ export function creaPosta({ ImapFlow, nodemailer, PostalMime, cfg }) {
     return (l.find((m) => m.specialUse === "\\Sent") || l.find((m) => /sent|inviat/i.test(m.path)))?.path;
   }
 
+  async function cartellaCestino(c) {
+    const l = await c.list();
+    return (l.find((m) => m.specialUse === "\\Trash") || l.find((m) => /trash|cestin|deleted/i.test(m.path)))?.path;
+  }
+
   return {
+    // Sposta nel cestino; se la mail è già nel cestino, la elimina per sempre.
+    async elimina({ cartella = "INBOX", uid }) {
+      if (!uid) throw new Error("Mail non indicata");
+      return conImap(async (c) => {
+        const cestino = await cartellaCestino(c);
+        const lock = await c.getMailboxLock(cartella);
+        try {
+          if (cestino && cartella !== cestino) {
+            await c.messageMove(String(uid), cestino, { uid: true });
+            return { ok: true, esito: "cestino" };
+          }
+          await c.messageDelete(String(uid), { uid: true });
+          return { ok: true, esito: "eliminata" };
+        } finally {
+          lock.release();
+        }
+      });
+    },
+
     async cartelle() {
       return conImap(async (c) => {
         const l = await c.list();

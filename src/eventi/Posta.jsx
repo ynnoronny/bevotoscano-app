@@ -51,7 +51,18 @@ export default function Posta({ onSessione }) {
     }} onSessione={onSessione} />;
   }
 
-  if (aperta) return <Mail m={aperta} cartella={cartella} onIndietro={() => setAperta(null)} onScrivi={setScrivi} onErrore={gestisci} err={err} />;
+  const nelCestino = cartelle.find((c) => c.path === cartella)?.speciale === "\\Trash" || /trash|cestin|deleted/i.test(cartella);
+  const elimina = async (m) => {
+    if (nelCestino && !confirm("Eliminare per sempre questa mail? Non si potrà recuperare.")) return;
+    setErr("");
+    try {
+      await posta("elimina", { cartella, uid: m.uid });
+      setLista((l) => (l || []).filter((x) => x.uid !== m.uid));
+      setAperta(null);
+    } catch (e) { gestisci(e); }
+  };
+
+  if (aperta) return <Mail m={aperta} cartella={cartella} nelCestino={nelCestino} onElimina={() => elimina(aperta)} onIndietro={() => setAperta(null)} onScrivi={setScrivi} onErrore={gestisci} err={err} />;
 
   const visibili = cartelle.filter((c) => c.speciale !== "\\Drafts");
   return (
@@ -82,7 +93,7 @@ export default function Posta({ onSessione }) {
   );
 }
 
-function Mail({ m, cartella, onIndietro, onScrivi, onErrore, err }) {
+function Mail({ m, cartella, nelCestino, onElimina, onIndietro, onScrivi, onErrore, err }) {
   const rispondi = (tutti) => {
     const a = (m.rispondiA || m.da)?.email || "";
     const cc = tutti ? [...m.a, ...m.cc].map((p) => p.email).filter((e) => e && !/info@bevotoscano\.com/i.test(e) && e !== a).join(", ") : "";
@@ -124,6 +135,7 @@ function Mail({ m, cartella, onIndietro, onScrivi, onErrore, err }) {
             <button className="btn btn--primary" onClick={() => rispondi(false)}>Rispondi</button>
             {(m.a?.length > 1 || m.cc?.length > 0) && <button className="btn btn--outline" onClick={() => rispondi(true)}>Rispondi a tutti</button>}
             <button className="link" onClick={inoltra}>Inoltra</button>
+            <button className="link" onClick={onElimina}>{nelCestino ? "Elimina per sempre" : "🗑 Elimina"}</button>
           </div>
           {m.allegati?.length > 0 && (
             <div className="chips">
