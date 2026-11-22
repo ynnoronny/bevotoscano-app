@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { online, accedi, esci, sessione, tuttiGliEventi, salvaEvento, eliminaEvento, pickupPoints, salvaPickup } from "./api.js";
+import { online, accedi, esci, sessione, livello, fattoreAttivo, nuovoFattore, verificaCodice, tuttiGliEventi, salvaEvento, eliminaEvento, pickupPoints, salvaPickup } from "./api.js";
 import { cercaLuogo } from "./geo.js";
 import { TIPI_ORG, fmtData, senzaAuto } from "./shared.js";
 import { CampiEvento, Campo } from "./Segnala.jsx";
@@ -24,6 +24,7 @@ export default function Admin() {
   const [s, setS] = useState(sessione);
   const [area, setArea] = useState("eventi");
   if (online() && !s) return <Login onOk={setS} />;
+  if (online() && livello(s) !== "aal2") return <Codice email={s.email} onOk={setS} onEsci={() => { esci(); setS(null); }} />;
   const fuori = () => { esci(); setS(null); };
   return (
     <>
@@ -49,10 +50,56 @@ function Login({ onOk }) {
   return (
     <form className="card" onSubmit={async (e) => { e.preventDefault(); try { onOk(await accedi(email, pw)); } catch (x) { setErr(x.message); } }}>
       <h1 className="page-title">Area admin</h1>
-      <input className="input" type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
-      <input className="input" type="password" placeholder="Password" value={pw} onChange={(e) => setPw(e.target.value)} />
+      <input className="input" type="email" autoComplete="username" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+      <input className="input" type="password" autoComplete="current-password" placeholder="Password" value={pw} onChange={(e) => setPw(e.target.value)} />
       {err && <p className="error">{err}</p>}
       <button className="btn btn--primary" type="submit">Entra</button>
+    </form>
+  );
+}
+
+// Secondo passo dopo la password: le 6 cifre dell'app (Google Authenticator o simili).
+// La prima volta mostra il QR da inquadrare; dalle volte dopo chiede solo il codice.
+function Codice({ email, onOk, onEsci }) {
+  const [fattore, setFattore] = useState(undefined); // undefined = carico, null = da attivare
+  const [nuovo, setNuovo] = useState(null);
+  const [code, setCode] = useState("");
+  const [err, setErr] = useState("");
+  const [invio, setInvio] = useState(false);
+  const guasto = (x) => (x.message === "sessione" ? onEsci() : setErr(x.message));
+  useEffect(() => {
+    fattoreAttivo().then(async (f) => {
+      setFattore(f);
+      if (!f) setNuovo(await nuovoFattore());
+    }).catch(guasto);
+  }, []);
+  const id = fattore?.id || nuovo?.id;
+  const invia = async (e) => {
+    e.preventDefault();
+    if (!/^\d{6}$/.test(code.trim())) return setErr("Scrivi le 6 cifre che vedi nell'app.");
+    setErr(""); setInvio(true);
+    try { onOk(await verificaCodice(id, code.trim())); } catch (x) { setInvio(false); setCode(""); x.message === "sessione" ? onEsci() : setErr("Codice non giusto o scaduto: riprova con quello nuovo."); }
+  };
+  return (
+    <form className="card stack" onSubmit={invia}>
+      <h1 className="page-title">Codice di accesso</h1>
+      <small className="muted">{email}</small>
+      {fattore === undefined && !err && <p className="muted">Un attimo…</p>}
+      {fattore === null && nuovo && (
+        <>
+          <p>Prima volta: apri <b>Google Authenticator</b> (o un'app simile), tocca <b>+</b> e inquadra questo codice.</p>
+          <img src={nuovo.totp.qr_code} alt="Codice QR da inquadrare" style={{ width: 200, height: 200, background: "#fff", borderRadius: 12, alignSelf: "center" }} />
+          <small className="muted">Non riesci a inquadrarlo? Inserisci a mano questa chiave: <code style={{ wordBreak: "break-all" }}>{nuovo.totp.secret}</code></small>
+          <p>Poi scrivi qui sotto le 6 cifre che compaiono nell'app.</p>
+        </>
+      )}
+      {fattore && <p>Scrivi le 6 cifre che vedi ora nell'app di autenticazione.</p>}
+      {id && <input className="input" inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="123456" value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} autoFocus />}
+      {err && <p className="error">{err}</p>}
+      <div className="row">
+        {id && <button className="btn btn--primary" type="submit" disabled={invio}>{invio ? "Controllo…" : "Entra"}</button>}
+        <button type="button" className="link" onClick={onEsci}>Esci</button>
+      </div>
     </form>
   );
 }

@@ -77,6 +77,42 @@ async function auth(grant, body) {
 }
 export const accedi = (email, password) => auth("password", { email, password });
 
+// ---------- secondo passo: codice a due fattori (TOTP, es. Google Authenticator) ----------
+// Il database dà i permessi da admin solo a una sessione che ha passato anche il codice ("aal2").
+export function livello(s = sessione()) {
+  try { return JSON.parse(atob(s.token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))).aal || "aal1"; } catch { return null; }
+}
+async function authApi(path, { method = "GET", body } = {}) {
+  const r = await fetch(`${SUPABASE_URL}/auth/v1/${path}`, {
+    method,
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${await token()}`, "Content-Type": "application/json" },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.msg || j.message || j.error_description || `Errore ${r.status}`);
+  return j;
+}
+// Il codice a due fattori già attivo su questo account (se c'è).
+export async function fattoreAttivo() {
+  const u = await authApi("user");
+  return (u.factors || []).find((f) => f.factor_type === "totp" && f.status === "verified") || null;
+}
+// Prima volta: crea il codice e restituisce il QR da inquadrare con l'app.
+export async function nuovoFattore() {
+  const u = await authApi("user");
+  // toglie i tentativi lasciati a metà, altrimenti Supabase non ne accetta uno nuovo
+  for (const f of (u.factors || []).filter((f) => f.status !== "verified")) await authApi(`factors/${f.id}`, { method: "DELETE" }).catch(() => {});
+  return authApi("factors", { method: "POST", body: { factor_type: "totp", friendly_name: `Bevotoscano ${new Date().toISOString().slice(0, 16)}` } });
+}
+// Controlla le 6 cifre: se sono giuste, la sessione passa ad "aal2" e si salva.
+export async function verificaCodice(factorId, code) {
+  const c = await authApi(`factors/${factorId}/challenge`, { method: "POST" });
+  const j = await authApi(`factors/${factorId}/verify`, { method: "POST", body: { challenge_id: c.id, code } });
+  const s = { token: j.access_token, refresh: j.refresh_token, email: j.user?.email, scade: Date.now() + j.expires_in * 1000 };
+  localStorage.setItem(SESSION, JSON.stringify(s));
+  return s;
+}
+
 async function token() {
   let s = sessione();
   if (!s) throw new Error("sessione");
