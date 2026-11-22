@@ -59,7 +59,7 @@ export const CASSA = {
 
 // I minigiochi. Per aggiungerne uno: crea il componente in src/games e aggiungilo qui.
 export const GIOCHI = [
-  { id: "quiz", titolo: "Quanto ne sai di vino toscano?", sottotitolo: "All Time a oltranza o Sfida da 10", emoji: "🍷", pronto: true },
-  { id: "oroscopo", titolo: "L'oroscopo del vino", sottotitolo: "Il tuo segno, il tuo vitigno, il tuo mese", emoji: "♌", pronto: true },
-  { id: "classifica", titolo: "Classifiche", sottotitolo: "Chi ne sa di più, da sempre", emoji: "🏆", pronto: true },
+  { id: "quiz", titolo: "Quanto ne sai di vino toscano?", sottotitolo: "Domande infinite e una riga di spiegazione dopo ogni risposta", emoji: "🍷", pronto: true },
+  { id: "oroscopo", titolo: "L'oroscopo del vino", sottotitolo: "Il tuo segno del mese, con l'affine e l'antagonista", emoji: "♌", pronto: true },
+  { id: "classifica", titolo: "Classifica", sottotitolo: "Quante risposte giuste prima di cadere", emoji: "🏆", pronto: true },
 ];

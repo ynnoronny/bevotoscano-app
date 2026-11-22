@@ -23,7 +23,7 @@ try {
 const dataBreve = (iso) => new Date(iso).toLocaleDateString("it-IT", { weekday: "short", day: "numeric", month: "long", timeZone: "Europe/Rome" });
 
 // Stesse classi dell'app, così il passaggio alla pagina vera non si nota.
-const TAB = [["", "🏡", "Scopri"], ["eventi", "📅", "Eventi"], ["cantine", "🍷", "Cantine"], ["gioca", "🎲", "Gioca"]];
+const TAB = [["eventi", "📅", "Eventi"], ["cantine", "🍷", "Cantine"], ["blog", "📖", "Blog"], ["gioca", "🎲", "Giochi"]];
 const guscio = (corpo) => `<div class="app"><header class="topbar"><a class="logo" href="/">Bevotoscano</a><span class="logo-claim">Il vino da vivere</span></header>
 <main class="page">${corpo}</main>
 <nav class="tabbar">${TAB.map(([p, i, l]) => `<a class="tab" href="/${p}"><span class="tab-icon">${i}</span><span>${l}</span></a>`).join("")}</nav></div>`;
