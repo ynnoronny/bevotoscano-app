@@ -635,3 +635,10 @@ html, body { height: 100%; }
   .feed-griglia--blog .art--primo { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); column-gap: 22px; align-content: center; }
   .feed-griglia--blog .art--primo .art-img { grid-row: 1 / span 5; margin: 0; }
 }
+
+/* Gestionale: da dove arriva l'evento */
+.admin-testa { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.admin-origine { font-size: 12px; font-weight: 800; padding: 4px 10px; border-radius: 999px; background: var(--cream); color: var(--plum); }
+.admin-origine--ia { background: #E4E9F7; color: #2F3F7A; }
+.admin-origine--form { background: rgba(242, 179, 61, 0.28); color: #6B4A08; }
+.admin-origine--admin { background: rgba(67, 37, 67, 0.1); }
