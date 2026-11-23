@@ -706,3 +706,14 @@ html, body { height: 100%; }
 .evento-articolo strong { font-family: var(--marchio); font-size: 19px; line-height: 1.25; color: var(--plum); }
 .evento-articolo .art-leggi { font-weight: 700; color: var(--wine); }
 .articolo-eventi { display: flex; flex-direction: column; gap: 12px; margin: 8px 0 4px; }
+
+/* Quiz: spiegazione in sovrimpressione dopo una risposta giusta, sparisce da sola */
+.sovra { position: fixed; inset: 0; z-index: 900; display: flex; align-items: flex-end; justify-content: center; padding: 20px 16px calc(28px + env(safe-area-inset-bottom)); background: rgba(46, 24, 48, 0.35); text-align: center; animation: fade 0.25s ease; -webkit-tap-highlight-color: transparent; }
+.sovra-card { width: 100%; max-width: 480px; background: var(--paper); border-radius: 18px; padding: 18px 18px 14px; box-shadow: 0 12px 40px rgba(46, 24, 48, 0.28); border-top: 4px solid #5A6B3C; animation: entra 0.3s ease; }
+.sovra-ok { font-family: var(--serif); font-weight: 800; font-size: 24px; color: #5A6B3C; }
+.sovra-nota { font-family: var(--sans); font-size: 15px; color: var(--wine); }
+.sovra-testo { margin-top: 8px; font-size: 15px; line-height: 1.5; color: var(--text); }
+.sovra-barra { height: 4px; border-radius: 4px; background: var(--line); overflow: hidden; margin-top: 14px; }
+.sovra-barra div { height: 100%; width: 100%; background: linear-gradient(90deg, var(--wine), var(--gold)); transform-origin: left; animation: svuota linear forwards; }
+.sovra-tocca { display: block; margin-top: 8px; font-size: 12px; color: var(--muted); }
+@keyframes svuota { from { transform: scaleX(1); } to { transform: scaleX(0); } }
