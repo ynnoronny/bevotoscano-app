@@ -6,7 +6,7 @@ import { ZONE, zonaDi } from "../zone.js";
 
 // Mappa OpenStreetMap divisa per zone del vino (tocca una zona per avvicinarti).
 // Pallini vino = dove si tiene l'evento, pallini oro = punti di raccolta.
-export default function Mappa({ eventi, centro, onApri }) {
+export default function Mappa({ eventi, centro, onApri, attivo }) {
   const box = useRef(null);
   const map = useRef(null);
   const layer = useRef(null);
@@ -30,7 +30,7 @@ export default function Mappa({ eventi, centro, onApri }) {
     eventi.forEach((e) => { const z = e.lat != null && zonaDi([e.lat, e.lng]); if (z) quanti[z] = (quanti[z] || 0) + 1; });
     ZONE.forEach((z) => {
       const n = quanti[z.zona] || 0;
-      const c = L.circle(z.centro, { radius: z.km * 1000, color: "#432543", weight: n ? 1.8 : 1, dashArray: "5 6", fillColor: n ? "#F2B33D" : "#432543", fillOpacity: n ? 0.18 : 0.03, opacity: n ? 0.9 : 0.4 })
+      const c = L.circle(z.centro, { radius: z.km * 1000, color: z.colore, weight: n ? 2 : 1, fillColor: z.colore, fillOpacity: n ? 0.28 : 0.12, opacity: n ? 0.9 : 0.6 })
         .on("click", () => map.current.fitBounds(c.getBounds(), { padding: [8, 8] }))
         .addTo(zone.current);
       if (n) c.bindTooltip(`${z.zona} · ${n}`, { permanent: true, direction: "top", className: "zona-tip", offset: [0, -6] });
@@ -52,12 +52,13 @@ export default function Mappa({ eventi, centro, onApri }) {
         punti.push([p.lat, p.lng]);
       });
       if (e.lat == null) return;
-      L.circleMarker([e.lat, e.lng], { radius: 9, color: "#FFFDF8", fillColor: "#B3243B", fillOpacity: 1, weight: 2 })
+      const on = e.id === attivo;
+      L.circleMarker([e.lat, e.lng], { radius: on ? 12 : 9, color: on ? "#F2B33D" : "#FFFDF8", fillColor: "#B3243B", fillOpacity: 1, weight: on ? 3 : 2 })
         .bindTooltip(e.titolo).on("click", () => onApri(e)).addTo(g);
       punti.push([e.lat, e.lng]);
     });
-    if (punti.length) map.current.fitBounds(punti, { padding: [30, 30], maxZoom: 11 });
-  }, [eventi, centro]);
+    if (punti.length && !attivo) map.current.fitBounds(punti, { padding: [30, 30], maxZoom: 11 });
+  }, [eventi, centro, attivo]);
 
   return <div ref={box} className="mappa" />;
 }

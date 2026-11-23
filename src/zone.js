@@ -41,3 +41,25 @@ export function zonaDi(p) {
 
 // La Toscana: la mappa delle cantine resta dentro questo riquadro.
 export const TOSCANA = [[42.2, 9.6], [44.55, 12.45]];
+// La Toscana vera e propria (da Giglio alla Lunigiana): è quello che la mappa inquadra all'inizio.
+export const TOSCANA_STRETTA = [[42.36, 9.85], [44.45, 12.35]];
+
+// Un colore per ogni zona, così sulla mappa si distinguono a colpo d'occhio
+// (toni caldi della palette: vino, oro, oliva, viola, terracotta, blu).
+const COLORI = ["#B3243B", "#C98A1B", "#5A6B3C", "#6B3F6B", "#C0603A", "#2F5D7C"];
+ZONE.forEach((z, i) => { z.colore = COLORI[i % COLORI.length]; });
+
+// Le dieci province, come riquadro [[sud, ovest], [nord, est]]: scegliendone una
+// la mappa delle cantine inquadra tutta la provincia (non solo le sue zone del vino).
+export const PROVINCE_BOX = {
+  "Massa-Carrara": [[44.0, 9.69], [44.52, 10.25]],
+  Lucca: [[43.78, 10.13], [44.33, 10.75]],
+  Pistoia: [[43.73, 10.62], [44.13, 11.06]],
+  Prato: [[43.76, 10.98], [44.11, 11.21]],
+  Firenze: [[43.45, 10.71], [44.24, 11.76]],
+  Arezzo: [[43.17, 11.42], [43.83, 12.37]],
+  Siena: [[42.83, 10.93], [43.52, 12.03]],
+  Grosseto: [[42.23, 10.73], [43.18, 11.95]],
+  Livorno: [[42.72, 9.8], [43.6, 10.68]],
+  Pisa: [[43.12, 10.26], [43.85, 11.0]],
+};

@@ -1,6 +1,14 @@
 // Gli articoli del blog. Per aggiungerne uno: copia un blocco, cambia id (diventa l'indirizzo
-// bevotoscano.com/blog/<id>), titolo, data, immagine (in public/img/) e paragrafi. Il primo articolo dell'elenco è il più recente.
+// bevotoscano.com/blog/<id>), titolo, data, tag (uno di TEMI_BLOG), immagine (in public/img/) e paragrafi. Il primo articolo dell'elenco è il più recente.
 import { SEGNI } from "./games/oroscopoData.js";
+
+// I temi del blog: ogni articolo e ogni notizia ne ha uno, ed è il filtro in cima al blog.
+//   Eventi: racconti e anteprime di eventi, sagre, serate in cantina
+//   Premi e guide: guide, concorsi, classifiche, riconoscimenti
+//   Vino toscano: tutto il resto (vitigni, territori, cantine, il nostro format)
+export const TEMI_BLOG = ["Eventi", "Premi e guide", "Vino toscano"];
+// Le notizie trovate dallo scanner hanno una categoria: qui diventa uno dei temi.
+export const temaDi = (categoria) => (["guida", "concorso", "classifica"].includes(categoria) ? "Premi e guide" : categoria === "evento" ? "Eventi" : "Vino toscano");
 
 export const ARTICOLI = [
   {
@@ -8,7 +16,7 @@ export const ARTICOLI = [
     titolo: "Dodici vitigni toscani che (forse) non conosci",
     sottotitolo: "Non c'è solo il Sangiovese: dal Ciliegiolo alla Barsaglina, la Toscana nel bicchiere è molto più larga.",
     data: "2026-11-22",
-    tag: "Vitigni",
+    tag: "Vino toscano",
     immagine: "/img/colline.jpg",
     alt: "Colline toscane coltivate a vigna",
     paragrafi: [
@@ -22,7 +30,7 @@ export const ARTICOLI = [
     titolo: "Qual è il vino più toscano che hai?",
     sottotitolo: "Una domanda sola, fatta a cantine, baristi ed enoteche. Le risposte dicono molto più di una scheda tecnica.",
     data: "2026-11-15",
-    tag: "Il format",
+    tag: "Vino toscano",
     immagine: "/og.jpg",
     alt: "Bevotoscano",
     paragrafi: [
@@ -36,7 +44,7 @@ export const ARTICOLI = [
     titolo: "Perché partiamo da Terricciola",
     sottotitolo: "Una Città del Vino con più di venti aziende agricole e poco più di 4.500 abitanti. Attraversata spesso, vissuta poco.",
     data: "2026-11-08",
-    tag: "Chi siamo",
+    tag: "Vino toscano",
     immagine: "/img/strada-bianca.jpg",
     alt: "Strada bianca tra le vigne",
     paragrafi: [
