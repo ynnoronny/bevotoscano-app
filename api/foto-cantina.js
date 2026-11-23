@@ -75,6 +75,14 @@ export default async function handler(req, res) {
   if (sito && !SITO_OK.test(sito)) return res.status(400).send("sito non valido");
   if (!sito && !nome) return res.status(400).send("manca il sito o il nome");
 
+  // ?prova=1: dice cosa ha visto sul sito (per capire perché una foto non arriva)
+  if (req.query.prova && sito) {
+    try {
+      const r = await fetch(sito, { redirect: "follow", signal: AbortSignal.timeout(7000), headers: { "User-Agent": "Mozilla/5.0 (compatible; BevotoscanoFoto/1.0)", Accept: "text/html" } });
+      const t = await r.text();
+      return res.json({ status: r.status, url: r.url, tipo: r.headers.get("content-type"), lunghezza: t.length, foto: trova(t, r.url), inizio: t.slice(0, 1500) });
+    } catch (e) { return res.json({ errore: String(e) }); }
+  }
   let foto = null, google = false;
   if (sito) foto = await dalSito(sito).catch(() => null);
   if (!foto) { foto = await daGoogle(nome, comune).catch(() => null); google = !!foto; }
