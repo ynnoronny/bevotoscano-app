@@ -372,7 +372,7 @@ function Gioca() {
         <section className="gioco-card">
           <small>IL QUIZ</small>
           <strong>Quanto ne sai di vino toscano?</strong>
-          <p>Si parte facile e si fa sempre più difficile. Ogni 3 giuste di fila guadagni una vita, se sbagli ne perdi una. Sbagli senza vite? Fine della partita.</p>
+          <p>Si parte facile e si fa sempre più difficile, con una vita di scorta. Ogni 3 giuste di fila guadagni una vita, se sbagli ne perdi una. Sbagli senza vite? Fine della partita.</p>
           <Link to="gioca/quiz" className="gioco-via">Gioca ora</Link>
         </section>
         <section className="gioco-vit">

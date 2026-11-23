@@ -5,10 +5,15 @@ import { Classifica } from "./Classifiche.jsx";
 import ShareButton from "./ShareButton.jsx";
 
 // Il quiz. Si può partire anche dalla domanda del giorno in home: quella risposta conta già.
-// Il quiz infinito. Si parte con 0 vite, ogni 3 risposte giuste di fila se ne guadagna una (un errore azzera il conto).
+// Il quiz infinito. Si parte con 1 vita di scorta, ogni 3 risposte giuste di fila se ne guadagna una (un errore azzera il conto).
 // Una risposta sbagliata toglie una vita; sbagliare con 0 vite chiude la partita.
+// Dopo una risposta giusta la spiegazione resta in sovrimpressione qualche secondo e si passa da soli alla domanda dopo.
 // La classifica conta quante risposte giuste fai prima di cadere.
 const OGNI_QUANTE_UNA_VITA = 3;
+const VITE_INIZIALI = 1;
+// Quanto resta la spiegazione dopo una risposta giusta (un tocco la chiude prima).
+const MS_SPIEGAZIONE = 5000;
+const MS_SOLO_GIUSTO = 1500; // se la domanda non ha spiegazione
 
 const shuffle = (a) => { const b = [...a]; for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
 const prepara = (q) => ({ ...q, giusta: q.r[0], opzioni: shuffle(q.r) });
@@ -59,7 +64,7 @@ export default function QuizToscana({ onExit, iniziale = "start" }) {
   // da: la domanda del giorno già risposta in home ({ d, ok }): non si ripete e, se giusta, conta.
   const parti = (da) => {
     setDomande(primoGiro().filter((q) => !da || q.d !== da.d));
-    setI(0); setCorrette(da?.ok ? 1 : 0); setSerie(da?.ok ? 1 : 0); setVite(0); setScelta(null); setFinita(false);
+    setI(0); setCorrette(da?.ok ? 1 : 0); setSerie(da?.ok ? 1 : 0); setVite(VITE_INIZIALI); setScelta(null); setFinita(false);
     setNota(da ? (da.ok ? "Hai già 1 giusta dalla domanda del giorno" : "La domanda del giorno non conta: si parte da qui") : "");
     setFase("gioco");
   };
@@ -113,7 +118,8 @@ export default function QuizToscana({ onExit, iniziale = "start" }) {
     setScelta(r);
   }
 
-  // Dopo la risposta resta la spiegazione: si va avanti quando si vuole.
+  // Dopo una risposta sbagliata resta la spiegazione e si va avanti col tasto.
+  // Dopo una giusta la spiegazione sparisce da sola (vedi sotto).
   function avanti() {
     if (finita) return setFase("fine");
     if (i + 1 >= domande.length) setDomande((d) => [...d, ...altroGiro()]);
@@ -122,7 +128,18 @@ export default function QuizToscana({ onExit, iniziale = "start" }) {
     setNota("");
   }
 
+  // Risposta giusta: spiegazione in sovrimpressione, poi domanda dopo senza toccare niente.
+  const avantiRef = useRef(avanti);
+  avantiRef.current = avanti;
   const q = domande[i];
+  const giustaOra = fase === "gioco" && !!scelta && !!q && scelta === q.giusta;
+  const msOverlay = q?.p ? MS_SPIEGAZIONE : MS_SOLO_GIUSTO;
+  useEffect(() => {
+    if (!giustaOra) return;
+    const t = setTimeout(() => avantiRef.current(), msOverlay);
+    return () => clearTimeout(t);
+  }, [giustaOra, i, msOverlay]);
+
   const versoVita = OGNI_QUANTE_UNA_VITA - serie;
 
   return (
@@ -140,7 +157,7 @@ export default function QuizToscana({ onExit, iniziale = "start" }) {
           <h1 className="game-title">Quanto ne sai di <em>vino toscano</em>?</h1>
           <div className="regole">
             <p><b>Le domande non finiscono mai.</b> Vai avanti finché resisti.</p>
-            <p><b>Parti con 0 vite.</b> Ogni 3 risposte giuste di fila ne guadagni una: un errore azzera il conto.</p>
+            <p><b>Parti con 1 vita di scorta.</b> Ogni 3 risposte giuste di fila ne guadagni una: un errore azzera il conto.</p>
             <p><b>Sbagli?</b> Perdi una vita. Se sbagli quando non ne hai, la partita finisce.</p>
             <p><b>Niente aiutini:</b> da 10 a 8 secondi a domanda, sempre meno man mano che si fanno difficili. Se esci dall'app per cercare la risposta, la domanda è persa.</p>
           </div>
@@ -169,14 +186,24 @@ export default function QuizToscana({ onExit, iniziale = "start" }) {
             })}
           </div>
           {!scelta && nota && <p className="tiny avviso">{nota}</p>}
-          {scelta && (
+          {scelta && !giustaOra && (
             <p className={`feedback ${scelta === q.giusta ? "ok" : "error"}`}>
               {scelta === q.giusta ? "Giusto!" : scelta === "__tempo" ? "Tempo scaduto!" : scelta === "__uscito" ? "Sei uscito dall'app: domanda persa!" : "Sbagliato!"}
               {nota && ` ${nota}`}
             </p>
           )}
-          {scelta && q.p && <p className="spiega fade">{q.p}</p>}
-          {scelta && <button className="btn btn--primary wide avanti" onClick={avanti} autoFocus>{finita ? "Vedi il risultato" : "Avanti"}</button>}
+          {scelta && !giustaOra && q.p && <p className="spiega fade">{q.p}</p>}
+          {scelta && !giustaOra && <button className="btn btn--primary wide avanti" onClick={avanti} autoFocus>{finita ? "Vedi il risultato" : "Avanti"}</button>}
+          {giustaOra && (
+            <button className="sovra" onClick={avanti} aria-label="Domanda successiva">
+              <div className="sovra-card">
+                <p className="sovra-ok">Giusto!{nota && <span className="sovra-nota"> {nota}</span>}</p>
+                {q.p && <p className="sovra-testo">{q.p}</p>}
+                <div className="sovra-barra"><div style={{ animationDuration: `${msOverlay}ms` }} /></div>
+                <span className="sovra-tocca">Tocca per andare avanti</span>
+              </div>
+            </button>
+          )}
         </div>
       )}
 
