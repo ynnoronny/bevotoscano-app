@@ -784,3 +784,9 @@ html, body { height: 100%; }
 .filtri--zone { padding: 8px 10px; }
 .zona-pallino { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
 .filtri-scelta button.vuota:not(.on) { opacity: 0.6; }
+
+/* Cantine | Enoteche: due elenchi separati sotto la stessa pill */
+.cant-tipo { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 5px; border-radius: 999px; background: var(--paper); box-shadow: 0 6px 18px rgba(67, 37, 67, 0.07); }
+.cant-tipo a { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 42px; padding: 0 10px; border-radius: 999px; font-weight: 800; font-size: 14px; color: var(--plum); text-align: center; line-height: 1.15; }
+.cant-tipo a small { font-size: 12px; font-weight: 700; opacity: 0.65; }
+.cant-tipo a.on { background: var(--plum); color: #fff; }
