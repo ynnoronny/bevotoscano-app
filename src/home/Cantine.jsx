@@ -27,18 +27,23 @@ const daAttore = (a) => ({
   // la descrizione la scrivi dal gestionale; se manca, almeno le denominazioni che fa
   descrizione: a.descrizione || (a.denominazioni && a.tipo !== "enoteca" ? `Vini ${a.denominazioni}` : null),
 });
-function useCantine() {
+// Cantine e enoteche stanno sempre separate: chi fa il vino da una parte, chi lo versa dall'altra.
+export const DOVE_SI_BEVE = new Set(["enoteca", "wine_bar", "ristorante"]);
+function useLuoghi() {
   const [extra, setExtra] = useState([]);
   useEffect(() => {
     const note = new Set(CANTINE.map((c) => c.nome.toLowerCase()));
-    attoriPubblici().then((l) => setExtra((l || []).filter((a) => TIPI_DB[a.tipo] && !note.has(a.nome.toLowerCase())).map(daAttore))).catch(() => {});
+    attoriPubblici().then((l) => setExtra((l || []).filter((a) => TIPI_DB[a.tipo] && !note.has(a.nome.toLowerCase())).map((a) => ({ ...daAttore(a), enoteca: DOVE_SI_BEVE.has(a.tipo) })))).catch(() => {});
   }, []);
-  return useMemo(() => [...CANTINE, ...extra], [extra]);
+  return useMemo(() => ({
+    cantine: [...CANTINE, ...extra.filter((x) => !x.enoteca)],
+    enoteche: extra.filter((x) => x.enoteca),
+  }), [extra]);
 }
 
 // La mappa delle cantine: ferma (il dito fa scorrere la pagina) e fa da filtro per zona.
 // Senza onZona (la pagina di una cantina) mostra solo il pallino, da vicino.
-function MappaCantine({ cantine, attiva, onScegli, zona, onZona, provincia, conta }) {
+function MappaCantine({ cantine, attiva, onScegli, zona, onZona, provincia, conta, enoteche }) {
   const box = useRef(null);
   const map = useRef(null);
   const layer = useRef(null);
@@ -67,12 +72,16 @@ function MappaCantine({ cantine, attiva, onScegli, zona, onZona, provincia, cont
       // piccolo scostamento per le cantine dello stesso comune, così non si sovrappongono
       const q = [p[0] + (i % 3) * 0.004, p[1] + (i % 2) * 0.006];
       const on = c.id === attiva;
-      L.circleMarker(q, { radius: on ? 11 : 8, color: "#FFFDF8", weight: 2, fillColor: on ? "#B3243B" : c.intervistata ? "#B3243B" : "#432543", fillOpacity: 1, bubblingMouseEvents: false })
+      // le enoteche hanno il pallino oro bordato di viola, le cantine viola (vino se intervistate)
+      const stile = c.enoteca
+        ? { radius: on ? 11 : 8, color: "#432543", weight: 2.5, fillColor: "#F2B33D", fillOpacity: 1 }
+        : { radius: on ? 11 : 8, color: "#FFFDF8", weight: 2, fillColor: on ? "#B3243B" : c.intervistata ? "#B3243B" : "#432543", fillOpacity: 1 };
+      L.circleMarker(q, { ...stile, bubblingMouseEvents: false })
         .on("click", () => onScegli(c.id)).addTo(layer.current);
       punti.push(q);
     });
     if (!onZona && punti.length) map.current.fitBounds(punti, { padding: [36, 36], maxZoom: 11 });
-  }, [cantine, attiva]);
+  }, [cantine, attiva, enoteche]);
   return <div ref={box} className={`mappa mappa--ferma ${onZona ? "mappa--bassa" : "mappa--piccola"}`} />;
 }
 
@@ -125,10 +134,10 @@ function Segni({ c }) {
   );
 }
 
-export default function Cantine({ apri }) {
-  const scheda = apri && CANTINE.find((c) => c.id === apri);
+export default function Cantine({ apri, enoteche }) {
+  const scheda = !enoteche && apri && CANTINE.find((c) => c.id === apri);
   if (scheda) return <Scheda c={scheda} />;
-  return <Elenco />;
+  return <Elenco enoteche={!!enoteche} />;
 }
 
 // La pagina di una cantina: bevotoscano.com/cantine/fibbiano
@@ -180,7 +189,7 @@ function Scheda({ c }) {
   );
 }
 
-function Elenco() {
+function Elenco({ enoteche }) {
   const [zona, setZona] = useState(null);
   const [provincia, setProvincia] = useState("");
   const [soloIntervistate, setSoloIntervistate] = useState(false);
@@ -188,7 +197,9 @@ function Elenco() {
   const [attiva, setAttiva] = useState(null);
   const [eventi, setEventi] = useState([]);
   useEffect(() => { eventiPubblici().then(setEventi).catch(() => {}); }, []);
-  const tutte = useCantine();
+  const luoghi = useLuoghi();
+  const tutte = enoteche ? luoghi.enoteche : luoghi.cantine;
+  const parola = enoteche ? ["enoteca", "enoteche"] : ["cantina", "cantine"];
 
   // tutte e dieci le province: scegliendone una la mappa la inquadra tutta
   const province = Object.keys(SIGLA);
@@ -207,6 +218,11 @@ function Elenco() {
 
   return (
     <div className="feed">
+      {/* due elenchi separati, uno accanto all'altro: chi il vino lo fa e chi lo versa */}
+      <div className="cant-tipo" role="tablist">
+        <Link to="cantine" role="tab" aria-selected={!enoteche} className={!enoteche ? "on" : ""}>🍇 Cantine <small>{luoghi.cantine.length}</small></Link>
+        <Link to="enoteche" role="tab" aria-selected={enoteche} className={enoteche ? "on" : ""}>🍷 Enoteche <small>{luoghi.enoteche.length}</small></Link>
+      </div>
       <Filtri>
         <Riga etichetta="Mostra">
           <label className={`filtri-sel ${provincia ? "on" : ""}`}>
@@ -215,26 +231,28 @@ function Elenco() {
               {province.map((p) => <option key={p} value={p}>Provincia di {p}</option>)}
             </select>
           </label>
-          <Interruttore on={soloIntervistate} onCambia={setSoloIntervistate}>🎤 Le abbiamo intervistate</Interruttore>
-          <Interruttore on={soloPremiate} onCambia={setSoloPremiate}>🏅 Premi nelle guide</Interruttore>
+          {!enoteche && <Interruttore on={soloIntervistate} onCambia={setSoloIntervistate}>🎤 Le abbiamo intervistate</Interruttore>}
+          {!enoteche && <Interruttore on={soloPremiate} onCambia={setSoloPremiate}>🏅 Premi nelle guide</Interruttore>}
         </Riga>
       </Filtri>
 
-      <MappaCantine cantine={lista} attiva={attiva} onScegli={scegli} zona={zona} provincia={provincia} conta={conta} onZona={(z) => { setZona(z); setProvincia(""); setAttiva(null); }} />
+      <MappaCantine cantine={lista} enoteche={enoteche} attiva={attiva} onScegli={scegli} zona={zona} provincia={provincia} conta={conta} onZona={(z) => { setZona(z); setProvincia(""); setAttiva(null); }} />
       <div className="filtri filtri--zone">
         <Riga etichetta="Zona"><SceltaZona conta={conta} zona={zona} onZona={(z) => { setZona(z); setProvincia(""); setAttiva(null); }} totale={filtrate.length} /></Riga>
       </div>
       {/* la lista qui sotto segue la mappa: zona, provincia e filtri scelti */}
       <div className="cant-conta">
-        <strong>{lista.length === 1 ? "1 cantina" : `${lista.length} cantine`}{zona ? ` · ${zona}` : ""}{provincia ? ` · provincia di ${provincia}` : ""}</strong>
+        <strong>{lista.length === 1 ? `1 ${parola[0]}` : `${lista.length} ${parola[1]}`}{zona ? ` · ${zona}` : ""}{provincia ? ` · provincia di ${provincia}` : ""}</strong>
         {(zona || provincia || soloIntervistate || soloPremiate)
           ? <button className="link" onClick={() => { setZona(null); setProvincia(""); setSoloIntervistate(false); setSoloPremiate(false); setAttiva(null); }}>Tutta la Toscana</button>
           : <small>Tocca una zona sulla mappa</small>}
       </div>
 
-      {lista.length === 0 && (zona && !tutte.some((c) => c.zona === zona)
-        ? <p className="feed-vuoto">Le cantine di {zona} arrivano presto. Ne conosci una che merita? <Link className="link" to="segnala/cantina">Proponila</Link>.</p>
-        : <p className="feed-vuoto">Nessuna cantina con questi filtri, per ora.</p>)}
+      {lista.length === 0 && (enoteche && !tutte.length
+        ? <p className="feed-vuoto">Le enoteche arrivano presto: le stiamo scegliendo una a una. Ne conosci una che merita? <Link className="link" to="segnala/enoteca">Proponila</Link>.</p>
+        : zona && !tutte.some((c) => c.zona === zona)
+        ? <p className="feed-vuoto">Le {parola[1]} di {zona} arrivano presto. Ne conosci una che merita? <Link className="link" to={`segnala/${parola[0]}`}>Proponila</Link>.</p>
+        : <p className="feed-vuoto">Nessuna {parola[0]} con questi filtri, per ora.</p>)}
       <div className="feed-griglia">
         {lista.map((c) => {
           const ev = eventiDi(c);
@@ -276,10 +294,10 @@ function Elenco() {
       </div>
 
       <section className="cant-invito">
-        <strong>Conosci una cantina che merita?</strong>
+        <strong>Conosci {enoteche ? "un'enoteca" : "una cantina"} che merita?</strong>
         <p>Proponila: la valutiamo e andiamo a conoscerla di persona.</p>
         <div className="cant-azioni">
-          <Link className="cant-btn cant-btn--sole" to="segnala/cantina">Proponi una cantina</Link>
+          <Link className="cant-btn cant-btn--sole" to={`segnala/${parola[0]}`}>Proponi {enoteche ? "un'enoteca" : "una cantina"}</Link>
         </div>
       </section>
     </div>

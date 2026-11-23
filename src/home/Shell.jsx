@@ -51,7 +51,8 @@ function indietroDa(section, sub) {
 }
 
 export default function Shell({ section, sub, children }) {
-  const pill = section;
+  // le enoteche stanno sotto la stessa pill delle cantine (con la scelta in cima alla pagina)
+  const pill = section === "enoteche" ? "cantine" : section;
   const area = useRef(null);
   const indietro = indietroDa(section, sub);
   // a ogni cambio di pagina si riparte dall'alto del contenuto
@@ -86,6 +87,7 @@ export default function Shell({ section, sub, children }) {
 
 function Contenuto({ section, sub }) {
   if (section === "cantine") return <div className="shell-pagina shell-pagina--larga"><Cantine apri={sub} /></div>;
+  if (section === "enoteche") return <div className="shell-pagina shell-pagina--larga"><Cantine enoteche /></div>;
   if (section === "blog") return sub ? <Articolo id={sub} /> : <Blog />;
   if (section === "gioca") return <Gioca />;
   if (section === "segnala") return <div className="page shell-pagina"><SegnalaScelta iniziale={sub} /></div>;
