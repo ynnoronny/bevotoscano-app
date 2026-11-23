@@ -667,6 +667,8 @@ html, body { height: 100%; }
 .admin-comune { display: flex; gap: 8px; align-items: center; }
 .admin-comune .input { max-width: 260px; }
 .admin-avviso { color: #8A5A00; }
+.admin-descr { display: flex; flex-direction: column; gap: 6px; }
+.admin-descr .btn { align-self: flex-start; }
 .admin-link { display: flex; flex-wrap: wrap; gap: 12px; }
 .admin-riga { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 12px; background: var(--paper); border: 1px solid var(--line); }
 .admin-regola { font-family: ui-monospace, Menlo, monospace; font-size: 13px; line-height: 1.5; }
@@ -698,3 +700,9 @@ html, body { height: 100%; }
 .campo-foto-scelta img { width: 84px; height: 84px; object-fit: cover; border-radius: 12px; }
 .campo-foto-aiuto { font-size: 12.5px; color: var(--muted); }
 .evento-img { display: block; width: 100%; max-height: 420px; object-fit: cover; border-radius: 18px; margin: 4px 0 6px; }
+
+/* evento <-> articolo del blog */
+.evento-articolo { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border-radius: 16px; background: var(--paper); border: 1px solid var(--line); text-decoration: none; color: inherit; }
+.evento-articolo strong { font-family: var(--marchio); font-size: 19px; line-height: 1.25; color: var(--plum); }
+.evento-articolo .art-leggi { font-weight: 700; color: var(--wine); }
+.articolo-eventi { display: flex; flex-direction: column; gap: 12px; margin: 8px 0 4px; }

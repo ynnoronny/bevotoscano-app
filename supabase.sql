@@ -233,3 +233,27 @@ create or replace view attori_pubblici as
          denominazioni, lat, lng, foto
   from scanner_attori
   where stato = 'approvato' and attivo;
+
+-- ---------- descrizione delle cantine sul sito ----------
+alter table scanner_attori add column if not exists descrizione text;
+
+-- parto dalle 4 cantine già approvate che hai inserito tu, che hanno già una nota descrittiva
+update scanner_attori set descrizione = note
+where origine = 'admin' and stato = 'approvato' and note is not null and descrizione is null;
+
+-- la vista pubblica mostra anche la descrizione (colonna aggiunta in fondo)
+create or replace view attori_pubblici as
+ SELECT id, nome, tipo, comune, indirizzo, sito, instagram, facebook,
+    COALESCE(google_maps, 'https://www.google.com/maps/search/?api=1&query='::text || replace(replace(((nome || ' '::text) || COALESCE(comune, ''::text)) || ' Toscana'::text, '&'::text, 'e'::text), ' '::text, '+'::text)) AS google_maps,
+    denominazioni, lat, lng, foto, descrizione
+   FROM scanner_attori
+  WHERE stato = 'approvato'::text AND attivo;
+
+-- ---------- evento collegato a un articolo del blog ----------
+alter table eventi add column if not exists articolo text;
+
+create or replace view eventi_pubblici as
+ SELECT id, titolo, descrizione, inizio, fine, altre_date, luogo_nome, indirizzo, comune, lat, lng, vini, guidato, accesso, pickup, prezzo, link, immagine,
+    org_tipo, org_nome, org_social, orari, provincia, prenotazione, categoria, orario_trovato, articolo
+   FROM eventi
+  WHERE stato = 'pubblicato'::text AND COALESCE(fine, inizio) > (now() - '1 day'::interval);

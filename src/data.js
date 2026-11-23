@@ -11,18 +11,19 @@ export const CONTACT_EMAIL = "info@bevotoscano.com"; // cambia con la mail che u
 //   foto: "/img/cantine/<id>.jpg" (metti il file in public/img/cantine/)
 //   intervistata: true quando l'intervista è uscita (reel: link al post Instagram)
 //   premi: ["Miglior rosso 2026 (Guida X)", …] dal più importante; in elenco si vedono i primi 3
+//   fonte: dove abbiamo letto i fatti della descrizione (resta interna, non si mostra).
 //   descrizione: una o due frasi su cosa la rende speciale (es. "Cantina di famiglia sulle colline di Terricciola, vigne a pochi passi dalla casa").
 //                Va sulla scheda in elenco, nella cantina del giorno e nella pagina della cantina.
 //   vinoPiuToscano: la risposta alla nostra domanda (solo nella pagina della cantina)
 export const CANTINE = [
-  { id: "la-regola", nome: "Podere La Regola", comune: "Riparbella", provincia: "Pisa", zona: "Costa pisana" },
-  { id: "agona", nome: "L'Agona", comune: "Terricciola", provincia: "Pisa", zona: "Colline pisane", sito: "https://www.lagonavini.com/" },
-  { id: "fibbiano", nome: "Fattoria Fibbiano", comune: "Terricciola", provincia: "Pisa", zona: "Colline pisane", sito: "https://www.fattoria-fibbiano.it/" },
-  { id: "gimonda", nome: "La Gimonda", comune: "Terricciola", provincia: "Pisa", zona: "Colline pisane", sito: "https://www.lagimonda.it/" },
-  { id: "castelvecchio", nome: "Tenuta Castelvecchio", comune: "Terricciola", provincia: "Pisa", zona: "Colline pisane", sito: "https://agricastelvecchio.com/" },
-  { id: "pellicciano", nome: "Podere Pellicciano", comune: "San Miniato", provincia: "Pisa", zona: "Valdarno inferiore", sito: "https://www.poderepellicciano.it/", foto: "https://poderepellicciano.it/wp-content/uploads/2023/07/Podere-Pellicciano-winery-scaled.jpg" },
-  { id: "montefoscoli", nome: "Tenuta di Montefoscoli", comune: "Montefoscoli", provincia: "Pisa", zona: "Colline pisane", sito: "https://tenutadimontefoscoli.com", foto: "https://www.tenutadimontefoscoli.com/wp-content/uploads/2026/02/Tenuta-di-Montefoscoli_Home.jpg" },
-  { id: "ghizzano", nome: "Tenuta di Ghizzano", comune: "Ghizzano", provincia: "Pisa", zona: "Colline pisane", sito: "https://www.tenutadighizzano.com/" },
+  { id: "la-regola", nome: "Podere La Regola", comune: "Riparbella", provincia: "Pisa", zona: "Costa pisana", descrizione: "Famiglia Nuti da cinque generazioni: 26 ettari tutti biologici dal 2015, Cabernet Franc in purezza e una barricaia affrescata.", fonte: "https://www.gazzettadelgusto.it/vino/vini-podere-la-regola-leccellenza-del-terroir-di-riparbella/" },
+  { id: "agona", nome: "L'Agona", comune: "Terricciola", provincia: "Pisa", zona: "Colline pisane", sito: "https://www.lagonavini.com/", descrizione: "Piccola cantina di famiglia: 3 ettari di vigna e circa 25.000 bottiglie l'anno, con visite e degustazioni in cantina.", fonte: "https://www.lagonavini.com/ · https://www.winetourism.com/it/azienda-vinicola/l-agona-vini/" },
+  { id: "fibbiano", nome: "Fattoria Fibbiano", comune: "Terricciola", provincia: "Pisa", zona: "Colline pisane", sito: "https://www.fattoria-fibbiano.it/", descrizione: "Tenuta che risale al 1707, della famiglia Cantoni dal 1997: agriturismo, visite in vigna e in cantina.", fonte: "https://www.winedering.com/it/winery-fattoria-fibbiano_d4438 · https://www.fattoria-fibbiano.it/" },
+  { id: "gimonda", nome: "La Gimonda", comune: "Terricciola", provincia: "Pisa", zona: "Colline pisane", sito: "https://www.lagimonda.it/", descrizione: "Piccolo vigneto di circa 4 ettari con i vitigni di casa: Sangiovese, Canaiolo, Colorino, Trebbiano e Colombana.", fonte: "https://www.enprimeurclub.com/wineries/vigneto-la-gimonda-terricciola" },
+  { id: "castelvecchio", nome: "Tenuta Castelvecchio", comune: "Terricciola", provincia: "Pisa", zona: "Colline pisane", sito: "https://agricastelvecchio.com/", descrizione: "Biologica certificata, con agriturismo e cene tra i filari. Il suo Vin Santo Armida è tra i 300 vini scelti da Vini Buoni d'Italia.", fonte: "https://agricastelvecchio.com/" },
+  { id: "pellicciano", nome: "Podere Pellicciano", comune: "San Miniato", provincia: "Pisa", zona: "Valdarno inferiore", sito: "https://www.poderepellicciano.it/", foto: "https://poderepellicciano.it/wp-content/uploads/2023/07/Podere-Pellicciano-winery-scaled.jpg", descrizione: "Podere storico, citato già nel 1830, rinato nel 2003 con la famiglia Caputo: 10 ettari biologici e Malvasia Nera e Colorino in purezza.", fonte: "https://www.poderepellicciano.it/" },
+  { id: "montefoscoli", nome: "Tenuta di Montefoscoli", comune: "Montefoscoli", provincia: "Pisa", zona: "Colline pisane", sito: "https://tenutadimontefoscoli.com", foto: "https://www.tenutadimontefoscoli.com/wp-content/uploads/2026/02/Tenuta-di-Montefoscoli_Home.jpg", descrizione: "Biologica certificata: Sangiovese e Vermentino su 8 parcelle, alcune vigne dal 1400 con lo stesso nome da oltre 600 anni.", fonte: "https://www.tenutadimontefoscoli.com/" },
+  { id: "ghizzano", nome: "Tenuta di Ghizzano", comune: "Ghizzano", provincia: "Pisa", zona: "Colline pisane", sito: "https://www.tenutadighizzano.com/", descrizione: "Biologica e biodinamica, nel borgo della famiglia Venerosi Pesciolini: 20 ettari di vigna intorno alla villa con la torre del 1370.", fonte: "https://www.tenutadighizzano.com/it/chi-siamo/la-nostra-storia/" },
 ];
 
 // Le esperienze: format Bevotoscano. Stato "presto" = raccogli interesse, "aperto" = prenotabile.

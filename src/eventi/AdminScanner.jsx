@@ -96,15 +96,16 @@ export function Attori({ onEsci }) {
       {lista && filtrate.length === 0 && <p className="muted">Niente qui.</p>}
       <div className="list">
         {filtrate.slice(0, quante).map((a) => <Attore key={a.id} a={a} lavoro={lavoro} onApprova={() => approva([a.id])} onRifiuta={() => rifiuta(a.id)}
-          onAttesa={() => cambia([a.id], { stato: "in_attesa", approvato: null })} onComune={(comune) => cambia([a.id], { comune })} />)}
+          onAttesa={() => cambia([a.id], { stato: "in_attesa", approvato: null })} onComune={(comune) => cambia([a.id], { comune })} onDescrizione={(descrizione) => cambia([a.id], { descrizione })} />)}
       </div>
       {filtrate.length > quante && <button className="btn btn--outline" onClick={() => setQuante((n) => n + 40)}>Mostra altre {Math.min(40, filtrate.length - quante)}</button>}
     </>
   );
 }
 
-function Attore({ a, lavoro, onApprova, onRifiuta, onAttesa, onComune }) {
+function Attore({ a, lavoro, onApprova, onRifiuta, onAttesa, onComune, onDescrizione }) {
   const [comune, setComune] = useState(a.comune || "");
+  const [descr, setDescr] = useState(a.descrizione || "");
   const riconosciuto = siglaProvincia(a.comune);
   const link = [["Sito", url(a.sito)], ["Instagram", url(a.instagram)], ["Facebook", url(a.facebook)], ["Maps", a.google_maps], ["Fonte", a.fonte_url]].filter(([, u]) => u);
   return (
@@ -124,6 +125,12 @@ function Attore({ a, lavoro, onApprova, onRifiuta, onAttesa, onComune }) {
       {(a.telefono || a.email) && <small>{a.telefono} {a.email && <a className="link" href={`mailto:${a.email}`}>{a.email}</a>}</small>}
       {a.denominazioni && <small>🍇 {a.denominazioni}</small>}
       {a.note && <p className="muted">{a.note}</p>}
+      {/* la riga che si legge sul sito: le note qui sopra restano solo per te */}
+      <label className="admin-descr">
+        <small>Descrizione sul sito (una o due righe)</small>
+        <textarea className="input" rows={2} maxLength={220} value={descr} placeholder="Es. Biodinamica, villa storica sulle colline di Lucca" onChange={(e) => setDescr(e.target.value)} />
+        {descr !== (a.descrizione || "") && <button className="btn btn--outline" disabled={lavoro} onClick={() => onDescrizione(descr.trim() || null)}>Salva descrizione</button>}
+      </label>
       {a.foto && <a href={a.foto} target="_blank" rel="noopener"><img src={a.foto} alt="" style={{ width: 120, height: 80, objectFit: "cover", borderRadius: 10 }} /></a>}
       {a.segnalato_da_email && <small>Segnalata da <a className="link" href={`mailto:${a.segnalato_da_email}`}>{a.segnalato_da_email}</a></small>}
       {a.esito_controllo && <small className="muted">Ultimo giro sul sito: {a.esito_controllo}</small>}

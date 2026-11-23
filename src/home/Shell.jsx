@@ -318,8 +318,22 @@ function Articolo({ id }) {
       {a.immagine && <img className="articolo-img" src={a.immagine} alt={a.alt || ""} />}
       <p className="articolo-sotto">{a.sottotitolo}</p>
       {a.paragrafi.map((p, i) => <p key={i} className="articolo-p">{p}</p>)}
+      <EventiDellArticolo id={a.id} />
       <Link className="btn btn--primary" to="eventi">Guarda gli eventi</Link>
     </article>
+  );
+}
+
+// gli eventi che nel gestionale hai collegato a questo articolo
+function EventiDellArticolo({ id }) {
+  const [eventi, setEventi] = useState([]);
+  useEffect(() => { eventiPubblici().then((l) => setEventi((l || []).filter((e) => e.articolo === id))).catch(() => {}); }, [id]);
+  if (!eventi.length) return null;
+  return (
+    <section className="articolo-eventi">
+      <div className="home-titolo"><h2>{eventi.length === 1 ? "L'evento di cui parliamo" : "Gli eventi di cui parliamo"}</h2></div>
+      {eventi.map((e, i) => <SchedaEvento key={e.id} e={e} i={i} />)}
+    </section>
   );
 }
 

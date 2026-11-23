@@ -24,6 +24,8 @@ const daAttore = (a) => ({
   provincia: PROVINCIA[siglaProvincia(a.comune)] || null,
   zona: zonaDi(a.lat != null ? [a.lat, a.lng] : null), lat: a.lat, lng: a.lng,
   sito: a.sito ? (/^https?:\/\//.test(a.sito) ? a.sito : `https://${a.sito}`) : null, maps: a.google_maps, foto: a.foto || null,
+  // la descrizione la scrivi dal gestionale; se manca, almeno le denominazioni che fa
+  descrizione: a.descrizione || (a.denominazioni && a.tipo !== "enoteca" ? `Vini ${a.denominazioni}` : null),
 });
 function useCantine() {
   const [extra, setExtra] = useState([]);
@@ -99,7 +101,9 @@ const Grappolo = () => (
 );
 
 export function Foto({ c, grande }) {
-  if (c.foto) return <img className={`cant-foto ${grande ? "cant-foto--grande" : ""}`} src={c.foto} alt={c.nome} loading="lazy" />;
+  // se il link della foto si rompe, torna il grappolo invece dell'immagine rotta
+  const [rotta, setRotta] = useState(false);
+  if (c.foto && !rotta) return <img className={`cant-foto ${grande ? "cant-foto--grande" : ""}`} src={c.foto} alt={c.nome} loading="lazy" onError={() => setRotta(true)} />;
   return <span className={`cant-foto cant-foto--vuota ${grande ? "cant-foto--grande" : ""}`}><Grappolo /></span>;
 }
 

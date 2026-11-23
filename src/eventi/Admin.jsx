@@ -4,6 +4,7 @@ import { cercaLuogo } from "./geo.js";
 import { TIPI_ORG, fmtData, senzaAuto } from "./shared.js";
 import { CampiEvento, Campo } from "./Segnala.jsx";
 import Posta from "./Posta.jsx";
+import { ARTICOLI } from "../blog.js";
 import { Attori, Notizie, Registro, CATEGORIE } from "./AdminScanner.jsx";
 
 // Backend di moderazione: bevotoscano.com/admin (non è nel menu).
@@ -263,6 +264,12 @@ function Editor({ ev, pickups, onAnnulla, onSalva, onPickupSalvato, err }) {
           <input className="input" type="url" maxLength={300} value={v.immagine || ""} onChange={(e) => set("immagine", e.target.value.trim() || null)} placeholder="https://…jpg" />
         </Campo>
         {v.immagine && <img src={v.immagine} alt="" style={{ width: "100%", maxHeight: 180, objectFit: "cover", borderRadius: 12 }} />}
+        <Campo label="Articolo del blog collegato" hint="Sulla pagina dell'evento compare «Leggi l'articolo», e nell'articolo compare l'evento.">
+          <select className="input" value={v.articolo || ""} onChange={(e) => set("articolo", e.target.value || null)}>
+            <option value="">Nessuno</option>
+            {ARTICOLI.map((a) => <option key={a.id} value={a.id}>{a.titolo}</option>)}
+          </select>
+        </Campo>
         <div className="due">
           <Campo label="Categoria">
             <select className="input" value={v.categoria || ""} onChange={(e) => set("categoria", e.target.value || null)}>

@@ -9,6 +9,7 @@ import { go } from "../nav.js";
 import Link from "../Link.jsx";
 import AggiungiCalendario, { indicazioniUrl } from "./Calendario.jsx";
 import { conProvincia } from "../province.js";
+import { articolo } from "../blog.js";
 import { eventoPercorso, idDaPercorso, eventoMeta, eventoJsonLd, briciole, applicaMeta } from "../seo.js";
 const POS_KEY = "bevotoscano-posizione";
 
@@ -238,6 +239,13 @@ function Dettaglio({ e, centro }) {
       <CondividiEvento e={e} grande />
       {e.altre_date && <p className="muted">Altre date: {e.altre_date}</p>}
       {e.descrizione && <p>{e.descrizione}</p>}
+      {articolo(e.articolo) && (
+        <Link className="evento-articolo" to={`blog/${e.articolo}`}>
+          <span className="art-tag">Dal blog</span>
+          <strong>{articolo(e.articolo).titolo}</strong>
+          <span className="art-leggi">Leggi l'articolo →</span>
+        </Link>
+      )}
       {e.vini && <p className="cantina-wine">Nel bicchiere: <b>{e.vini}</b></p>}
 
       <section className="card">
