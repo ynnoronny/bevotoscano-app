@@ -59,6 +59,14 @@ function Login({ onOk }) {
   );
 }
 
+// Supabase manda il QR come SVG dentro un indirizzo "data:" non codificato: i "#" dei colori
+// lo spezzano e il browser non disegna niente. Qui lo ricodifichiamo per bene.
+const qrSicuro = (q) => {
+  if (!q) return "";
+  const i = q.indexOf("<svg");
+  return i < 0 ? q : `data:image/svg+xml;charset=utf-8,${encodeURIComponent(q.slice(i))}`;
+};
+
 // Secondo passo dopo la password: le 6 cifre dell'app (Google Authenticator o simili).
 // La prima volta mostra il QR da inquadrare; dalle volte dopo chiede solo il codice.
 function Codice({ email, onOk, onEsci }) {
@@ -89,7 +97,7 @@ function Codice({ email, onOk, onEsci }) {
       {fattore === null && nuovo && (
         <>
           <p>Prima volta: apri <b>Google Authenticator</b> (o un'app simile), tocca <b>+</b> e inquadra questo codice.</p>
-          <img src={nuovo.totp.qr_code} alt="Codice QR da inquadrare" style={{ width: 200, height: 200, background: "#fff", borderRadius: 12, alignSelf: "center" }} />
+          <img src={qrSicuro(nuovo.totp.qr_code)} alt="Codice QR da inquadrare" style={{ width: 200, height: 200, background: "#fff", borderRadius: 12, alignSelf: "center" }} />
           <small className="muted">Non riesci a inquadrarlo? Inserisci a mano questa chiave: <code style={{ wordBreak: "break-all" }}>{nuovo.totp.secret}</code></small>
           <p>Poi scrivi qui sotto le 6 cifre che compaiono nell'app.</p>
         </>
