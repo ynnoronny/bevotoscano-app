@@ -23,6 +23,7 @@ import CondividiEvento from "../eventi/Condividi.jsx";
 import { conProvincia } from "../province.js";
 import { Filtri, Riga, Scelta, Interruttore, SceltaZona } from "./Filtri.jsx";
 import { contaZone } from "../mappaFerma.js";
+import { fotoDiRiserva } from "../repertorio.js";
 import { zonaDi } from "../zone.js";
 import { go } from "../nav.js";
 import { eventoPercorso, FILTRI_EVENTI, cantinaPercorso } from "../seo.js";
@@ -223,13 +224,13 @@ export function Prezzo({ e }) {
   );
 }
 
-// Foto di repertorio per gli eventi che non ne hanno una: la scheda resta sempre uguale.
-const REPERTORIO = ["/img/colline.jpg", "/img/strada-bianca.jpg"];
 
 // La scheda evento ha sempre lo stesso ordine: data e prezzo in alto, poi la foto, poi il titolo.
 function SchedaEvento({ e, i, centro, attivo }) {
   const arrivo = comeArrivi(e, centro);
-  const foto = e.immagine || REPERTORIO[(e.id || i) % REPERTORIO.length];
+  // senza foto sua, un paesaggio diverso da tutti gli altri della pagina
+  const riserva = fotoDiRiserva(`evento-${e.id ?? i}`);
+  const foto = e.immagine || riserva;
   return (
     <article id={`evento-${e.id}`} className={`ev ev--${["viola", "vino", "sole"][i % 3]} ${attivo ? "ev--attivo" : ""}`}>
       <div className="ev-su">
@@ -237,8 +238,7 @@ function SchedaEvento({ e, i, centro, attivo }) {
         <Prezzo e={e} />
       </div>
       <Link to={eventoPercorso(e)} className="ev-foto" tabIndex={-1} aria-hidden="true">
-        <img src={foto} alt="" loading="lazy" onError={(x) => { if (!x.currentTarget.dataset.rip) { x.currentTarget.dataset.rip = 1; x.currentTarget.src = REPERTORIO[0]; } }} />
-        {!e.immagine && <span className="ev-foto-nota">foto di repertorio</span>}
+        <img src={foto} alt="" loading="lazy" onError={(x) => { if (!x.currentTarget.dataset.rip) { x.currentTarget.dataset.rip = 1; x.currentTarget.src = riserva; } }} />
       </Link>
       <Link to={eventoPercorso(e)} className="ev-titolo">{e.titolo}</Link>
       <small className="ev-meta">
@@ -468,8 +468,7 @@ function CantinaDelGiorno() {
     <Link to={cantinaPercorso(c)} className="home-cantina">
       {/* se la cantina non ha ancora una sua foto, un paesaggio come negli eventi */}
       <span className="home-cantina-foto">
-        <img src={foto || REPERTORIO[0]} alt="" loading="lazy" onError={() => setRotta(true)} />
-        {!foto && <span className="ev-foto-nota">foto di repertorio</span>}
+        <img src={foto || fotoDiRiserva(`cantina-${c.id}`)} alt="" loading="lazy" onError={() => setRotta(true)} />
       </span>
       <span className="home-cantina-testo">
         <strong>{c.nome}</strong>
