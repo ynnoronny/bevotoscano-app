@@ -763,3 +763,24 @@ html, body { height: 100%; }
 .sovra-card--no { border-top-color: #C75B39; }
 .sovra-ko { font-family: var(--serif); font-weight: 800; font-size: 22px; color: #C75B39; }
 .sovra-giusta { margin-top: 6px; font-size: 15px; color: var(--text); }
+
+/* ==========================================================================
+   Mappe ferme che fanno da filtro (secondo giro di prova, 23 novembre)
+   ========================================================================== */
+/* il dito sulla mappa fa scorrere la pagina: niente trascinamenti */
+.mappa--ferma, .mappa--ferma.leaflet-container { touch-action: pan-y; cursor: default; }
+.mappa--ferma .leaflet-interactive { cursor: pointer; }
+.feed-mappa { height: auto; }
+.feed-mappa .mappa, .mappa--ferma.mappa--bassa { height: 340px; }
+@media (min-width: 760px) { .feed-mappa .mappa, .mappa--ferma.mappa--bassa { height: 520px; } }
+.mappa--piccola { height: 220px; }
+/* il credito a OpenStreetMap: obbligatorio, ma piccolo e discreto */
+.mappa .leaflet-control-attribution { font-size: 9px; line-height: 1.4; padding: 0 5px; background: rgba(255, 253, 248, 0.55); color: rgba(67, 37, 67, 0.6); border-radius: 6px 0 0 0; }
+.mappa .leaflet-control-attribution a { color: inherit; text-decoration: none; }
+/* da lontano si leggono solo le zone dove c'è qualcosa; avvicinandosi (zona scelta) tutte */
+.mappa--lontana .leaflet-tooltip.zona-tip--vuota { display: none; }
+.leaflet-tooltip.zona-tip { pointer-events: auto; cursor: pointer; }
+/* le zone nella riga di scelta, col pallino dello stesso colore della mappa */
+.filtri--zone { padding: 8px 10px; }
+.zona-pallino { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+.filtri-scelta button.vuota:not(.on) { opacity: 0.6; }

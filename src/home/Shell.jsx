@@ -21,7 +21,10 @@ import Benvenuto, { segnoMio } from "./Benvenuto.jsx";
 import AggiungiCalendario, { Indicazioni } from "../eventi/Calendario.jsx";
 import CondividiEvento from "../eventi/Condividi.jsx";
 import { conProvincia } from "../province.js";
-import { Filtri, Riga, Scelta, Interruttore } from "./Filtri.jsx";
+import { Filtri, Riga, Scelta, Interruttore, SceltaZona } from "./Filtri.jsx";
+import { contaZone } from "../mappaFerma.js";
+import { fotoDiRiserva } from "../repertorio.js";
+import { zonaDi } from "../zone.js";
 import { go } from "../nav.js";
 import { eventoPercorso, FILTRI_EVENTI, cantinaPercorso } from "../seo.js";
 
@@ -151,7 +154,9 @@ function FeedEventi({ filtro }) {
   const [noAuto, setNoAuto] = useState(filtro === "senza-auto");
   const [mappa, setMappa] = useState(false);
   const [attivo, setAttivo] = useState(null);
-  useEffect(() => { setAttivo(null); }, [quando, noAuto, centro]);
+  // con la mappa aperta, la zona toccata fa da filtro per la lista qui sotto
+  const [zona, setZona] = useState(null);
+  useEffect(() => { setAttivo(null); }, [quando, noAuto, centro, zona]);
   const quantiSenzaAuto = (eventi || []).filter((e) => conNavetta(e) && nelQuando(e, quando)).length;
   useEffect(() => { eventiPubblici().then(setEventi).catch(() => setEventi([])); }, []);
   useEffect(() => { scrivi(POS_KEY, centro); }, [centro]);
@@ -163,9 +168,11 @@ function FeedEventi({ filtro }) {
 
   const lista = useMemo(() => (eventi || [])
     .filter((e) => (!noAuto || conNavetta(e)) && nelQuando(e, quando))
-    .map((e) => ({ ...e, d: km(centro, e) }))
+    .map((e) => ({ ...e, d: km(centro, e), zona: e.lat != null ? zonaDi([e.lat, e.lng]) : null }))
     .sort((a, b) => (centro && a.d != null && b.d != null ? a.d - b.d : a.inizio.localeCompare(b.inizio))),
   [eventi, quando, noAuto, centro]);
+  const conta = useMemo(() => contaZone(lista), [lista]);
+  const mostrati = mappa && zona ? lista.filter((e) => e.zona === zona) : lista;
 
   return (
     <div className="feed">
@@ -178,18 +185,27 @@ function FeedEventi({ filtro }) {
       </Filtri>
       <div className="feed-vista">
         <span>{eventi ? (lista.length === 1 ? "1 evento" : `${lista.length} eventi`) : ""}</span>
-        <Scelta opzioni={[["lista", "Lista"], ["mappa", "Mappa e lista"]]} valore={mappa ? "mappa" : "lista"} onCambia={(v) => { setMappa(v === "mappa"); setAttivo(null); }} />
+        <Scelta opzioni={[["lista", "Lista"], ["mappa", "Mappa"]]} valore={mappa ? "mappa" : "lista"} onCambia={(v) => { setMappa(v === "mappa"); setZona(null); setAttivo(null); }} />
       </div>
-      {/* con la mappa la lista resta sotto: toccando un pallino si scende al suo evento */}
-      {mappa && eventi && <div className="feed-mappa"><Mappa eventi={lista} centro={centro} attivo={attivo} onApri={(e) => {
-        setAttivo(e.id);
-        document.getElementById(`evento-${e.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-      }} /></div>}
-      {mappa && eventi && lista.length > 0 && <p className="feed-sotto">Tocca un pallino sulla mappa per trovare l'evento qui sotto.</p>}
+      {/* la mappa è ferma (il dito fa scorrere la pagina) e fa da filtro: tocchi una zona e sotto restano i suoi eventi */}
+      {mappa && eventi && (
+        <>
+          <div className="feed-mappa"><Mappa eventi={mostrati} conta={conta} centro={centro} attivo={attivo} zona={zona} onZona={setZona} onApri={(e) => {
+            setAttivo(e.id);
+            document.getElementById(`evento-${e.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+          }} /></div>
+          <div className="filtri filtri--zone"><Riga etichetta="Zona"><SceltaZona conta={conta} zona={zona} onZona={setZona} totale={lista.length} /></Riga></div>
+          <div className="cant-conta">
+            <strong>{mostrati.length === 1 ? "1 evento" : `${mostrati.length} eventi`}{zona ? ` · ${zona}` : " in Toscana"}</strong>
+            {zona ? <button className="link" onClick={() => setZona(null)}>Tutta la Toscana</button> : <small>Tocca una zona sulla mappa</small>}
+          </div>
+          {zona && !mostrati.length && lista.length > 0 && <p className="feed-vuoto">Nessun evento in zona {zona} in questo periodo. Tocca un'altra zona, o torna a tutta la Toscana.</p>}
+        </>
+      )}
       {!eventi && <p className="feed-vuoto">Carico gli eventi…</p>}
       {eventi && lista.length === 0 && <p className="feed-vuoto">{noAuto ? "Per ora nessun evento di questo periodo ha una navetta che ti passa a prendere. Togli \"Con navetta\" per vederli tutti." : "Nessun evento in questo periodo, per ora. Prova un'altra data, o segnalaci un evento con il pulsante + Segnala."}</p>}
       <div className="feed-griglia">
-        {lista.map((e, i) => <SchedaEvento key={e.id} e={e} i={i} centro={centro} attivo={attivo === e.id} />)}
+        {mostrati.map((e, i) => <SchedaEvento key={e.id} e={e} i={i} centro={centro} attivo={attivo === e.id} />)}
       </div>
       <FineFeed />
     </div>
@@ -208,13 +224,13 @@ export function Prezzo({ e }) {
   );
 }
 
-// Foto di repertorio per gli eventi che non ne hanno una: la scheda resta sempre uguale.
-const REPERTORIO = ["/img/colline.jpg", "/img/strada-bianca.jpg"];
 
 // La scheda evento ha sempre lo stesso ordine: data e prezzo in alto, poi la foto, poi il titolo.
 function SchedaEvento({ e, i, centro, attivo }) {
   const arrivo = comeArrivi(e, centro);
-  const foto = e.immagine || REPERTORIO[(e.id || i) % REPERTORIO.length];
+  // senza foto sua, un paesaggio diverso da tutti gli altri della pagina
+  const riserva = fotoDiRiserva(`evento-${e.id ?? i}`);
+  const foto = e.immagine || riserva;
   return (
     <article id={`evento-${e.id}`} className={`ev ev--${["viola", "vino", "sole"][i % 3]} ${attivo ? "ev--attivo" : ""}`}>
       <div className="ev-su">
@@ -222,8 +238,7 @@ function SchedaEvento({ e, i, centro, attivo }) {
         <Prezzo e={e} />
       </div>
       <Link to={eventoPercorso(e)} className="ev-foto" tabIndex={-1} aria-hidden="true">
-        <img src={foto} alt="" loading="lazy" onError={(x) => { if (!x.currentTarget.dataset.rip) { x.currentTarget.dataset.rip = 1; x.currentTarget.src = REPERTORIO[0]; } }} />
-        {!e.immagine && <span className="ev-foto-nota">foto di repertorio</span>}
+        <img src={foto} alt="" loading="lazy" onError={(x) => { if (!x.currentTarget.dataset.rip) { x.currentTarget.dataset.rip = 1; x.currentTarget.src = riserva; } }} />
       </Link>
       <Link to={eventoPercorso(e)} className="ev-titolo">{e.titolo}</Link>
       <small className="ev-meta">
@@ -453,8 +468,7 @@ function CantinaDelGiorno() {
     <Link to={cantinaPercorso(c)} className="home-cantina">
       {/* se la cantina non ha ancora una sua foto, un paesaggio come negli eventi */}
       <span className="home-cantina-foto">
-        <img src={foto || REPERTORIO[0]} alt="" loading="lazy" onError={() => setRotta(true)} />
-        {!foto && <span className="ev-foto-nota">foto di repertorio</span>}
+        <img src={foto || fotoDiRiserva(`cantina-${c.id}`)} alt="" loading="lazy" onError={() => setRotta(true)} />
       </span>
       <span className="home-cantina-testo">
         <strong>{c.nome}</strong>
