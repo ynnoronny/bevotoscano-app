@@ -13,7 +13,7 @@ import { Filtri, Riga, Scelta, Interruttore } from "./Filtri.jsx";
 import { cantinaPercorso, cantinaMeta, cantinaJsonLd, briciole, applicaMeta, eventoPercorso } from "../seo.js";
 
 const SIGLA = { Pisa: "PI", Firenze: "FI", Siena: "SI", Livorno: "LI", Lucca: "LU", Arezzo: "AR", Grosseto: "GR", Pistoia: "PT", Prato: "PO", "Massa-Carrara": "MS" };
-const dove = (c) => [`${c.comune || ""}${c.provincia ? ` (${SIGLA[c.provincia] || c.provincia})` : ""}`, c.zona].filter(Boolean).join(" · ");
+export const dove = (c) => [`${c.comune || ""}${c.provincia ? ` (${SIGLA[c.provincia] || c.provincia})` : ""}`, c.zona].filter(Boolean).join(" · ");
 const PROVINCIA = Object.fromEntries(Object.entries(SIGLA).map(([n, s]) => [s, n]));
 
 // Le realtà approvate dal gestionale (le trova lo scanner o le segnalano gli utenti) si aggiungono
@@ -90,7 +90,7 @@ const Grappolo = () => (
   </svg>
 );
 
-function Foto({ c, grande }) {
+export function Foto({ c, grande }) {
   if (c.foto) return <img className={`cant-foto ${grande ? "cant-foto--grande" : ""}`} src={c.foto} alt={c.nome} loading="lazy" />;
   return <span className={`cant-foto cant-foto--vuota ${grande ? "cant-foto--grande" : ""}`}><Grappolo /></span>;
 }

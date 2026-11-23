@@ -598,7 +598,8 @@ html, body { height: 100%; }
 /* ===== Home ===== */
 .home-griglia { display: grid; gap: 14px; }
 @media (min-width: 760px) { .home-griglia { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; } }
-.home-titolo { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 26px 2px 12px; }
+.home-titolo { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 28px 2px 12px; }
+.home > .home-titolo:first-child { margin-top: 4px; }
 .home-titolo h2 { font-family: var(--serif); font-weight: 800; font-size: 24px; letter-spacing: -0.4px; color: var(--plum); }
 .home-tutti { font-weight: 800; font-size: 14px; color: var(--wine); }
 .home-scorciatoie { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }
@@ -623,10 +624,21 @@ html, body { height: 100%; }
 .avanti { margin-top: 16px; }
 .avviso { margin-top: 14px; text-align: center; opacity: 0.8; }
 
-/* Eventi con foto */
-.ev-foto { display: block; margin: 0 -18px; height: 150px; overflow: hidden; border-radius: 22px 22px 0 0; background: var(--cream); }
+/* Eventi: la foto sta sempre sotto la striscia della data (vera o di repertorio) */
+.ev-su { margin-bottom: 0; }
+.ev-foto { position: relative; display: block; margin: 0 -18px 4px; height: 128px; overflow: hidden; background: var(--cream); }
 .ev-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.ev--foto .ev-su { border-radius: 0; }
+.ev-foto-nota { position: absolute; right: 8px; bottom: 6px; font-size: 10px; font-weight: 700; color: #fff; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6); opacity: 0.85; }
+
+/* Home */
+.home-scopri { display: block; margin-top: 12px; padding: 14px 18px; border-radius: 16px; text-align: center; font-weight: 800; font-size: 15px; color: var(--plum); background: rgba(67, 37, 67, 0.06); }
+.home-cantina { display: flex; align-items: center; gap: 14px; padding: 14px; border-radius: 20px; background: var(--paper); box-shadow: 0 6px 18px rgba(67, 37, 67, 0.07), inset 0 0 0 1px rgba(67, 37, 67, 0.06); }
+.home-cantina .cant-foto { width: 72px; height: 72px; flex: none; }
+.home-cantina-testo { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+.home-cantina-testo strong { font-family: var(--serif); font-size: 20px; line-height: 1.15; color: var(--plum); }
+.home-cantina-testo small { font-size: 13px; color: var(--muted); }
+.home-cantina-testo span { font-size: 14px; line-height: 1.4; }
+.home-cantina-via { flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--plum); color: #fff; font-weight: 800; }
 
 /* Blog: foto dentro la scheda, con il suo bordo, sempre nello stesso formato */
 .art-img, .art--primo .art-img { width: 100%; height: auto; aspect-ratio: 1200 / 630; margin: 0 0 6px; border-radius: 14px; object-fit: cover; }
@@ -661,3 +673,12 @@ html, body { height: 100%; }
 .notizia-dettagli { margin: 4px 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
 .notizia-dettagli li span { display: block; font-size: 14px; color: var(--muted); }
 .articolo-fonte { font-size: 15px; color: var(--muted); }
+
+/* iPhone (app aggiunta alla Home da Safari): la testata parte sotto notch e orologio,
+   il contenuto finisce sopra la barra in basso, e niente vuoti sotto. */
+.shell-testa { padding-top: calc(10px + env(safe-area-inset-top)); }
+.shell-riga, .shell-pills { padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
+.shell-area { padding-bottom: env(safe-area-inset-bottom); }
+@supports (height: 100dvh) { .shell { height: 100dvh; bottom: auto; } .game { min-height: 100dvh; } }
+.game { padding-top: calc(16px + env(safe-area-inset-top)); padding-bottom: calc(32px + env(safe-area-inset-bottom)); }
+.benvenuto { padding-top: calc(20px + env(safe-area-inset-top)); padding-bottom: calc(20px + env(safe-area-inset-bottom)); }

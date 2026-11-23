@@ -1,21 +1,35 @@
 import { useEffect, useRef, useState } from "react";
-import { DOMANDE, SECONDI_PER_DOMANDA } from "./quizData.js";
+import { DOMANDE } from "./quizData.js";
 import { inviaPunteggio, PAESI } from "../leaderboard.js";
 import { Classifica } from "./Classifiche.jsx";
 import ShareButton from "./ShareButton.jsx";
 
 // Il quiz. Si può partire anche dalla domanda del giorno in home: quella risposta conta già.
-// Il quiz infinito. Si parte con 0 vite, ogni 3 risposte giuste se ne guadagna una.
+// Il quiz infinito. Si parte con 0 vite, ogni 3 risposte giuste di fila se ne guadagna una (un errore azzera il conto).
 // Una risposta sbagliata toglie una vita; sbagliare con 0 vite chiude la partita.
 // La classifica conta quante risposte giuste fai prima di cadere.
 const OGNI_QUANTE_UNA_VITA = 3;
 
 const shuffle = (a) => { const b = [...a]; for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
 const prepara = (q) => ({ ...q, giusta: q.r[0], opzioni: shuffle(q.r) });
-const perLivello = (l) => shuffle(DOMANDE.filter((q) => q.livello === l));
-// Primo giro dalle facili alle difficili; quando il mazzo finisce si rimescola tutto.
-const primoGiro = () => [...perLivello(1), ...perLivello(2), ...perLivello(3)].map(prepara);
-const altroGiro = () => shuffle(DOMANDE).map(prepara);
+// Difficoltà che sale: 4 facili per scaldarsi, poi facili e medie, poi medie e difficili,
+// e dopo la ventesima quasi solo difficili. Se un livello finisce si pesca dal più vicino.
+const livelloPer = (n) => (n < 4 ? 1 : n < 10 ? (n % 3 === 0 ? 1 : 2) : n < 20 ? (n % 3 === 0 ? 2 : 3) : (n % 4 === 0 ? 2 : 3));
+function primoGiro() {
+  const mazzi = { 1: shuffle(DOMANDE.filter((q) => q.livello === 1)), 2: shuffle(DOMANDE.filter((q) => q.livello === 2)), 3: shuffle(DOMANDE.filter((q) => q.livello === 3)) };
+  const fuori = [];
+  for (let n = 0; n < DOMANDE.length; n++) {
+    const l = livelloPer(n);
+    const ordine = l === 1 ? [1, 2, 3] : l === 2 ? [2, 3, 1] : [3, 2, 1];
+    const da = ordine.find((k) => mazzi[k].length);
+    fuori.push(mazzi[da].pop());
+  }
+  return fuori.map(prepara);
+}
+// Secondi per rispondere: meno tempo man mano che le domande si fanno difficili.
+const SECONDI = { 1: 10, 2: 9, 3: 8 };
+const secondiDi = (q) => SECONDI[q?.livello] || 10;
+const altroGiro = () => shuffle(DOMANDE.filter((q) => q.livello > 1)).map(prepara);
 
 const GRADIENTE = "linear-gradient(170deg, #432543 0%, #6B2440 45%, #B3243B 80%, #F2B33D 100%)";
 
@@ -33,7 +47,8 @@ export default function QuizToscana({ onExit, iniziale = "start" }) {
   const [fase, setFase] = useState(dalGiorno ? "gioco" : iniziale); // start | gioco | fine | classifica
   const [domande, setDomande] = useState([]);
   const [i, setI] = useState(0);
-  const [tempo, setTempo] = useState(SECONDI_PER_DOMANDA);
+  const [tempo, setTempo] = useState(10);
+  const [serie, setSerie] = useState(0); // giuste di fila verso la prossima vita: un errore la azzera
   const [scelta, setScelta] = useState(null); // risposta data, o "__tempo" / "__uscito"
   const [corrette, setCorrette] = useState(0);
   const [vite, setVite] = useState(0);
@@ -44,7 +59,7 @@ export default function QuizToscana({ onExit, iniziale = "start" }) {
   // da: la domanda del giorno già risposta in home ({ d, ok }): non si ripete e, se giusta, conta.
   const parti = (da) => {
     setDomande(primoGiro().filter((q) => !da || q.d !== da.d));
-    setI(0); setCorrette(da?.ok ? 1 : 0); setVite(0); setScelta(null); setFinita(false);
+    setI(0); setCorrette(da?.ok ? 1 : 0); setSerie(da?.ok ? 1 : 0); setVite(0); setScelta(null); setFinita(false);
     setNota(da ? (da.ok ? "Hai già 1 giusta dalla domanda del giorno" : "La domanda del giorno non conta: si parte da qui") : "");
     setFase("gioco");
   };
@@ -57,9 +72,10 @@ export default function QuizToscana({ onExit, iniziale = "start" }) {
   useEffect(() => {
     if (fase !== "gioco" || scelta) return;
     inizio.current = performance.now();
-    setTempo(SECONDI_PER_DOMANDA);
+    const tot = secondiDi(domande[i]);
+    setTempo(tot);
     const t = setInterval(() => {
-      const rest = SECONDI_PER_DOMANDA - (performance.now() - inizio.current) / 1000;
+      const rest = tot - (performance.now() - inizio.current) / 1000;
       if (rest <= 0) { clearInterval(t); setTempo(0); rispondi("__tempo"); }
       else setTempo(rest);
     }, 100);
@@ -82,12 +98,15 @@ export default function QuizToscana({ onExit, iniziale = "start" }) {
     if (giusta) {
       const c = corrette + 1;
       setCorrette(c);
-      if (c % OGNI_QUANTE_UNA_VITA === 0) { setVite((v) => v + 1); setNota("+1 vita"); } else setNota("");
+      const sr = serie + 1;
+      if (sr >= OGNI_QUANTE_UNA_VITA) { setVite((v) => v + 1); setNota("+1 vita"); setSerie(0); } else { setNota(""); setSerie(sr); }
     } else if (vite > 0) {
+      setSerie(0);
       setVite(vite - 1);
       setNota("-1 vita");
     } else {
       fine = true;
+      setSerie(0);
       setNota("");
     }
     setFinita(fine);
@@ -104,7 +123,7 @@ export default function QuizToscana({ onExit, iniziale = "start" }) {
   }
 
   const q = domande[i];
-  const versoVita = OGNI_QUANTE_UNA_VITA - (corrette % OGNI_QUANTE_UNA_VITA);
+  const versoVita = OGNI_QUANTE_UNA_VITA - serie;
 
   return (
     <div className={`game ${fase === "fine" ? "game--result" : ""}`} style={fase === "fine" ? { background: GRADIENTE } : undefined}>
@@ -121,9 +140,9 @@ export default function QuizToscana({ onExit, iniziale = "start" }) {
           <h1 className="game-title">Quanto ne sai di <em>vino toscano</em>?</h1>
           <div className="regole">
             <p><b>Le domande non finiscono mai.</b> Vai avanti finché resisti.</p>
-            <p><b>Parti con 0 vite.</b> Ogni 3 risposte giuste ne guadagni una.</p>
+            <p><b>Parti con 0 vite.</b> Ogni 3 risposte giuste di fila ne guadagni una: un errore azzera il conto.</p>
             <p><b>Sbagli?</b> Perdi una vita. Se sbagli quando non ne hai, la partita finisce.</p>
-            <p><b>Niente aiutini:</b> {SECONDI_PER_DOMANDA} secondi a domanda, e se esci dall'app per cercare la risposta la domanda è persa.</p>
+            <p><b>Niente aiutini:</b> da 10 a 8 secondi a domanda, sempre meno man mano che si fanno difficili. Se esci dall'app per cercare la risposta, la domanda è persa.</p>
           </div>
           <button className="btn btn--primary wide" onClick={() => parti()}>Inizia</button>
           <button className="link" onClick={() => setFase("classifica")}>Vedi la classifica</button>
@@ -138,7 +157,7 @@ export default function QuizToscana({ onExit, iniziale = "start" }) {
             </span>
             <span className="score">{corrette} ✓</span>
           </div>
-          <div className={`timer ${tempo < 5 ? "timer--low" : ""}`}><div style={{ width: `${(tempo / SECONDI_PER_DOMANDA) * 100}%` }} /></div>
+          <div className={`timer ${tempo < 3 ? "timer--low" : ""}`}><div style={{ width: `${(tempo / secondiDi(q)) * 100}%` }} /></div>
           <div className="tiny right">
             Domanda {i + 1} · {Math.ceil(tempo)}s · {versoVita === 1 ? "la prossima giusta vale una vita" : `${versoVita} giuste alla prossima vita`}
           </div>
