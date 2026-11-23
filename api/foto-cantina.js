@@ -47,7 +47,22 @@ async function dalSito(sito) {
     headers: { "User-Agent": "Mozilla/5.0 (compatible; BevotoscanoFoto/1.0)", Accept: "text/html" },
   });
   if (!r.ok) return null;
-  return trova((await r.text()).slice(0, 600000), r.url || sito);
+  const html = (await r.text()).slice(0, 600000);
+  return trova(html, r.url || sito) || (/wp-content|wp-json/.test(html) ? await daWordPress(r.url || sito) : null);
+}
+
+// Molti siti di cantine sono fatti con WordPress e caricano le foto con JavaScript (nella pagina
+// non si vedono). WordPress però elenca le sue immagini: prendiamo la più grande in orizzontale.
+async function daWordPress(base) {
+  const u = new URL("/wp-json/wp/v2/media?per_page=50&media_type=image&_fields=source_url,media_details", base);
+  const r = await fetch(u, { signal: AbortSignal.timeout(6000), headers: { "User-Agent": "Mozilla/5.0 (compatible; BevotoscanoFoto/1.0)" } });
+  if (!r.ok) return null;
+  const lista = await r.json().catch(() => []);
+  const buone = (Array.isArray(lista) ? lista : [])
+    .map((m) => ({ src: m.source_url, w: m.media_details?.width || 0, h: m.media_details?.height || 0 }))
+    .filter((m) => m.src && /\.(jpe?g|webp)$/i.test(m.src) && !NON_FOTO.test(m.src) && m.w >= 900 && m.w > m.h)
+    .sort((a, b) => b.w - a.w);
+  return buone[0]?.src || null;
 }
 
 // La scheda Google Maps della cantina (Places API): solo se la chiave è configurata in Vercel.
@@ -80,7 +95,7 @@ export default async function handler(req, res) {
     try {
       const r = await fetch(sito, { redirect: "follow", signal: AbortSignal.timeout(7000), headers: { "User-Agent": "Mozilla/5.0 (compatible; BevotoscanoFoto/1.0)", Accept: "text/html" } });
       const t = await r.text();
-      return res.json({ status: r.status, url: r.url, lunghezza: t.length, foto: trova(t, r.url), img: [...t.matchAll(/<img[^>]{0,400}>/gi)].slice(0, 12).map((m) => m[0]), sfondi: [...t.matchAll(/url\([^)]{0,200}\)/gi)].slice(0, 12).map((m) => m[0]) });
+      return res.json({ wp: /wp-content|wp-json/.test(t) ? await daWordPress(r.url).catch((e) => String(e)) : null, status: r.status, url: r.url, lunghezza: t.length, foto: trova(t, r.url), img: [...t.matchAll(/<img[^>]{0,400}>/gi)].slice(0, 12).map((m) => m[0]), sfondi: [...t.matchAll(/url\([^)]{0,200}\)/gi)].slice(0, 12).map((m) => m[0]) });
     } catch (e) { return res.json({ errore: String(e) }); }
   }
   let foto = null, google = false;
