@@ -79,7 +79,7 @@ function ProponiLuogo({ tipo }) {
       </Campo>
       <Campo label="Il tuo nome"><input className="input" value={v.referente} maxLength={80} onChange={(e) => set("referente", e.target.value)} /></Campo>
       <Campo label="La tua email *" hint="Solo per risponderti, non la pubblichiamo."><input className="input" type="email" value={v.email} maxLength={200} onChange={(e) => set("email", e.target.value)} /></Campo>
-      <Campo label="Perché merita?"><textarea className="input" rows={3} value={v.note} maxLength={600} onChange={(e) => set("note", e.target.value)} placeholder={tipo === "cantina" ? "Il vino più toscano che fanno, la storia, le visite…" : "Cosa si beve, l'atmosfera, le serate…"} /></Campo>
+      <Campo label="Perché merita?"><textarea className="input" rows={3} value={v.note} maxLength={600} onChange={(e) => set("note", e.target.value)} placeholder={tipo === "cantina" ? "Cosa la rende speciale: la storia, le vigne, le visite…" : "Cosa si beve, l'atmosfera, le serate…"} /></Campo>
       <CampoFoto file={foto} onFile={setFoto} etichetta={`Una foto della ${cosa} (se ce l'hai)`}
         aiuto="La vigna, la cantina, il banco: nell'elenco si vede piccola, nella scheda in grande." />
       {errore && <p className="error">{errore}</p>}
