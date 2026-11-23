@@ -23,7 +23,7 @@ const daAttore = (a) => ({
   id: `r${a.id}`, db: true, nome: a.nome, comune: a.comune, tipo: TIPI_DB[a.tipo],
   provincia: PROVINCIA[siglaProvincia(a.comune)] || null,
   zona: zonaDi(a.lat != null ? [a.lat, a.lng] : null), lat: a.lat, lng: a.lng,
-  sito: a.sito ? (/^https?:\/\//.test(a.sito) ? a.sito : `https://${a.sito}`) : null, maps: a.google_maps,
+  sito: a.sito ? (/^https?:\/\//.test(a.sito) ? a.sito : `https://${a.sito}`) : null, maps: a.google_maps, foto: a.foto || null,
 });
 function useCantine() {
   const [extra, setExtra] = useState([]);

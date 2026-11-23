@@ -231,6 +231,8 @@ function Dettaglio({ e, centro }) {
         ? `Dal ${fmtData(e.inizio, false)} al ${fmtData(e.fine, false)}`
         : `${fmtData(e.inizio)}${e.fine ? ` → ${new Date(e.fine).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}` : ""}`}</p>
       <h1 className="page-title">{e.titolo}</h1>
+      {/* la foto o la locandina, in grande: un tocco la apre intera */}
+      {e.immagine && <a href={e.immagine} target="_blank" rel="noopener"><img className="evento-img" src={e.immagine} alt={`Foto di ${e.titolo}`} /></a>}
       <Badges e={e} />
       <AggiungiCalendario e={e} percorso={eventoPercorso(e)} className="cal--pagina" />
       <CondividiEvento e={e} grande />

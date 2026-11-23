@@ -1,7 +1,8 @@
 import { useState } from "react";
 import Segnala, { Campo } from "../eventi/Segnala.jsx";
 import { saveLead, isEmail } from "../leads.js";
-import { proponi } from "../eventi/api.js";
+import { proponi, caricaFoto } from "../eventi/api.js";
+import CampoFoto from "../eventi/CampoFoto.jsx";
 import { Scelta } from "./Filtri.jsx";
 
 // "Segnala": un solo pulsante in alto, poi scegli cosa proponi.
@@ -28,6 +29,7 @@ function ProponiLuogo({ tipo }) {
   const [errore, setErrore] = useState("");
   const [fatto, setFatto] = useState(false);
   const [invio, setInvio] = useState(false);
+  const [foto, setFoto] = useState(null);
   const set = (k, x) => { setV((o) => ({ ...o, [k]: x })); setErrore(""); };
   const cosa = tipo === "cantina" ? "cantina" : "enoteca";
 
@@ -38,7 +40,7 @@ function ProponiLuogo({ tipo }) {
         <p>{fatto === "doppione"
           ? `Questa ${cosa} la conosciamo già: è tra quelle che stiamo valutando. Grazie lo stesso!`
           : `Abbiamo ricevuto la ${cosa}. La guardiamo e, se fa per Bevotoscano, ti scriviamo per andarla a trovare.`}</p>
-        <button className="link" onClick={() => { setV(VUOTO); setFatto(false); }}>Proponine un'altra</button>
+        <button className="link" onClick={() => { setV(VUOTO); setFoto(null); setFatto(false); }}>Proponine un'altra</button>
       </div>
     );
   }
@@ -52,6 +54,8 @@ function ProponiLuogo({ tipo }) {
     setInvio(true);
     let esito = true;
     try {
+      // la foto è facoltativa: se il caricamento non va, la proposta parte lo stesso
+      if (foto) p.foto = await caricaFoto(foto).catch(() => null);
       if ((await proponi(p)) === "doppione") esito = "doppione";
     } catch (x) {
       if (/troppe/.test(x.message)) { setInvio(false); return setErrore("Hai già mandato molte proposte oggi: riprova domani."); }
@@ -76,6 +80,8 @@ function ProponiLuogo({ tipo }) {
       <Campo label="Il tuo nome"><input className="input" value={v.referente} maxLength={80} onChange={(e) => set("referente", e.target.value)} /></Campo>
       <Campo label="La tua email *" hint="Solo per risponderti, non la pubblichiamo."><input className="input" type="email" value={v.email} maxLength={200} onChange={(e) => set("email", e.target.value)} /></Campo>
       <Campo label="Perché merita?"><textarea className="input" rows={3} value={v.note} maxLength={600} onChange={(e) => set("note", e.target.value)} placeholder={tipo === "cantina" ? "Il vino più toscano che fanno, la storia, le visite…" : "Cosa si beve, l'atmosfera, le serate…"} /></Campo>
+      <CampoFoto file={foto} onFile={setFoto} etichetta={`Una foto della ${cosa} (se ce l'hai)`}
+        aiuto="La vigna, la cantina, il banco: nell'elenco si vede piccola, nella scheda in grande." />
       {errore && <p className="error">{errore}</p>}
       <button className="btn btn--primary" type="submit" disabled={invio}>{invio ? "Invio…" : "Invia la proposta"}</button>
     </form>

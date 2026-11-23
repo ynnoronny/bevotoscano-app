@@ -688,3 +688,13 @@ html, body { height: 100%; }
 @media (min-width: 760px) { .mappa--bassa { height: 560px; } }
 .leaflet-tooltip.zona-tip--vuota { font-size: 10.5px; padding: 3px 8px; }
 .mappa--lontana .leaflet-tooltip.zona-tip--vuota { display: none; }
+
+/* Moduli Segnala: foto o locandina */
+.campo-foto { display: flex; flex-direction: column; gap: 6px; }
+.campo-foto-etichetta { font-size: 14px; font-weight: 700; color: var(--plum); }
+.campo-foto-vuoto { position: relative; display: flex; align-items: center; justify-content: center; min-height: 64px; border-radius: 14px; border: 1.5px dashed rgba(67, 37, 67, 0.3); background: var(--paper); color: var(--plum); font-weight: 700; cursor: pointer; }
+.campo-foto-vuoto input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.campo-foto-scelta { display: flex; align-items: center; gap: 12px; }
+.campo-foto-scelta img { width: 84px; height: 84px; object-fit: cover; border-radius: 12px; }
+.campo-foto-aiuto { font-size: 12.5px; color: var(--muted); }
+.evento-img { display: block; width: 100%; max-height: 420px; object-fit: cover; border-radius: 18px; margin: 4px 0 6px; }

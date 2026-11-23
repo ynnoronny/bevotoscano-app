@@ -176,15 +176,22 @@ const attoriLocali = () => { try { return JSON.parse(localStorage.getItem(LOCAL_
 const salvaAttoriLocali = (l) => { try { localStorage.setItem(LOCAL_ATTORI, JSON.stringify(l)); } catch { /* niente */ } };
 
 // Ritorna "doppione" se la conosciamo già (stesso nome e comune).
-export async function proponi({ tipo, nome, comune, sito, ruolo, referente, email, note }) {
+export async function proponi({ tipo, nome, comune, sito, ruolo, referente, email, note, foto }) {
   const chi = ruolo === "titolare" ? "La propone chi ci lavora" : "La consiglia un cliente";
   const riga = {
     tipo, nome, comune, sito, stato: "in_attesa", origine: "segnalazione", segnalato_da_email: email,
+    ...(foto ? { foto } : {}),
     note: [`${chi}${referente ? `: ${referente}` : ""}.`, note].filter(Boolean).join(" ").slice(0, 900),
   };
   if (online()) {
-    try { return await rest("scanner_attori", { method: "POST", body: riga, prefer: "return=minimal" }); }
-    catch (e) { if (/duplicate|unique/i.test(e.message)) return "doppione"; throw e; }
+    const manda = (r) => rest("scanner_attori", { method: "POST", body: r, prefer: "return=minimal" });
+    try { return await manda(riga); }
+    catch (e) {
+      if (/duplicate|unique/i.test(e.message)) return "doppione";
+      // se nel database manca ancora la colonna della foto, la proposta parte senza
+      if (riga.foto && /foto/i.test(e.message)) { const { foto: _, ...senza } = riga; return manda(senza); }
+      throw e;
+    }
   }
   salvaAttoriLocali([...attoriLocali(), { ...riga, id: Date.now(), creato: new Date().toISOString(), attivo: true }]);
 }
@@ -230,4 +237,30 @@ export async function registroScanner(tabella, query) {
 }
 export async function salvaRegola(nome, testo) {
   return rest(`scanner_regole?nome=eq.${encodeURIComponent(nome)}`, { method: "PATCH", body: { testo, aggiornato: new Date().toISOString() }, token: await token(), prefer: "return=minimal" });
+}
+
+// ---------- foto e locandine dal modulo Segnala (Supabase Storage, cartella "segnalazioni") ----------
+// La foto viene rimpicciolita nel browser (lato lungo 1600 px, JPEG) prima di partire:
+// pesa poco, si carica in fretta e va bene sia come anteprima sia aperta in grande.
+async function rimpicciolisci(file, lato = 1600) {
+  const img = await new Promise((ok, ko) => { const i = new Image(); i.onload = () => ok(i); i.onerror = ko; i.src = URL.createObjectURL(file); });
+  const k = Math.min(1, lato / Math.max(img.width, img.height));
+  const c = document.createElement("canvas");
+  c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+  c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+  URL.revokeObjectURL(img.src);
+  return new Promise((ok) => c.toBlob(ok, "image/jpeg", 0.82));
+}
+export async function caricaFoto(file) {
+  if (!file || !online()) return null;
+  if (!/^image\//.test(file.type)) throw new Error("Serve un'immagine (JPG, PNG…).");
+  const blob = await rimpicciolisci(file);
+  const nome = `${new Date().toISOString().slice(0, 10)}/${Math.random().toString(36).slice(2, 10)}.jpg`;
+  const r = await fetch(`${SUPABASE_URL}/storage/v1/object/segnalazioni/${nome}`, {
+    method: "POST",
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, "Content-Type": "image/jpeg" },
+    body: blob,
+  });
+  if (!r.ok) throw new Error("Caricamento della foto non riuscito.");
+  return `${SUPABASE_URL}/storage/v1/object/public/segnalazioni/${nome}`;
 }
