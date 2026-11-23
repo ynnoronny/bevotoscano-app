@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { INSTAGRAM_URL, RYB_URL } from "../data.js";
 import { eventiPubblici, notiziePubbliche } from "../eventi/api.js";
-import { Dettagli, CATEGORIE_NOTIZIE } from "../eventi/AdminScanner.jsx";
+import { Dettagli } from "../eventi/AdminScanner.jsx";
 import { senzaAuto, prezzoEv, conNavetta } from "../eventi/shared.js";
 import Eventi from "../eventi/Eventi.jsx";
 import Mappa from "../eventi/Mappa.jsx";
 import { km, fmtKm, posizioneAttuale, CITTA } from "../eventi/geo.js";
-import Cantine, { Foto, dove } from "./Cantine.jsx";
+import Cantine, { dove } from "./Cantine.jsx";
 import SegnalaScelta from "./SegnalaScelta.jsx";
 import { ARTICOLI, articolo, dataArticolo } from "../blog.js";
 import { DOMANDE } from "../games/quizData.js";
@@ -15,6 +15,7 @@ import MESE from "../games/oroscopoMese.json";
 import { Classifica } from "../games/Classifiche.jsx";
 import { DAL_GIORNO } from "../games/QuizToscana.jsx";
 import { CANTINE } from "../data.js";
+import { TEMI_BLOG, temaDi } from "../blog.js";
 import Link from "../Link.jsx";
 import Benvenuto, { segnoMio } from "./Benvenuto.jsx";
 import AggiungiCalendario, { Indicazioni } from "../eventi/Calendario.jsx";
@@ -29,12 +30,14 @@ import { eventoPercorso, FILTRI_EVENTI, cantinaPercorso } from "../seo.js";
 // della pill scelta: eventi, cantine, articoli del blog, classifica del gioco.
 
 export const PILLS = [
+  { id: "home", label: "Home", to: "home" },
   { id: "eventi", label: "Eventi", to: "eventi" },
   { id: "cantine", label: "Cantine", to: "cantine" },
   { id: "blog", label: "Blog", to: "blog" },
   { id: "gioca", label: "Giochi", to: "gioca" },
 ];
 
+// La Home ha la sua pill (prima ci si tornava solo toccando il logo, e non si capiva).
 // Da una pagina interna (un evento, una cantina, un articolo…) la freccia riporta all'elenco.
 function indietroDa(section, sub) {
   if (section === "eventi" && sub && !FILTRI_EVENTI.includes(sub)) return ["eventi", "Eventi"];
@@ -111,6 +114,11 @@ function quandoEv(e) {
     : `${a.getDate()} ${MESI_L[a.getMonth()]} – ${b.getDate()} ${MESI_L[b.getMonth()]}`;
   return ora ? `${giorni} · dalle ${hm(a)}` : giorni;
 }
+// Il giorno grande su una riga, l'orario sotto più piccolo: si legge al volo.
+function QuandoEv({ e }) {
+  const [giorno, ...ora] = quandoEv(e).split(" · ");
+  return <>{giorno.charAt(0).toUpperCase() + giorno.slice(1)}{ora.length > 0 && <small className="ev-ora">{ora.join(" · ")}</small>}</>;
+}
 const inCorso = (e) => g(e.inizio) <= new Date() && (!e.fine || g(e.fine) >= new Date());
 function comeArrivi(e, centro) {
   const pk = [...(e.pickup || [])].map((p) => ({ ...p, d: km(centro, p) })).sort((a, b) => (a.d ?? 0) - (b.d ?? 0))[0];
@@ -142,6 +150,8 @@ function FeedEventi({ filtro }) {
   const [quando, setQuando] = useState(filtro === "weekend" ? "weekend" : "tutte");
   const [noAuto, setNoAuto] = useState(filtro === "senza-auto");
   const [mappa, setMappa] = useState(false);
+  const [attivo, setAttivo] = useState(null);
+  useEffect(() => { setAttivo(null); }, [quando, noAuto, centro]);
   const quantiSenzaAuto = (eventi || []).filter((e) => conNavetta(e) && nelQuando(e, quando)).length;
   useEffect(() => { eventiPubblici().then(setEventi).catch(() => setEventi([])); }, []);
   useEffect(() => { scrivi(POS_KEY, centro); }, [centro]);
@@ -168,14 +178,19 @@ function FeedEventi({ filtro }) {
       </Filtri>
       <div className="feed-vista">
         <span>{eventi ? (lista.length === 1 ? "1 evento" : `${lista.length} eventi`) : ""}</span>
-        <Scelta opzioni={[["lista", "Lista"], ["mappa", "Mappa"]]} valore={mappa ? "mappa" : "lista"} onCambia={(v) => setMappa(v === "mappa")} />
+        <Scelta opzioni={[["lista", "Lista"], ["mappa", "Mappa e lista"]]} valore={mappa ? "mappa" : "lista"} onCambia={(v) => { setMappa(v === "mappa"); setAttivo(null); }} />
       </div>
-      {mappa && eventi && <div className="feed-mappa"><Mappa eventi={lista} centro={centro} onApri={(e) => go(eventoPercorso(e))} /></div>}
+      {/* con la mappa la lista resta sotto: toccando un pallino si scende al suo evento */}
+      {mappa && eventi && <div className="feed-mappa"><Mappa eventi={lista} centro={centro} attivo={attivo} onApri={(e) => {
+        setAttivo(e.id);
+        document.getElementById(`evento-${e.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }} /></div>}
+      {mappa && eventi && lista.length > 0 && <p className="feed-sotto">Tocca un pallino sulla mappa per trovare l'evento qui sotto.</p>}
       {!eventi && <p className="feed-vuoto">Carico gli eventi…</p>}
       {eventi && lista.length === 0 && <p className="feed-vuoto">{noAuto ? "Per ora nessun evento di questo periodo ha una navetta che ti passa a prendere. Togli \"Con navetta\" per vederli tutti." : "Nessun evento in questo periodo, per ora. Prova un'altra data, o segnalaci un evento con il pulsante + Segnala."}</p>}
-      {!mappa && <div className="feed-griglia">
-        {lista.map((e, i) => <SchedaEvento key={e.id} e={e} i={i} centro={centro} />)}
-      </div>}
+      <div className="feed-griglia">
+        {lista.map((e, i) => <SchedaEvento key={e.id} e={e} i={i} centro={centro} attivo={attivo === e.id} />)}
+      </div>
       <FineFeed />
     </div>
   );
@@ -197,13 +212,13 @@ export function Prezzo({ e }) {
 const REPERTORIO = ["/img/colline.jpg", "/img/strada-bianca.jpg"];
 
 // La scheda evento ha sempre lo stesso ordine: data e prezzo in alto, poi la foto, poi il titolo.
-function SchedaEvento({ e, i, centro }) {
+function SchedaEvento({ e, i, centro, attivo }) {
   const arrivo = comeArrivi(e, centro);
   const foto = e.immagine || REPERTORIO[(e.id || i) % REPERTORIO.length];
   return (
-    <article className={`ev ev--${["viola", "vino", "sole"][i % 3]}`}>
+    <article id={`evento-${e.id}`} className={`ev ev--${["viola", "vino", "sole"][i % 3]} ${attivo ? "ev--attivo" : ""}`}>
       <div className="ev-su">
-        <span className="ev-quando">{quandoEv(e)}</span>
+        <span className="ev-quando"><QuandoEv e={e} /></span>
         <Prezzo e={e} />
       </div>
       <Link to={eventoPercorso(e)} className="ev-foto" tabIndex={-1} aria-hidden="true">
@@ -269,7 +284,7 @@ function FineFeed() {
 // Le notizie approvate dal gestionale (le trova lo scanner) si mettono accanto agli articoli
 // scritti a mano, in ordine di data. Il loro indirizzo è bevotoscano.com/blog/n-<id>.
 const daNotizia = (n) => ({
-  id: `n-${n.id}`, notizia: n, titolo: n.titolo, tag: CATEGORIE_NOTIZIE[n.categoria] || "Notizie",
+  id: `n-${n.id}`, notizia: n, titolo: n.titolo, tag: temaDi(n.categoria),
   data: (n.data_fonte || n.approvato || "").slice(0, 10),
   sottotitolo: (n.sintesi || "").split(/(?<=\.)\s/)[0],
 });
@@ -282,13 +297,14 @@ function useNotizie() {
 function Blog() {
   const notizie = useNotizie();
   const tutti = [...ARTICOLI, ...notizie].sort((a, b) => String(b.data).localeCompare(String(a.data)));
-  // filtro per argomento (il tag di ogni articolo o notizia)
+  // filtro per tema: Eventi, Premi e guide, Vino toscano
   const [tema, setTema] = useState("tutti");
-  const temi = [["tutti", "Tutti"], ...[...new Set(tutti.map((a) => a.tag).filter(Boolean))].map((t) => [t, t])];
+  const temi = [["tutti", "Tutti"], ...TEMI_BLOG.map((t) => [t, t])];
   const lista = tutti.filter((a) => tema === "tutti" || a.tag === tema);
   return (
     <div className="feed">
-      {temi.length > 2 && <Filtri><Riga etichetta="Tema"><Scelta opzioni={temi} valore={tema} onCambia={setTema} /></Riga></Filtri>}
+      <Filtri><Riga etichetta="Temi"><Scelta opzioni={temi} valore={tema} onCambia={setTema} /></Riga></Filtri>
+      {lista.length === 0 && <p className="feed-vuoto">Nessun articolo su questo tema, per ora. Arrivano presto.</p>}
       <div className="feed-griglia feed-griglia--blog">
         {lista.map((a) => (
           <Link key={a.id} to={`blog/${a.id}`} className={`art ${a.notizia ? "art--notizia" : ""}`}>
@@ -399,7 +415,7 @@ function Home() {
   const [eventi, setEventi] = useState(null);
   useEffect(() => { eventiPubblici().then(setEventi).catch(() => setEventi([])); }, []);
   const prossimi = (eventi || []).slice(0, 3);
-  const altri = Math.max(0, (eventi || []).length - prossimi.length);
+  const tutti = (eventi || []).length;
   return (
     <div className="feed home">
       <div className="home-titolo">
@@ -409,11 +425,11 @@ function Home() {
       {!eventi && <p className="feed-vuoto">Carico gli eventi…</p>}
       {eventi && !prossimi.length && <p className="feed-vuoto">Nuovi eventi in arrivo. Ne conosci uno? Segnalacelo con + Segnala.</p>}
       <div className="feed-griglia home-eventi">{prossimi.map((e, i) => <SchedaEvento key={e.id} e={e} i={i} />)}</div>
-      {altri > 0 && <Link to="eventi" className="home-scopri">{altri === 1 ? "Scopri l'altro evento" : `Scopri gli altri ${altri} eventi`} →</Link>}
+      {tutti > prossimi.length && <Link to="eventi" className="home-scopri">Vedi tutti i {tutti} eventi in calendario →</Link>}
 
       <div className="home-titolo"><h2>La cantina del giorno</h2><Link to="cantine" className="home-tutti">Tutte →</Link></div>
       <CantinaDelGiorno />
-      <Link to="cantine" className="home-scopri">Scopri tutte le {CANTINE.length} cantine →</Link>
+      <Link to="cantine" className="home-scopri">Tutte le cantine sulla mappa →</Link>
 
       <div className="home-titolo"><h2>Gioca</h2><Link to="gioca" className="home-tutti">Giochi →</Link></div>
       <div className="home-griglia">
@@ -432,7 +448,11 @@ function CantinaDelGiorno() {
   if (!c) return null;
   return (
     <Link to={cantinaPercorso(c)} className="home-cantina">
-      <Foto c={c} />
+      {/* se la cantina non ha ancora una sua foto, un paesaggio come negli eventi */}
+      <span className="home-cantina-foto">
+        <img src={c.foto || REPERTORIO[0]} alt="" loading="lazy" onError={(x) => { x.currentTarget.src = REPERTORIO[0]; }} />
+        {!c.foto && <span className="ev-foto-nota">foto di repertorio</span>}
+      </span>
       <span className="home-cantina-testo">
         <strong>{c.nome}</strong>
         <small>{dove(c)}</small>

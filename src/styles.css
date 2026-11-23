@@ -717,3 +717,46 @@ html, body { height: 100%; }
 .sovra-barra div { height: 100%; width: 100%; background: linear-gradient(90deg, var(--wine), var(--gold)); transform-origin: left; animation: svuota linear forwards; }
 .sovra-tocca { display: block; margin-top: 8px; font-size: 12px; color: var(--muted); }
 @keyframes svuota { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+
+/* ==========================================================================
+   Dopo la prova su iPhone (23 novembre)
+   ========================================================================== */
+/* la Home è una pill: cinque in fila */
+.shell-pills { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; }
+.shell-pill { font-size: 14px; padding: 0 2px; }
+@media (min-width: 760px) { .shell-pill { font-size: 15px; } }
+
+/* schede evento: data e nome più grandi, si leggono anche al volo */
+.ev-quando { font-size: 16px; font-weight: 800; letter-spacing: 0; }
+.ev-titolo { font-size: 23px; line-height: 1.18; }
+.ev-meta { font-size: 14.5px; }
+.ev--attivo { box-shadow: 0 0 0 3px var(--gold), 0 10px 28px rgba(67, 37, 67, 0.18); }
+.feed-sotto { margin: -6px 2px 0; font-size: 13px; color: var(--muted); }
+
+/* la cantina del giorno: una foto larga come negli eventi (vera o di repertorio) */
+.home-cantina { flex-wrap: wrap; padding: 0 0 14px; overflow: hidden; }
+.home-cantina-foto { position: relative; display: block; flex: 0 0 100%; height: 160px; }
+.home-cantina-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.home-cantina-testo { padding-left: 16px; }
+.home-cantina-via { margin-right: 14px; }
+
+/* niente spazio vuoto in fondo: meno margine sotto l'ultimo blocco */
+.shell-dentro { padding-bottom: 16px; }
+/* app aperta dall'icona sulla Home dell'iPhone: lì 100dvh è più corto dello schermo
+   (non conta la barra in alto) e sotto restava una fascia vuota. La cornice va da bordo a bordo. */
+@media (display-mode: standalone) { .shell { height: auto; bottom: 0; } }
+
+/* mappa delle cantine: zone colorate, nome sempre scritto dentro */
+.mappa--bassa { height: 450px; }
+@media (min-width: 760px) { .mappa--bassa { height: 540px; } }
+.leaflet-tooltip.zona-tip { background: rgba(255, 253, 248, 0.94); color: var(--plum); font-size: 11.5px; padding: 3px 8px; box-shadow: 0 1px 4px rgba(67, 37, 67, 0.25); }
+.leaflet-tooltip.zona-tip--on { background: var(--plum); color: #fff; }
+.mappa--lontana .leaflet-tooltip.zona-tip { font-size: 9.5px; padding: 2px 6px; }
+.mappa--lontana .leaflet-tooltip.zona-tip--vuota { display: inline-block; }
+.cant-conta { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 2px 2px -4px; }
+.cant-conta strong { font-family: var(--serif); font-size: 19px; color: var(--plum); }
+.cant-conta small { font-size: 12.5px; color: var(--muted); }
+.cant-conta .link { background: none; border: 0; padding: 0; font: inherit; font-size: 14px; font-weight: 700; color: var(--wine); text-decoration: underline; cursor: pointer; white-space: nowrap; }
+.ev-quando { display: flex; flex-direction: column; font-size: 17px; line-height: 1.2; }
+.ev-ora { display: block; font-size: 13.5px; font-weight: 700; opacity: 0.85; }
+.ev-ora::first-letter { text-transform: none; }
