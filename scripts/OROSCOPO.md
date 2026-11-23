@@ -15,7 +15,7 @@ Ogni volta che il Sole cambia segno, `src/games/oroscopoMese.json` va riscritto 
    - `cielo`: 2-3 frasi con i fatti del periodo (ingresso del Sole, lune, cambi di segno dei pianeti, retrogradazioni). Solo fatti presi dallo script.
    - `testi`: un oggetto per ciascuno dei 12 segni (ariete, toro, gemelli, cancro, leone, vergine, bilancia, scorpione, sagittario, capricorno, acquario, pesci), ognuno con:
      - `titolo`: massimo 6 parole, con un po' di spirito;
-     - `testo`: 3-4 frasi, massimo 420 caratteri;
+     - `testo`: 2 frasi, massimo 220 caratteri, brevi e simpatiche (Ronny lo vuole leggero, non un trattato);
      - `affine` e `antagonista`: `{ "segno": "<id>", "nome": "...", "testo": "..." }`.
        L'affine è uno dei due segni dello stesso elemento (trigono), l'antagonista uno dei due in quadratura.
        Ogni mese scegli quello che il cielo del periodo mette in evidenza (dove sta il Sole, Venere, Marte, Giove…).
