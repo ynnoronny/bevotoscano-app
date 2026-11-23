@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { online, accedi, esci, sessione, livello, fattoreAttivo, nuovoFattore, verificaCodice, tuttiGliEventi, salvaEvento, eliminaEvento, pickupPoints, salvaPickup } from "./api.js";
 import { cercaLuogo } from "./geo.js";
-import { TIPI_ORG, fmtData, senzaAuto } from "./shared.js";
+import { TIPI_ORG, fmtData, oraNota, senzaAuto } from "./shared.js";
 import { CampiEvento, Campo } from "./Segnala.jsx";
 import Posta from "./Posta.jsx";
 import { ARTICOLI } from "../blog.js";
@@ -151,7 +151,7 @@ function Moderazione({ email, onEsci }) {
           <article key={e.id} className="card">
             <div className="admin-testa">
               <Origine fonte={e.fonte} />
-              <small className="evento-data">{fmtData(e.inizio)} · {e.comune}</small>
+              <small className="evento-data">{fmtData(e.inizio, oraNota(e))}{oraNota(e) ? "" : " · ora non trovata"} · {e.comune}</small>
               {e.verifica && <Verifica v={e.verifica} />}
               {e.categoria && <small className="admin-cat">{CATEGORIE[e.categoria] || e.categoria}</small>}
               {e.fonte_url && <a className="link" href={e.fonte_url} target="_blank" rel="noopener"><small>dove l'ha trovato ↗</small></a>}

@@ -127,14 +127,17 @@ function prezzo(e) {
 
 // Dati strutturati schema.org/Event: è così che un evento può comparire su Google
 // nei risultati "Eventi" con data e luogo.
+const giornoIt = (iso) => new Date(iso).toLocaleDateString("sv-SE", { timeZone: "Europe/Rome" });
+
 export function eventoJsonLd(e) {
   const social = e.org_social ? (e.org_social.startsWith("http") ? e.org_social : `https://instagram.com/${e.org_social.replace("@", "")}`) : undefined;
   const dati = {
     "@context": "https://schema.org",
     "@type": "Event",
     name: e.titolo,
-    startDate: e.inizio,
-    endDate: e.fine || undefined,
+    // se l'ora non è nota diamo a Google solo il giorno, mai un orario inventato
+    startDate: e.orario_trovato === false ? giornoIt(e.inizio) : e.inizio,
+    endDate: e.fine ? (e.orario_trovato === false ? giornoIt(e.fine) : e.fine) : undefined,
     eventStatus: "https://schema.org/EventScheduled",
     eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
     description: e.descrizione || eventoMeta(e).description,

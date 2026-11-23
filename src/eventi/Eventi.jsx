@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { eventiPubblici } from "./api.js";
 import { km, fmtKm, cercaLuogo, posizioneAttuale, CITTA } from "./geo.js";
-import { ACCESSI, senzaAuto, fmtData, conNavetta } from "./shared.js";
+import { ACCESSI, senzaAuto, fmtData, oraNota, conNavetta } from "./shared.js";
 import Mappa from "./Mappa.jsx";
 import CondividiEvento from "./Condividi.jsx";
 
@@ -208,7 +208,7 @@ function Viaggio({ e, centro }) {
 function Scheda({ e, centro }) {
   return (
     <Link className="card evento" to={eventoPercorso(e)}>
-      <small className="evento-data">{fmtData(e.inizio)}</small>
+      <small className="evento-data">{fmtData(e.inizio, oraNota(e))}</small>
       <strong className="evento-titolo">{e.titolo}</strong>
       <Viaggio e={e} centro={centro} />
       <Badges e={e} />
@@ -230,7 +230,7 @@ function Dettaglio({ e, centro }) {
     <>
       <p className="eyebrow">{e.fine && new Date(e.fine).toDateString() !== new Date(e.inizio).toDateString()
         ? `Dal ${fmtData(e.inizio, false)} al ${fmtData(e.fine, false)}`
-        : `${fmtData(e.inizio)}${e.fine ? ` → ${new Date(e.fine).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}` : ""}`}</p>
+        : oraNota(e) ? `${fmtData(e.inizio)}${e.fine ? ` → ${new Date(e.fine).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}` : ""}` : fmtData(e.inizio, false)}{e.orari ? ` · ${e.orari}` : ""}</p>
       <h1 className="page-title">{e.titolo}</h1>
       {/* la foto o la locandina, in grande: un tocco la apre intera */}
       {e.immagine && <a href={e.immagine} target="_blank" rel="noopener"><img className="evento-img" src={e.immagine} alt={`Foto di ${e.titolo}`} /></a>}

@@ -13,6 +13,9 @@ export const TIPI_ORG = {
 };
 export const senzaAuto = (e) => (e.accesso || []).some((a) => a !== "auto");
 
+// Lo scanner a volte non trova l'ora: in quel caso non mostriamo un orario inventato.
+export const oraNota = (e) => e && e.orario_trovato !== false;
+
 export const fmtData = (iso, conOra = true) => {
   const d = new Date(iso);
   const g = d.toLocaleDateString("it-IT", { weekday: "short", day: "numeric", month: "short" });
