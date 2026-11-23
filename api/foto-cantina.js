@@ -80,7 +80,7 @@ export default async function handler(req, res) {
     try {
       const r = await fetch(sito, { redirect: "follow", signal: AbortSignal.timeout(7000), headers: { "User-Agent": "Mozilla/5.0 (compatible; BevotoscanoFoto/1.0)", Accept: "text/html" } });
       const t = await r.text();
-      return res.json({ status: r.status, url: r.url, tipo: r.headers.get("content-type"), lunghezza: t.length, foto: trova(t, r.url), inizio: t.slice(0, 1500) });
+      return res.json({ status: r.status, url: r.url, lunghezza: t.length, foto: trova(t, r.url), img: [...t.matchAll(/<img[^>]{0,400}>/gi)].slice(0, 12).map((m) => m[0]), sfondi: [...t.matchAll(/url\([^)]{0,200}\)/gi)].slice(0, 12).map((m) => m[0]) });
     } catch (e) { return res.json({ errore: String(e) }); }
   }
   let foto = null, google = false;
