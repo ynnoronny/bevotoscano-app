@@ -6,7 +6,7 @@ import { senzaAuto, prezzoEv, conNavetta } from "../eventi/shared.js";
 import Eventi from "../eventi/Eventi.jsx";
 import Mappa from "../eventi/Mappa.jsx";
 import { km, fmtKm, posizioneAttuale, CITTA } from "../eventi/geo.js";
-import Cantine, { dove } from "./Cantine.jsx";
+import Cantine, { dove, fotoDi } from "./Cantine.jsx";
 import SegnalaScelta from "./SegnalaScelta.jsx";
 import { ARTICOLI, articolo, dataArticolo } from "../blog.js";
 import { DOMANDE } from "../games/quizData.js";
@@ -445,13 +445,16 @@ function Home() {
 function CantinaDelGiorno() {
   const oggi = Math.floor((Date.now() - new Date().getTimezoneOffset() * 60000) / 86400000);
   const c = CANTINE[(oggi * 7) % CANTINE.length];
+  // la foto dal sito della cantina; se non si trova, il paesaggio di repertorio
+  const [rotta, setRotta] = useState(false);
   if (!c) return null;
+  const foto = rotta ? null : fotoDi(c);
   return (
     <Link to={cantinaPercorso(c)} className="home-cantina">
       {/* se la cantina non ha ancora una sua foto, un paesaggio come negli eventi */}
       <span className="home-cantina-foto">
-        <img src={c.foto || REPERTORIO[0]} alt="" loading="lazy" onError={(x) => { x.currentTarget.src = REPERTORIO[0]; }} />
-        {!c.foto && <span className="ev-foto-nota">foto di repertorio</span>}
+        <img src={foto || REPERTORIO[0]} alt="" loading="lazy" onError={() => setRotta(true)} />
+        {!foto && <span className="ev-foto-nota">foto di repertorio</span>}
       </span>
       <span className="home-cantina-testo">
         <strong>{c.nome}</strong>

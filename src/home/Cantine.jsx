@@ -127,10 +127,16 @@ const Grappolo = () => (
   </svg>
 );
 
+// La foto di una cantina: quella scelta da noi (campo foto), se no quella che la cantina usa
+// per presentare il suo sito, o quella della sua scheda Google Maps (la va a prendere api/foto-cantina.js).
+// Vale anche per le cantine nuove trovate dalle ricerche.
+export const fotoDi = (c) => c.foto || `/api/foto-cantina?${new URLSearchParams({ ...(c.sito ? { sito: c.sito } : {}), nome: c.nome, comune: c.comune || "" })}`;
+
 export function Foto({ c, grande }) {
-  // se il link della foto si rompe, torna il grappolo invece dell'immagine rotta
+  // se la foto non c'è o il link si rompe, torna il grappolo invece dell'immagine rotta
   const [rotta, setRotta] = useState(false);
-  if (c.foto && !rotta) return <img className={`cant-foto ${grande ? "cant-foto--grande" : ""}`} src={c.foto} alt={c.nome} loading="lazy" onError={() => setRotta(true)} />;
+  const src = fotoDi(c);
+  if (src && !rotta) return <img className={`cant-foto ${grande ? "cant-foto--grande" : ""}`} src={src} alt={c.nome} loading="lazy" onError={() => setRotta(true)} />;
   return <span className={`cant-foto cant-foto--vuota ${grande ? "cant-foto--grande" : ""}`}><Grappolo /></span>;
 }
 
@@ -180,7 +186,7 @@ function Scheda({ c }) {
   const vicine = CANTINE.filter((x) => x.id !== c.id && (x.comune === c.comune || x.zona === c.zona)).slice(0, 4);
   return (
     <div className="cant-scheda">
-      {c.foto && <Foto c={c} grande />}
+      {fotoDi(c) && <Foto c={c} grande />}
       <div className="cant-scheda-testa">
         <p className="cant-dove">{dove(c)}</p>
         <h1 className="page-title">{c.nome}</h1>
