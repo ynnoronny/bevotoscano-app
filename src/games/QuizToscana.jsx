@@ -7,13 +7,13 @@ import ShareButton from "./ShareButton.jsx";
 // Il quiz. Si può partire anche dalla domanda del giorno in home: quella risposta conta già.
 // Il quiz infinito. Si parte con 1 vita di scorta, ogni 3 risposte giuste di fila se ne guadagna una (un errore azzera il conto).
 // Una risposta sbagliata toglie una vita; sbagliare con 0 vite chiude la partita.
-// Dopo una risposta giusta la spiegazione resta in sovrimpressione qualche secondo e si passa da soli alla domanda dopo.
+// Dopo ogni risposta (giusta o sbagliata) la spiegazione resta in sovrimpressione qualche secondo e si passa da soli alla domanda dopo.
 // La classifica conta quante risposte giuste fai prima di cadere.
 const OGNI_QUANTE_UNA_VITA = 3;
 const VITE_INIZIALI = 1;
-// Quanto resta la spiegazione dopo una risposta giusta (un tocco la chiude prima).
+// Quanto resta la spiegazione dopo una risposta (un tocco la chiude prima).
 const MS_SPIEGAZIONE = 3500;
-const MS_SOLO_GIUSTO = 1500; // se la domanda non ha spiegazione
+const MS_SENZA_SPIEGAZIONE = 1500; // risposta giusta e la domanda non ha spiegazione
 
 const shuffle = (a) => { const b = [...a]; for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
 const prepara = (q) => ({ ...q, giusta: q.r[0], opzioni: shuffle(q.r) });
@@ -118,8 +118,7 @@ export default function QuizToscana({ onExit, iniziale = "start" }) {
     setScelta(r);
   }
 
-  // Dopo una risposta sbagliata resta la spiegazione e si va avanti col tasto.
-  // Dopo una giusta la spiegazione sparisce da sola (vedi sotto).
+  // Dopo la risposta la spiegazione sparisce da sola (vedi sotto); un tocco la chiude prima.
   function avanti() {
     if (finita) return setFase("fine");
     if (i + 1 >= domande.length) setDomande((d) => [...d, ...altroGiro()]);
@@ -128,17 +127,18 @@ export default function QuizToscana({ onExit, iniziale = "start" }) {
     setNota("");
   }
 
-  // Risposta giusta: spiegazione in sovrimpressione, poi domanda dopo senza toccare niente.
+  // Dopo ogni risposta: spiegazione in sovrimpressione, poi domanda dopo (o risultato finale) senza toccare niente.
   const avantiRef = useRef(avanti);
   avantiRef.current = avanti;
   const q = domande[i];
-  const giustaOra = fase === "gioco" && !!scelta && !!q && scelta === q.giusta;
-  const msOverlay = q?.p ? MS_SPIEGAZIONE : MS_SOLO_GIUSTO;
+  const risposto = fase === "gioco" && !!scelta && !!q;
+  const giustaOra = risposto && scelta === q.giusta;
+  const msOverlay = giustaOra && !q?.p ? MS_SENZA_SPIEGAZIONE : MS_SPIEGAZIONE;
   useEffect(() => {
-    if (!giustaOra) return;
+    if (!risposto) return;
     const t = setTimeout(() => avantiRef.current(), msOverlay);
     return () => clearTimeout(t);
-  }, [giustaOra, i, msOverlay]);
+  }, [risposto, i, msOverlay]);
 
   const versoVita = OGNI_QUANTE_UNA_VITA - serie;
 
@@ -186,21 +186,17 @@ export default function QuizToscana({ onExit, iniziale = "start" }) {
             })}
           </div>
           {!scelta && nota && <p className="tiny avviso">{nota}</p>}
-          {scelta && !giustaOra && (
-            <p className={`feedback ${scelta === q.giusta ? "ok" : "error"}`}>
-              {scelta === q.giusta ? "Giusto!" : scelta === "__tempo" ? "Tempo scaduto!" : scelta === "__uscito" ? "Sei uscito dall'app: domanda persa!" : "Sbagliato!"}
-              {nota && ` ${nota}`}
-            </p>
-          )}
-          {scelta && !giustaOra && q.p && <p className="spiega fade">{q.p}</p>}
-          {scelta && !giustaOra && <button className="btn btn--primary wide avanti" onClick={avanti} autoFocus>{finita ? "Vedi il risultato" : "Avanti"}</button>}
-          {giustaOra && (
-            <button className="sovra" onClick={avanti} aria-label="Domanda successiva">
-              <div className="sovra-card">
-                <p className="sovra-ok">Giusto!{nota && <span className="sovra-nota"> {nota}</span>}</p>
+          {risposto && (
+            <button className="sovra" onClick={avanti} aria-label={finita ? "Vedi il risultato" : "Domanda successiva"}>
+              <div className={`sovra-card ${giustaOra ? "" : "sovra-card--no"}`}>
+                <p className={giustaOra ? "sovra-ok" : "sovra-ko"}>
+                  {giustaOra ? "Giusto!" : scelta === "__tempo" ? "Tempo scaduto!" : scelta === "__uscito" ? "Sei uscito dall'app: domanda persa!" : "Sbagliato!"}
+                  {nota && <span className="sovra-nota"> {nota}</span>}
+                </p>
+                {!giustaOra && <p className="sovra-giusta">La risposta giusta era: <b>{q.giusta}</b></p>}
                 {q.p && <p className="sovra-testo">{q.p}</p>}
                 <div className="sovra-barra"><div style={{ animationDuration: `${msOverlay}ms` }} /></div>
-                <span className="sovra-tocca">Tocca per andare avanti</span>
+                <span className="sovra-tocca">{finita ? "Partita finita · tocca per vedere il risultato" : "Tocca per andare avanti"}</span>
               </div>
             </button>
           )}
