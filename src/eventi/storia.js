@@ -23,11 +23,12 @@ const stesso = (a, b) => a.toDateString() === b.toDateString();
 // { sopra: "SABATO", numero: "5", sotto: "dicembre", ora: "ore 18:30" }
 export function dataStoria(e) {
   const a = new Date(e.inizio), b = e.fine ? new Date(e.fine) : null;
+  const nota = e.orario_trovato !== false;
   if (!b || stesso(a, b)) {
-    return { sopra: GIORNI[a.getDay()], numero: String(a.getDate()), sotto: MESI[a.getMonth()], ora: `ore ${hm(a)}${b ? ` – ${hm(b)}` : ""}` };
+    return { sopra: GIORNI[a.getDay()], numero: String(a.getDate()), sotto: MESI[a.getMonth()], ora: nota ? `ore ${hm(a)}${b ? ` – ${hm(b)}` : ""}` : "" };
   }
   const numero = a.getMonth() === b.getMonth() ? `${a.getDate()}–${b.getDate()}` : `${a.getDate()} ${MESI[a.getMonth()].slice(0, 3)} – ${b.getDate()}`;
-  return { sopra: `da ${GIORNI[a.getDay()]}`, numero, sotto: MESI[b.getMonth()], ora: `dalle ${hm(a)}` };
+  return { sopra: `da ${GIORNI[a.getDay()]}`, numero, sotto: MESI[b.getMonth()], ora: nota ? `dalle ${hm(a)}` : "" };
 }
 
 function comeArrivi(e) {

@@ -104,11 +104,12 @@ const hm = (d) => `${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`;
 function quandoEv(e) {
   const a = g(e.inizio), b = e.fine ? g(e.fine) : null;
   if (inCorso(e) && b && !stessoGiorno(a, b)) return `In corso · fino al ${b.getDate()} ${MESI_L[b.getMonth()]}`;
-  if (!b || stessoGiorno(a, b)) return `${GIORNI_L[a.getDay()]} ${a.getDate()} ${MESI_L[a.getMonth()]} · ${hm(a)}${b ? `–${hm(b)}` : ""}`;
+  const ora = e.orario_trovato !== false;
+  if (!b || stessoGiorno(a, b)) return `${GIORNI_L[a.getDay()]} ${a.getDate()} ${MESI_L[a.getMonth()]}${ora ? ` · ${hm(a)}${b ? `–${hm(b)}` : ""}` : ""}`;
   const giorni = a.getMonth() === b.getMonth()
     ? `${a.getDate()}–${b.getDate()} ${MESI_L[b.getMonth()]}`
     : `${a.getDate()} ${MESI_L[a.getMonth()]} – ${b.getDate()} ${MESI_L[b.getMonth()]}`;
-  return `${giorni} · dalle ${hm(a)}`;
+  return ora ? `${giorni} · dalle ${hm(a)}` : giorni;
 }
 const inCorso = (e) => g(e.inizio) <= new Date() && (!e.fine || g(e.fine) >= new Date());
 function comeArrivi(e, centro) {
