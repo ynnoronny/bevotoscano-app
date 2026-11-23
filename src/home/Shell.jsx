@@ -6,7 +6,7 @@ import { senzaAuto, prezzoEv, conNavetta } from "../eventi/shared.js";
 import Eventi from "../eventi/Eventi.jsx";
 import Mappa from "../eventi/Mappa.jsx";
 import { km, fmtKm, posizioneAttuale, CITTA } from "../eventi/geo.js";
-import Cantine from "./Cantine.jsx";
+import Cantine, { Foto, dove } from "./Cantine.jsx";
 import SegnalaScelta from "./SegnalaScelta.jsx";
 import { ARTICOLI, articolo, dataArticolo } from "../blog.js";
 import { DOMANDE } from "../games/quizData.js";
@@ -22,7 +22,7 @@ import CondividiEvento from "../eventi/Condividi.jsx";
 import { conProvincia } from "../province.js";
 import { Filtri, Riga, Scelta, Interruttore } from "./Filtri.jsx";
 import { go } from "../nav.js";
-import { eventoPercorso, FILTRI_EVENTI } from "../seo.js";
+import { eventoPercorso, FILTRI_EVENTI, cantinaPercorso } from "../seo.js";
 
 // La schermata unica di Bevotoscano: una cornice fissa, uguale su telefono e computer.
 // In alto il marchio e le pills (scorrono col dito), sotto scorre solo il contenuto
@@ -192,15 +192,23 @@ export function Prezzo({ e }) {
   );
 }
 
+// Foto di repertorio per gli eventi che non ne hanno una: la scheda resta sempre uguale.
+const REPERTORIO = ["/img/colline.jpg", "/img/strada-bianca.jpg"];
+
+// La scheda evento ha sempre lo stesso ordine: data e prezzo in alto, poi la foto, poi il titolo.
 function SchedaEvento({ e, i, centro }) {
   const arrivo = comeArrivi(e, centro);
+  const foto = e.immagine || REPERTORIO[(e.id || i) % REPERTORIO.length];
   return (
-    <article className={`ev ev--${["viola", "vino", "sole"][i % 3]} ${e.immagine ? "ev--foto" : ""}`}>
-      {e.immagine && <Link to={eventoPercorso(e)} className="ev-foto" tabIndex={-1} aria-hidden="true"><img src={e.immagine} alt="" loading="lazy" onError={(x) => { x.currentTarget.parentElement.style.display = "none"; }} /></Link>}
+    <article className={`ev ev--${["viola", "vino", "sole"][i % 3]}`}>
       <div className="ev-su">
         <span className="ev-quando">{quandoEv(e)}</span>
         <Prezzo e={e} />
       </div>
+      <Link to={eventoPercorso(e)} className="ev-foto" tabIndex={-1} aria-hidden="true">
+        <img src={foto} alt="" loading="lazy" onError={(x) => { if (!x.currentTarget.dataset.rip) { x.currentTarget.dataset.rip = 1; x.currentTarget.src = REPERTORIO[0]; } }} />
+        {!e.immagine && <span className="ev-foto-nota">foto di repertorio</span>}
+      </Link>
       <Link to={eventoPercorso(e)} className="ev-titolo">{e.titolo}</Link>
       <small className="ev-meta">
         <span>{conProvincia(e.comune)}{e.d != null ? ` · ${fmtKm(e.d)}` : ""}</span>
@@ -273,11 +281,16 @@ function useNotizie() {
 function Blog() {
   const notizie = useNotizie();
   const tutti = [...ARTICOLI, ...notizie].sort((a, b) => String(b.data).localeCompare(String(a.data)));
+  // filtro per argomento (il tag di ogni articolo o notizia)
+  const [tema, setTema] = useState("tutti");
+  const temi = [["tutti", "Tutti"], ...[...new Set(tutti.map((a) => a.tag).filter(Boolean))].map((t) => [t, t])];
+  const lista = tutti.filter((a) => tema === "tutti" || a.tag === tema);
   return (
     <div className="feed">
+      {temi.length > 2 && <Filtri><Riga etichetta="Tema"><Scelta opzioni={temi} valore={tema} onCambia={setTema} /></Riga></Filtri>}
       <div className="feed-griglia feed-griglia--blog">
-        {tutti.map((a, i) => (
-          <Link key={a.id} to={`blog/${a.id}`} className={`art ${i === 0 ? "art--primo" : ""} ${a.notizia ? "art--notizia" : ""}`}>
+        {lista.map((a) => (
+          <Link key={a.id} to={`blog/${a.id}`} className={`art ${a.notizia ? "art--notizia" : ""}`}>
             {a.immagine && <img className="art-img" src={a.immagine} alt="" loading="lazy" />}
             <span className="art-tag">{a.tag}{a.data ? ` · ${dataArticolo(a.data)}` : ""}</span>
             <strong>{a.titolo}</strong>
@@ -344,7 +357,7 @@ function Gioca() {
         <section className="gioco-card">
           <small>IL QUIZ</small>
           <strong>Quanto ne sai di vino toscano?</strong>
-          <p>Le domande non finiscono mai. Ogni 3 risposte giuste guadagni una vita, se sbagli ne perdi una. Sbagli senza vite? Fine della partita.</p>
+          <p>Si parte facile e si fa sempre più difficile. Ogni 3 giuste di fila guadagni una vita, se sbagli ne perdi una. Sbagli senza vite? Fine della partita.</p>
           <Link to="gioca/quiz" className="gioco-via">Gioca ora</Link>
         </section>
         <section className="gioco-vit">
@@ -371,25 +384,47 @@ function Home() {
   const [eventi, setEventi] = useState(null);
   useEffect(() => { eventiPubblici().then(setEventi).catch(() => setEventi([])); }, []);
   const prossimi = (eventi || []).slice(0, 3);
+  const altri = Math.max(0, (eventi || []).length - prossimi.length);
   return (
     <div className="feed home">
-      <div className="home-griglia">
-        <Oroscopo compatto />
-        <DomandaDelGiorno />
-      </div>
       <div className="home-titolo">
         <h2>Prossimi eventi</h2>
-        <Link to="eventi" className="home-tutti">Tutti gli eventi →</Link>
+        <Link to="eventi" className="home-tutti">Tutti →</Link>
       </div>
       {!eventi && <p className="feed-vuoto">Carico gli eventi…</p>}
       {eventi && !prossimi.length && <p className="feed-vuoto">Nuovi eventi in arrivo. Ne conosci uno? Segnalacelo con + Segnala.</p>}
-      <div className="feed-griglia">{prossimi.map((e, i) => <SchedaEvento key={e.id} e={e} i={i} />)}</div>
-      <div className="home-scorciatoie">
-        <Link to="cantine" className="home-scorc"><b>Cantine</b><small>{CANTINE.length} piccole cantine da conoscere</small></Link>
-        <Link to="blog" className="home-scorc"><b>Blog</b><small>{ARTICOLI[0]?.titolo}</small></Link>
+      <div className="feed-griglia home-eventi">{prossimi.map((e, i) => <SchedaEvento key={e.id} e={e} i={i} />)}</div>
+      {altri > 0 && <Link to="eventi" className="home-scopri">{altri === 1 ? "Scopri l'altro evento" : `Scopri gli altri ${altri} eventi`} →</Link>}
+
+      <div className="home-titolo"><h2>La cantina del giorno</h2><Link to="cantine" className="home-tutti">Tutte →</Link></div>
+      <CantinaDelGiorno />
+      <Link to="cantine" className="home-scopri">Scopri tutte le {CANTINE.length} cantine →</Link>
+
+      <div className="home-titolo"><h2>Gioca</h2><Link to="gioca" className="home-tutti">Giochi →</Link></div>
+      <div className="home-griglia">
+        <DomandaDelGiorno />
+        <Oroscopo compatto />
       </div>
       <FineFeed />
     </div>
+  );
+}
+
+// Una cantina diversa ogni giorno, tra quelle scelte da noi.
+function CantinaDelGiorno() {
+  const oggi = Math.floor((Date.now() - new Date().getTimezoneOffset() * 60000) / 86400000);
+  const c = CANTINE[(oggi * 7) % CANTINE.length];
+  if (!c) return null;
+  return (
+    <Link to={cantinaPercorso(c)} className="home-cantina">
+      <Foto c={c} />
+      <span className="home-cantina-testo">
+        <strong>{c.nome}</strong>
+        <small>{dove(c)}</small>
+        {c.descrizione && <span>{c.descrizione}</span>}
+      </span>
+      <span className="home-cantina-via" aria-hidden="true">→</span>
+    </Link>
   );
 }
 

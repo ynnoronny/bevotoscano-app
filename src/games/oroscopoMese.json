@@ -6,7 +6,7 @@
   "testi": {
     "ariete": {
       "titolo": "Saturno ti tiene a stecchetto",
-      "testo": "Con Saturno nel tuo segno, ogni cosa ti costa il doppio della fatica, ma resta fatta per bene. Il Sole in Sagittario ti rimette il fuoco nelle gambe: approfittane per una gita fuori porta, magari dove il vino lo fanno ancora in tre. Con la Luna piena del 24 non litigare per un posto a sedere.",
+      "testo": "Saturno nel tuo segno ti fa sudare ogni cosa, ma la fai per bene. Il Sole in Sagittario ti rimette il fuoco nelle gambe: gita fuori porta, dove il vino lo fanno ancora in tre.",
       "vino": "Un Ciliegiolo giovane, per ricordarti che si può anche ridere.",
       "affine": {
         "segno": "sagittario",
@@ -21,7 +21,7 @@
     },
     "toro": {
       "titolo": "Venere ti guarda storto, ma poco",
-      "testo": "Venere passa nel segno opposto al tuo e le persone vicine diventano lo specchio dove guardarti, nel bene e nel male. Marte in Vergine ti dà pazienza da contadino: semina adesso, che a primavera raccogli. Dicembre è da tavole lunghe e chiacchiere corte.",
+      "testo": "Venere nel segno opposto fa degli altri il tuo specchio, nel bene e nel male. Marte in Vergine ti dà pazienza da contadino: semina ora, a primavera raccogli.",
       "vino": "Un Chianti Colline Pisane con l'arrosto della domenica.",
       "affine": {
         "segno": "vergine",
@@ -36,7 +36,7 @@
     },
     "gemelli": {
       "titolo": "La Luna piena è tutta tua",
-      "testo": "Il 24 la Luna piena cade nel tuo segno: emozioni a fiumi, telefonate a mezzanotte, idee che non ti fanno dormire. Il Sole davanti a te ti mette di fronte agli altri: un socio, un amore, un amico che torna. Ascolta più di quanto parli, una volta tanto.",
+      "testo": "Il 24 la Luna piena cade nel tuo segno: emozioni a fiumi e telefonate a mezzanotte. Il Sole davanti a te riporta un socio, un amore o un amico: ascolta più di quanto parli.",
       "vino": "Una Malvasia secca, che come te ha due anime.",
       "affine": {
         "segno": "acquario",
@@ -51,7 +51,7 @@
     },
     "cancro": {
       "titolo": "Rimettere in ordine la cantina",
-      "testo": "Mese da lavoro paziente e da piccole sistemazioni: cassetti, conti, abitudini. Marte in Vergine ti aiuta a finire quello che lasci sempre a metà. Con la Luna nuova del 9 dicembre inizia una routine nuova, anche piccola: una passeggiata, un bicchiere in meno, uno buono in più.",
+      "testo": "Mese da cassetti, conti e piccole sistemazioni, con Marte in Vergine che ti fa finire le cose. Dalla Luna nuova del 9 parte una routine nuova: un bicchiere in meno, uno buono in più.",
       "vino": "Un Trebbiano macerato, che sa di casa e di nonni.",
       "affine": {
         "segno": "scorpione",
@@ -66,7 +66,7 @@
     },
     "leone": {
       "titolo": "Giove ti fa la corte",
-      "testo": "Con Giove nel tuo segno sei al centro della piazza, e il Sole in Sagittario ti mette voglia di festa e di gente. Attento però a non offrire da bere a tutto il paese: Marte esce dal tuo segno e ti chiede di pensare anche ai soldi. Un regalo fatto a mano vale più di dieci comprati.",
+      "testo": "Giove nel tuo segno ti mette al centro della piazza e il Sole in Sagittario ti dà voglia di festa. Ma non offrire da bere a tutto il paese: un regalo fatto a mano vale dieci comprati.",
       "vino": "Un Sangiovese in purezza, che non ha bisogno di presentazioni.",
       "affine": {
         "segno": "sagittario",
@@ -81,7 +81,7 @@
     },
     "vergine": {
       "titolo": "Marte ti rimbocca le maniche",
-      "testo": "Marte entra nel tuo segno e torni a fare dieci cose al giorno, tutte con precisione. Il Sole quadrato ti tira verso casa e famiglia: non scappare dalle cene di dicembre, ci trovi più di quello che pensi. Con la Luna piena del 24 il lavoro alza la voce: rispondi con calma.",
+      "testo": "Marte entra nel tuo segno e torni a fare dieci cose al giorno, tutte a garbo. Il Sole ti tira verso casa: non scappare dalle cene di dicembre, ci trovi più di quel che pensi.",
       "vino": "Una Vernaccia di San Gimignano, minerale e senza fronzoli.",
       "affine": {
         "segno": "capricorno",
@@ -96,7 +96,7 @@
     },
     "bilancia": {
       "titolo": "Parole che pesano il giusto",
-      "testo": "Venere ti lascia e passa in Scorpione: meno vetrina, più sostanza, anche nei soldi. Il Sole in Sagittario ti riempie l'agenda di messaggi, viaggi brevi, incontri per caso. È il mese giusto per riallacciare un rapporto che si era raffreddato. La Luna piena del 24 ti porta un'idea da segnare.",
+      "testo": "Venere passa in Scorpione: meno vetrina, più sostanza, anche nei soldi. Il Sole in Sagittario ti riempie l'agenda di incontri: è il mese buono per riallacciare un rapporto.",
       "vino": "Un rosso col Mammolo dentro, elegante e profumato di viola.",
       "affine": {
         "segno": "acquario",
@@ -111,7 +111,7 @@
     },
     "scorpione": {
       "titolo": "Venere bussa alla tua porta",
-      "testo": "Venere entra nel tuo segno e ti rende magnetico, anche più del solito. Mercurio lascia lo Scorpione e la testa si fa più leggera. Il Sole parla di soldi e di cose concrete: compra meno, compra meglio. Con la Luna nuova del 9 decidi cosa tenere e cosa lasciar andare.",
+      "testo": "Venere entra nel tuo segno e diventi magnetico, più del solito. Il Sole parla di soldi: compra meno, compra meglio, e dalla Luna nuova del 9 lascia andare il superfluo.",
       "vino": "Un Colorino scuro e profondo, da bere a lume di candela.",
       "affine": {
         "segno": "pesci",
@@ -126,7 +126,7 @@
     },
     "sagittario": {
       "titolo": "Buon compleanno, viandante",
-      "testo": "Il Sole è nel tuo segno e la Luna nuova del 9 dicembre ti apre un anno nuovo: progetti, viaggi, una partenza vera o anche solo una voglia di partire. Giove in Leone ti spinge lontano, Marte in Vergine ti ricorda il lavoro: prima la vendemmia, poi la festa. Festeggia con chi ti segue davvero.",
+      "testo": "Il Sole è nel tuo segno e la Luna nuova del 9 ti apre un anno nuovo, con voglia di partire. Marte in Vergine però ricorda: prima la vendemmia, poi la festa.",
       "vino": "Un Vermentino Nero della costa, libero come te.",
       "affine": {
         "segno": "leone",
@@ -141,7 +141,7 @@
     },
     "capricorno": {
       "titolo": "Il mese che prepara il tuo",
-      "testo": "Il Sole nel segno che ti precede ti chiede di fermarti, dormire di più, fare spazio. Marte in Vergine è un buon alleato per il lavoro di fino e per chiudere le pratiche dell'anno. Non è il momento di correre: è il momento di potare, che a gennaio si riparte.",
+      "testo": "Il Sole nel segno prima del tuo ti chiede di rallentare e dormire di più. È tempo di potare e chiudere le pratiche dell'anno: a gennaio si riparte.",
       "vino": "Un Vin Santo dopo cena, lento come i pensieri buoni.",
       "affine": {
         "segno": "vergine",
@@ -156,7 +156,7 @@
     },
     "acquario": {
       "titolo": "Gli amici prima di tutto",
-      "testo": "Il Sole in Sagittario illumina il gruppo, le amicizie, i progetti condivisi. Giove opposto al tuo segno porta incontri importanti: qualcuno ti propone qualcosa che non avevi previsto. Con la Luna piena del 24 hai l'ispirazione giusta per scrivere, creare, inventare.",
+      "testo": "Il Sole in Sagittario accende amici e progetti di gruppo, e Giove opposto porta una proposta che non ti aspettavi. Con la Luna piena del 24 ti vengono le idee migliori.",
       "vino": "Una Barsaglina, rara come le tue idee.",
       "affine": {
         "segno": "gemelli",
@@ -171,7 +171,7 @@
     },
     "pesci": {
       "titolo": "Il lavoro chiede la tua voce",
-      "testo": "Il Sole al vertice del tuo cielo mette in vista lavoro e reputazione: fatti avanti, anche se ti costa. Marte opposto ti mette davanti persone esigenti, ma giuste. A metà dicembre concediti una giornata al mare d'inverno, che ti rimette al mondo.",
+      "testo": "Il Sole in alto nel tuo cielo mette in vista il lavoro: fatti avanti, anche se ti costa. A metà dicembre regalati una giornata al mare d'inverno.",
       "vino": "Un'Ansonica dell'Isola del Giglio, salina e sognante.",
       "affine": {
         "segno": "cancro",

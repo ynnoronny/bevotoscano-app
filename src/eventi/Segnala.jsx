@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
-import { segnalaEvento } from "./api.js";
+import { segnalaEvento, caricaFoto } from "./api.js";
+import CampoFoto from "./CampoFoto.jsx";
 import { ACCESSI, TIPI_ORG } from "./shared.js";
 import { isEmail } from "../leads.js";
 import { CONTACT_EMAIL } from "../data.js";
@@ -80,6 +81,7 @@ export default function Segnala({ dentro = false }) {
   const [criteri, setCriteri] = useState([false, false, false]);
   const [privacy, setPrivacy] = useState(false);
   const [trappola, setTrappola] = useState("");
+  const [foto, setFoto] = useState(null);
   const [stato, setStato] = useState("form");
   const [err, setErr] = useState("");
   const aperto = useRef(Date.now());
@@ -96,8 +98,11 @@ export default function Segnala({ dentro = false }) {
     if (!privacy) return setErr("Serve il consenso al trattamento dei dati.");
     setStato("invio");
     try {
+      // la locandina è facoltativa: se il caricamento non va, l'evento parte lo stesso
+      const immagine = foto ? await caricaFoto(foto).catch(() => null) : null;
       await segnalaEvento({
         ...v,
+        ...(immagine ? { immagine } : {}),
         inizio: new Date(v.inizio).toISOString(),
         fine: v.fine ? new Date(v.fine).toISOString() : null,
         pickup: v.accesso.includes("bus") ? v.pickup.filter((p) => p.nome.trim()) : [],
@@ -159,6 +164,8 @@ export default function Segnala({ dentro = false }) {
       <section className="card">
         <strong>L'evento</strong>
         <CampiEvento v={v} set={set} />
+        <CampoFoto file={foto} onFile={setFoto} etichetta="Foto o locandina (se ce l'hai)"
+          aiuto="Sulla scheda dell'evento si vede piccola come anteprima e si apre in grande. Va bene anche una foto della locandina." />
       </section>
 
       <input className="trappola" tabIndex={-1} autoComplete="off" aria-hidden="true" value={trappola} onChange={(e) => setTrappola(e.target.value)} name="sito_web" />

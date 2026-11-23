@@ -1,24 +1,25 @@
 // Le zone del vino toscano, come cerchi sulla mappa (centro e raggio in km, a occhio).
 // Servono alle mappe di eventi e cantine: si tocca una zona e la mappa si avvicina.
+// prov: le sigle delle province che tocca (per avvicinare la mappa quando si sceglie una provincia).
 // Il nome deve coincidere con il campo `zona` delle cantine in data.js.
 export const ZONE = [
-  { zona: "Colli di Luni", centro: [44.07, 10.03], km: 9 },
-  { zona: "Colline lucchesi", centro: [43.86, 10.62], km: 10 },
-  { zona: "Carmignano", centro: [43.81, 11.01], km: 7 },
-  { zona: "Rufina", centro: [43.83, 11.49], km: 8 },
-  { zona: "Valdarno inferiore", centro: [43.68, 10.85], km: 10 },
-  { zona: "Colline pisane", centro: [43.54, 10.73], km: 11 },
-  { zona: "Costa pisana", centro: [43.37, 10.59], km: 9 },
-  { zona: "San Gimignano", centro: [43.47, 11.04], km: 8 },
-  { zona: "Chianti Classico", centro: [43.5, 11.3], km: 20 },
-  { zona: "Bolgheri", centro: [43.22, 10.62], km: 9 },
-  { zona: "Val di Cornia", centro: [43.07, 10.7], km: 9 },
-  { zona: "Elba", centro: [42.78, 10.27], km: 14 },
-  { zona: "Montalcino", centro: [43.06, 11.49], km: 10 },
-  { zona: "Montepulciano", centro: [43.1, 11.79], km: 9 },
-  { zona: "Cortona", centro: [43.28, 11.99], km: 9 },
-  { zona: "Montecucco", centro: [42.89, 11.42], km: 10 },
-  { zona: "Maremma", centro: [42.68, 11.25], km: 24 },
+  { zona: "Colli di Luni", centro: [44.07, 10.03], km: 9, prov: "MS" },
+  { zona: "Colline lucchesi", centro: [43.86, 10.62], km: 10, prov: "LU" },
+  { zona: "Carmignano", centro: [43.81, 11.01], km: 7, prov: "PO" },
+  { zona: "Rufina", centro: [43.83, 11.49], km: 8, prov: "FI" },
+  { zona: "Valdarno inferiore", centro: [43.68, 10.85], km: 10, prov: "PI" },
+  { zona: "Colline pisane", centro: [43.54, 10.73], km: 11, prov: "PI" },
+  { zona: "Costa pisana", centro: [43.37, 10.59], km: 9, prov: "PI" },
+  { zona: "San Gimignano", centro: [43.47, 11.04], km: 8, prov: "SI" },
+  { zona: "Chianti Classico", centro: [43.5, 11.3], km: 20, prov: "FI SI" },
+  { zona: "Bolgheri", centro: [43.22, 10.62], km: 9, prov: "LI" },
+  { zona: "Val di Cornia", centro: [43.07, 10.7], km: 9, prov: "LI" },
+  { zona: "Elba", centro: [42.78, 10.27], km: 14, prov: "LI" },
+  { zona: "Montalcino", centro: [43.06, 11.49], km: 10, prov: "SI" },
+  { zona: "Montepulciano", centro: [43.1, 11.79], km: 9, prov: "SI" },
+  { zona: "Cortona", centro: [43.28, 11.99], km: 9, prov: "AR" },
+  { zona: "Montecucco", centro: [42.89, 11.42], km: 10, prov: "GR" },
+  { zona: "Maremma", centro: [42.68, 11.25], km: 24, prov: "GR" },
 ];
 
 const R = 6371;
@@ -37,3 +38,6 @@ export function zonaDi(p) {
   }
   return migliore?.z.zona || null;
 }
+
+// La Toscana: la mappa delle cantine resta dentro questo riquadro.
+export const TOSCANA = [[42.2, 9.6], [44.55, 12.45]];

@@ -214,3 +214,22 @@ revoke execute on function public.limita_segnalazioni_attori() from public, anon
 drop trigger if exists limita_segnalazioni_attori on public.scanner_attori;
 create trigger limita_segnalazioni_attori before insert on public.scanner_attori
   for each row execute function public.limita_segnalazioni_attori();
+-- ===================== FOTO DAL MODULO SEGNALA (novembre 2026) =====================
+-- Chi segnala un evento o propone una cantina/enoteca può allegare una foto o la locandina.
+-- Le foto finiscono nella cartella pubblica "segnalazioni" (max 5 MB, solo immagini):
+-- il sito può solo caricarle, non cancellarle né elencarle.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('segnalazioni', 'segnalazioni', true, 5242880, array['image/jpeg', 'image/png', 'image/webp'])
+on conflict (id) do nothing;
+drop policy if exists "carica foto segnalazioni" on storage.objects;
+create policy "carica foto segnalazioni" on storage.objects for insert to anon
+  with check (bucket_id = 'segnalazioni');
+
+-- La foto delle cantine ed enoteche proposte, visibile anche nell'elenco pubblico.
+alter table scanner_attori add column if not exists foto text check (char_length(foto) <= 300);
+create or replace view attori_pubblici as
+  select id, nome, tipo, comune, indirizzo, sito, instagram, facebook,
+         coalesce(google_maps, 'https://www.google.com/maps/search/?api=1&query=' || replace(replace(nome || ' ' || coalesce(comune, '') || ' Toscana', '&', 'e'), ' ', '+')) as google_maps,
+         denominazioni, lat, lng, foto
+  from scanner_attori
+  where stato = 'approvato' and attivo;

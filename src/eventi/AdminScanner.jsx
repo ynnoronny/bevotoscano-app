@@ -124,6 +124,7 @@ function Attore({ a, lavoro, onApprova, onRifiuta, onAttesa, onComune }) {
       {(a.telefono || a.email) && <small>{a.telefono} {a.email && <a className="link" href={`mailto:${a.email}`}>{a.email}</a>}</small>}
       {a.denominazioni && <small>🍇 {a.denominazioni}</small>}
       {a.note && <p className="muted">{a.note}</p>}
+      {a.foto && <a href={a.foto} target="_blank" rel="noopener"><img src={a.foto} alt="" style={{ width: 120, height: 80, objectFit: "cover", borderRadius: 10 }} /></a>}
       {a.segnalato_da_email && <small>Segnalata da <a className="link" href={`mailto:${a.segnalato_da_email}`}>{a.segnalato_da_email}</a></small>}
       {a.esito_controllo && <small className="muted">Ultimo giro sul sito: {a.esito_controllo}</small>}
       {a.note_admin && <small>📝 {a.note_admin}</small>}
