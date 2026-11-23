@@ -8,7 +8,7 @@ import { siglaProvincia } from "../province.js";
 import { go } from "../nav.js";
 import Link from "../Link.jsx";
 import { pos } from "./luoghi.js";
-import { ZONE, zonaDi } from "../zone.js";
+import { ZONE, TOSCANA, zonaDi } from "../zone.js";
 import { Filtri, Riga, Scelta, Interruttore } from "./Filtri.jsx";
 import { cantinaPercorso, cantinaMeta, cantinaJsonLd, briciole, applicaMeta, eventoPercorso } from "../seo.js";
 
@@ -34,13 +34,18 @@ function useCantine() {
   return useMemo(() => [...CANTINE, ...extra], [extra]);
 }
 
-function MappaCantine({ cantine, attiva, onScegli, zona, onZona, tutte = CANTINE }) {
+function MappaCantine({ cantine, attiva, onScegli, zona, onZona, provincia, tutte = CANTINE }) {
   const box = useRef(null);
   const map = useRef(null);
   const layer = useRef(null);
   const zone = useRef(null);
   useEffect(() => {
-    map.current = L.map(box.current, { scrollWheelZoom: false }).setView([43.55, 10.7], 9);
+    // solo la Toscana: non si scappa dal riquadro e non si allontana troppo
+    map.current = L.map(box.current, { scrollWheelZoom: false, maxBounds: TOSCANA, maxBoundsViscosity: 1, minZoom: 7, zoomSnap: 0.25 }).setView([43.4, 11.1], 8);
+    // da lontano (telefono, tutta la Toscana) i nomi delle zone ancora vuote si vedono avvicinandosi, così non si accavallano
+    const scala = () => box.current?.classList.toggle("mappa--lontana", box.current.offsetWidth < 600 && map.current.getZoom() < 9);
+    map.current.on("zoomend", scala);
+    scala();
     L.tileLayer(TILE, { className: "tile-calde", maxZoom: 16, attribution: TILE_ATTR }).addTo(map.current);
     zone.current = L.layerGroup().addTo(map.current);
     layer.current = L.layerGroup().addTo(map.current);
@@ -54,17 +59,20 @@ function MappaCantine({ cantine, attiva, onScegli, zona, onZona, tutte = CANTINE
       const on = a.zona === zona;
       const n = tutte.filter((c) => c.zona === a.zona).length;
       const cerchio = L.circle(a.centro, { radius: a.km * 1000, color: "#432543", weight: on ? 2.5 : 1.5, dashArray: on ? null : "5 6", fillColor: on ? "#F2B33D" : "#432543", fillOpacity: on ? 0.22 : n ? 0.09 : 0.03, opacity: n || on ? 1 : 0.45 })
-        // il nome resta scritto solo dove ci sono cantine (o sulla zona scelta): le altre lo mostrano al tocco
-        .bindTooltip(n ? `${a.zona} · ${n}` : a.zona, { permanent: !!n || on, direction: "center", className: `zona-tip ${n ? "" : "zona-tip--vuota"}` })
+        // ogni zona ha il suo nome scritto dentro il cerchio, col numero di cantine se ce ne sono
+        .bindTooltip(n ? `${a.zona} · ${n}` : a.zona, { permanent: true, direction: "center", className: `zona-tip ${n ? "" : "zona-tip--vuota"}` })
         .on("click", () => onZona(on ? "Tutte" : a.zona))
         .addTo(zone.current);
       if (on) map.current.fitBounds(cerchio.getBounds(), { padding: [10, 10] });
     });
     if (zona === "Tutte") {
-      const b = L.featureGroup(zone.current.getLayers()).getBounds();
+      // con una provincia scelta la mappa si avvicina alle sue zone, se no mostra tutta la Toscana
+      const sigla = provincia && SIGLA[provincia];
+      const sue = sigla ? zone.current.getLayers().filter((_, k) => ZONE[k].prov.split(" ").includes(sigla)) : zone.current.getLayers();
+      const b = L.featureGroup(sue.length ? sue : zone.current.getLayers()).getBounds();
       if (b.isValid()) map.current.fitBounds(b, { padding: [12, 12] });
     }
-  }, [zona, tutte]);
+  }, [zona, tutte, provincia]);
   useEffect(() => {
     layer.current.clearLayers();
     const punti = [];
@@ -196,7 +204,8 @@ function Elenco() {
     if (zona !== "Tutte" && !piene.includes(zona)) elenco.push([zona, `${zona} · 0`]);
     return elenco;
   }, [zona, tutte]);
-  const province = useMemo(() => [...new Set(tutte.map((c) => c.provincia).filter(Boolean))], [tutte]);
+  // tutte e dieci le province: scegliendone una la mappa ci si avvicina
+  const province = Object.keys(SIGLA);
   const lista = tutte.filter((c) => (zona === "Tutte" || c.zona === zona) && (!provincia || c.provincia === provincia)
     && (!soloIntervistate || c.intervistata) && (!soloPremiate || (c.premi || []).length))
     // prima le cantine dove siamo già stati
@@ -224,11 +233,11 @@ function Elenco() {
         </Riga>
       </Filtri>
 
-      <MappaCantine cantine={lista} tutte={tutte} attiva={attiva} onScegli={scegli} zona={zona} onZona={(z) => { setZona(z); setAttiva(null); }} />
+      <MappaCantine cantine={lista} tutte={tutte} attiva={attiva} onScegli={scegli} zona={zona} provincia={provincia} onZona={(z) => { setZona(z); setAttiva(null); }} />
       <p className="tiny">Tocca una zona sulla mappa per vederla da vicino.</p>
 
       {lista.length === 0 && (zona !== "Tutte" && !tutte.some((c) => c.zona === zona)
-        ? <p className="feed-vuoto">In zona {zona} non abbiamo ancora cantine. Ne conosci una? <Link className="link" to="segnala/cantina">Proponila</Link>.</p>
+        ? <p className="feed-vuoto">Le cantine di {zona} arrivano presto. Ne conosci una che merita? <Link className="link" to="segnala/cantina">Proponila</Link>.</p>
         : <p className="feed-vuoto">Nessuna cantina con questi filtri, per ora.</p>)}
       <div className="feed-griglia">
         {lista.map((c) => {

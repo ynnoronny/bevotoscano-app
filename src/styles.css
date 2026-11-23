@@ -682,3 +682,9 @@ html, body { height: 100%; }
 @supports (height: 100dvh) { .shell { height: 100dvh; bottom: auto; } .game { min-height: 100dvh; } }
 .game { padding-top: calc(16px + env(safe-area-inset-top)); padding-bottom: calc(32px + env(safe-area-inset-bottom)); }
 .benvenuto { padding-top: calc(20px + env(safe-area-inset-top)); padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
+
+/* Mappa delle cantine: grande, solo Toscana, zone ben leggibili */
+.mappa--bassa { height: 440px; }
+@media (min-width: 760px) { .mappa--bassa { height: 560px; } }
+.leaflet-tooltip.zona-tip--vuota { font-size: 10.5px; padding: 3px 8px; }
+.mappa--lontana .leaflet-tooltip.zona-tip--vuota { display: none; }
