@@ -13,7 +13,7 @@ export const isOnline = online;
 export const MODALITA = {
   alltime: { nome: "Quiz infinito", unita: "giuste" },
 };
-export const AZZERATA_IL = "2026-11-22";
+export const AZZERATA_IL = "2026-11-23T21:45:00Z"; // ultimo azzeramento: 23 novembre 2026, sera
 
 export async function inviaPunteggio({ nome, paese, punti, corrette, modalita = "alltime" }) {
   const riga = { nome: nome.trim().slice(0, 20), paese, punti, corrette, modalita, creato: new Date().toISOString() };

@@ -12,7 +12,7 @@ import ShareButton from "./ShareButton.jsx";
 const OGNI_QUANTE_UNA_VITA = 3;
 const VITE_INIZIALI = 1;
 // Quanto resta la spiegazione dopo una risposta giusta (un tocco la chiude prima).
-const MS_SPIEGAZIONE = 5000;
+const MS_SPIEGAZIONE = 3500;
 const MS_SOLO_GIUSTO = 1500; // se la domanda non ha spiegazione
 
 const shuffle = (a) => { const b = [...a]; for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
@@ -32,8 +32,8 @@ function primoGiro() {
   return fuori.map(prepara);
 }
 // Secondi per rispondere: meno tempo man mano che le domande si fanno difficili.
-const SECONDI = { 1: 10, 2: 9, 3: 8 };
-const secondiDi = (q) => SECONDI[q?.livello] || 10;
+const SECONDI = { 1: 9, 2: 8, 3: 7 };
+const secondiDi = (q) => SECONDI[q?.livello] || 9;
 const altroGiro = () => shuffle(DOMANDE.filter((q) => q.livello > 1)).map(prepara);
 
 const GRADIENTE = "linear-gradient(170deg, #432543 0%, #6B2440 45%, #B3243B 80%, #F2B33D 100%)";
@@ -52,7 +52,7 @@ export default function QuizToscana({ onExit, iniziale = "start" }) {
   const [fase, setFase] = useState(dalGiorno ? "gioco" : iniziale); // start | gioco | fine | classifica
   const [domande, setDomande] = useState([]);
   const [i, setI] = useState(0);
-  const [tempo, setTempo] = useState(10);
+  const [tempo, setTempo] = useState(9);
   const [serie, setSerie] = useState(0); // giuste di fila verso la prossima vita: un errore la azzera
   const [scelta, setScelta] = useState(null); // risposta data, o "__tempo" / "__uscito"
   const [corrette, setCorrette] = useState(0);
@@ -159,7 +159,7 @@ export default function QuizToscana({ onExit, iniziale = "start" }) {
             <p><b>Le domande non finiscono mai.</b> Vai avanti finché resisti.</p>
             <p><b>Parti con 1 vita di scorta.</b> Ogni 3 risposte giuste di fila ne guadagni una: un errore azzera il conto.</p>
             <p><b>Sbagli?</b> Perdi una vita. Se sbagli quando non ne hai, la partita finisce.</p>
-            <p><b>Niente aiutini:</b> da 10 a 8 secondi a domanda, sempre meno man mano che si fanno difficili. Se esci dall'app per cercare la risposta, la domanda è persa.</p>
+            <p><b>Niente aiutini:</b> da 9 a 7 secondi a domanda, sempre meno man mano che si fanno difficili. Se esci dall'app per cercare la risposta, la domanda è persa.</p>
           </div>
           <button className="btn btn--primary wide" onClick={() => parti()}>Inizia</button>
           <button className="link" onClick={() => setFase("classifica")}>Vedi la classifica</button>
