@@ -11,7 +11,9 @@ export const CONTACT_EMAIL = "info@bevotoscano.com"; // cambia con la mail che u
 //   foto: "/img/cantine/<id>.jpg" (metti il file in public/img/cantine/)
 //   intervistata: true quando l'intervista è uscita (reel: link al post Instagram)
 //   premi: ["Miglior rosso 2026 (Guida X)", …] dal più importante; in elenco si vedono i primi 3
-//   vinoPiuToscano: la risposta alla nostra domanda
+//   descrizione: una o due frasi su cosa la rende speciale (es. "Cantina di famiglia sulle colline di Terricciola, vigne a pochi passi dalla casa").
+//                Va sulla scheda in elenco, nella cantina del giorno e nella pagina della cantina.
+//   vinoPiuToscano: la risposta alla nostra domanda (solo nella pagina della cantina)
 export const CANTINE = [
   { id: "la-regola", nome: "Podere La Regola", comune: "Riparbella", provincia: "Pisa", zona: "Costa pisana" },
   { id: "agona", nome: "L'Agona", comune: "Terricciola", provincia: "Pisa", zona: "Colline pisane", sito: "https://www.lagonavini.com/" },

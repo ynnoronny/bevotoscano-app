@@ -156,9 +156,9 @@ function Scheda({ c }) {
         <Segni c={c} />
       </div>
       <section className="cant-blocco cant-blocco--vino">
-        {c.vinoPiuToscano
-          ? <p>Il suo vino più toscano: <b>{c.vinoPiuToscano}</b></p>
-          : <p>Una piccola cantina di {c.comune}, in provincia di {c.provincia}, zona {c.zona}. Presto andiamo a trovarla e le chiediamo qual è il suo vino più toscano.</p>}
+        {/* due righe su cosa la rende speciale; se non le abbiamo ancora, dove si trova */}
+        <p>{c.descrizione || `Una piccola cantina di ${c.comune}, in provincia di ${c.provincia}, nella zona ${c.zona}.`}</p>
+        {c.vinoPiuToscano && <p>Il suo vino più toscano: <b>{c.vinoPiuToscano}</b></p>}
         <div className="cant-azioni">
           {c.sito && <a className="cant-btn" href={c.sito} target="_blank" rel="noopener">Sito della cantina ↗</a>}
           {c.reel && <a className="cant-btn cant-btn--chiaro" href={c.reel} target="_blank" rel="noopener">Guarda l'intervista ↗</a>}
@@ -262,9 +262,7 @@ function Elenco() {
                 </Link>
               )}
               <Segni c={c} />
-              {c.vinoPiuToscano
-                ? <p className="cant-vino">Il suo vino più toscano: <b>{c.vinoPiuToscano}</b></p>
-                : <p className="cant-vino cant-vino--presto">Il suo vino più toscano? Glielo chiediamo presto.</p>}
+              {c.descrizione && <p className="cant-vino">{c.descrizione}</p>}
               {ev.length > 0 && (
                 <button className="cant-ev" onClick={(x) => { x.stopPropagation(); go(eventoPercorso(ev[0])); }}>
                   📅 {ev.length === 1 ? "1 evento in arrivo" : `${ev.length} eventi in arrivo`}

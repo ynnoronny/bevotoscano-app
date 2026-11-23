@@ -281,11 +281,16 @@ function useNotizie() {
 function Blog() {
   const notizie = useNotizie();
   const tutti = [...ARTICOLI, ...notizie].sort((a, b) => String(b.data).localeCompare(String(a.data)));
+  // filtro per argomento (il tag di ogni articolo o notizia)
+  const [tema, setTema] = useState("tutti");
+  const temi = [["tutti", "Tutti"], ...[...new Set(tutti.map((a) => a.tag).filter(Boolean))].map((t) => [t, t])];
+  const lista = tutti.filter((a) => tema === "tutti" || a.tag === tema);
   return (
     <div className="feed">
+      {temi.length > 2 && <Filtri><Riga etichetta="Tema"><Scelta opzioni={temi} valore={tema} onCambia={setTema} /></Riga></Filtri>}
       <div className="feed-griglia feed-griglia--blog">
-        {tutti.map((a, i) => (
-          <Link key={a.id} to={`blog/${a.id}`} className={`art ${i === 0 ? "art--primo" : ""} ${a.notizia ? "art--notizia" : ""}`}>
+        {lista.map((a) => (
+          <Link key={a.id} to={`blog/${a.id}`} className={`art ${a.notizia ? "art--notizia" : ""}`}>
             {a.immagine && <img className="art-img" src={a.immagine} alt="" loading="lazy" />}
             <span className="art-tag">{a.tag}{a.data ? ` · ${dataArticolo(a.data)}` : ""}</span>
             <strong>{a.titolo}</strong>
