@@ -37,10 +37,15 @@ export function Interruttore({ on, onCambia, children }) {
 // Prima le zone dove c'è qualcosa, poi le altre.
 export function SceltaZona({ conta, zona, onZona, totale }) {
   const riga = useRef(null);
+  // la zona scelta (anche dalla mappa) scorre al centro della riga; "Tutta la Toscana" torna all'inizio
+  const prima = useRef(true);
   useEffect(() => {
+    if (prima.current) { prima.current = false; return; }
+    const s = riga.current?.closest(".filtri-scorri");
     const b = riga.current?.querySelector(".on");
-    const s = b?.closest(".filtri-scorri");
-    if (b && s) s.scrollTo({ left: b.offsetLeft - s.offsetWidth / 2 + b.offsetWidth / 2, behavior: "smooth" });
+    if (!s) return;
+    const dx = zona && b ? b.getBoundingClientRect().left - s.getBoundingClientRect().left - (s.clientWidth - b.offsetWidth) / 2 : -s.scrollLeft;
+    s.scrollBy({ left: dx, behavior: "smooth" });
   }, [zona]);
   const ordine = [...ZONE].sort((a, b) => (conta[b.zona] || 0) - (conta[a.zona] || 0));
   return (
