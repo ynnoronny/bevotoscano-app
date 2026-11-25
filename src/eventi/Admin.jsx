@@ -199,6 +199,13 @@ function Moderazione({ email, onEsci }) {
   );
 }
 
+// Le ricerche da provare in ordine: nome del posto + comune, indirizzo (che spesso contiene già il comune), solo il comune.
+function tentativiLuogo(v) {
+  const pulisci = (t) => (t || "").replace(/centro storico,?/gi, "").replace(/\s{2,}/g, " ").replace(/\s+,/g, ",").replace(/^[\s,]+|[\s,]+$/g, "");
+  const conComune = (t) => { t = pulisci(t); return !t ? "" : v.comune && !t.toLowerCase().includes(v.comune.toLowerCase()) ? `${t}, ${v.comune}` : t; };
+  return [...new Set([conComune(v.luogo_nome), conComune(v.indirizzo), v.comune].filter(Boolean))];
+}
+
 function Trova({ testo, onTrovato, label = "Trova coordinate" }) {
   const [ris, setRis] = useState(null);
   const [msg, setMsg] = useState("");
@@ -206,7 +213,12 @@ function Trova({ testo, onTrovato, label = "Trova coordinate" }) {
     <div className="stack">
       <button type="button" className="btn btn--outline" onClick={async () => {
         setMsg("Cerco…");
-        try { const r = await cercaLuogo(testo); setRis(r); setMsg(r.length ? "" : "Nessun risultato: prova a scrivere meglio indirizzo o comune"); } catch (e) { setMsg(e.message); }
+        // prova dal testo più preciso al più generico: "luogo, indirizzo, comune" spesso non dà risultati
+        try {
+          let r = [];
+          for (const t of [].concat(testo).filter(Boolean)) { r = await cercaLuogo(t); if (r.length) break; }
+          setRis(r); setMsg(r.length ? "" : "Nessun risultato: prova a scrivere meglio indirizzo o comune");
+        } catch (e) { setMsg(e.message); }
       }}>{label}</button>
       {ris && ris.map((r) => <button type="button" key={`${r.lat},${r.lng}`} className="link" onClick={() => { onTrovato(r); setRis(null); }}>{r.nome}</button>)}
       {msg && <small>{msg}</small>}
@@ -266,7 +278,7 @@ function Editor({ ev, pickups, onAnnulla, onSalva, onPickupSalvato, err }) {
         <strong>Evento</strong>
         <CampiEvento v={v} set={set} pickupExtra={pickupExtra} />
         <Campo label="Coordinate del luogo" hint={v.lat != null ? `✓ ${v.lat.toFixed(4)}, ${v.lng.toFixed(4)}` : "Servono per la mappa e le distanze"}>
-          <Trova testo={[v.luogo_nome, v.indirizzo, v.comune].filter(Boolean).join(", ")} onTrovato={(r) => setV((x) => ({ ...x, lat: r.lat, lng: r.lng }))} />
+          <Trova testo={tentativiLuogo(v)} onTrovato={(r) => setV((x) => ({ ...x, lat: r.lat, lng: r.lng }))} />
         </Campo>
         <Campo label="Foto (link a un'immagine)" hint="Va in cima alla scheda dell'evento. Usa la foto ufficiale dal sito dell'evento.">
           <input className="input" type="url" maxLength={300} value={v.immagine || ""} onChange={(e) => set("immagine", e.target.value.trim() || null)} placeholder="https://…jpg" />
