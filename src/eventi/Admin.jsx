@@ -203,7 +203,16 @@ function Moderazione({ email, onEsci }) {
 function tentativiLuogo(v) {
   const pulisci = (t) => (t || "").replace(/centro storico,?/gi, "").replace(/\s{2,}/g, " ").replace(/\s+,/g, ",").replace(/^[\s,]+|[\s,]+$/g, "");
   const conComune = (t) => { t = pulisci(t); return !t ? "" : v.comune && !t.toLowerCase().includes(v.comune.toLowerCase()) ? `${t}, ${v.comune}` : t; };
-  return [...new Set([conComune(v.luogo_nome), conComune(v.indirizzo), v.comune].filter(Boolean))];
+  // per primo l'indirizzo completo scritto dall'admin (solo admin, non si vede nell'app)
+  return [...new Set([pulisci(v.indirizzo_mappa), conComune(v.luogo_nome), conComune(v.indirizzo), v.comune].filter(Boolean))];
+}
+
+// Coordinate incollate a mano: "43.8433, 10.5027" oppure un link di Google Maps con "@43.84,10.50" o "?q=43.84,10.50".
+function coordinateIncollate(t) {
+  const m = (t || "").match(/(?:@|q=|ll=|^\s*)(-?\d{1,2}\.\d{3,})\s*,\s*(-?\d{1,3}\.\d{3,})/);
+  if (!m) return null;
+  const lat = +m[1], lng = +m[2];
+  return lat > 42 && lat < 44.6 && lng > 9.5 && lng < 12.6 ? { lat, lng, nome: `Coordinate incollate: ${lat}, ${lng}` } : null;
 }
 
 function Trova({ testo, onTrovato, label = "Trova coordinate" }) {
@@ -215,6 +224,8 @@ function Trova({ testo, onTrovato, label = "Trova coordinate" }) {
         setMsg("Cerco…");
         // prova dal testo più preciso al più generico: "luogo, indirizzo, comune" spesso non dà risultati
         try {
+          const diretta = coordinateIncollate([].concat(testo)[0]);
+          if (diretta) { onTrovato(diretta); setRis(null); setMsg("✓ Coordinate prese da quello che hai incollato"); return; }
           let r = [];
           for (const t of [].concat(testo).filter(Boolean)) { r = await cercaLuogo(t); if (r.length) break; }
           setRis(r); setMsg(r.length ? "" : "Nessun risultato: prova a scrivere meglio indirizzo o comune");
@@ -277,6 +288,9 @@ function Editor({ ev, pickups, onAnnulla, onSalva, onPickupSalvato, err }) {
       <section className="card">
         <strong>Evento</strong>
         <CampiEvento v={v} set={set} pickupExtra={pickupExtra} />
+        <Campo label="Indirizzo per la mappa (solo admin)" hint="Indirizzo completo, es. «Piazza San Michele 1, 55100 Lucca». Non compare nell'app: serve solo a trovare le coordinate giuste. Puoi anche incollare le coordinate o un link di Google Maps.">
+          <input className="input" maxLength={300} value={v.indirizzo_mappa || ""} onChange={(e) => set("indirizzo_mappa", e.target.value || null)} placeholder="Via, numero civico, CAP, comune" />
+        </Campo>
         <Campo label="Coordinate del luogo" hint={v.lat != null ? `✓ ${v.lat.toFixed(4)}, ${v.lng.toFixed(4)}` : "Servono per la mappa e le distanze"}>
           <Trova testo={tentativiLuogo(v)} onTrovato={(r) => setV((x) => ({ ...x, lat: r.lat, lng: r.lng }))} />
         </Campo>
