@@ -22,8 +22,8 @@ scanner_attori) e ne compili la scheda verificata. Ronny conferma poi dal gestio
      négociant, cantine che comprano tutte le uve, agriturismi che vendono vino d'altri.
    - azienda_agricola: è un'impresa agricola che coltiva le sue vigne (società agricola, azienda agricola,
      coltivatore diretto)? true / false.
-   - ettari: ettari VITATI (non la superficie totale della tenuta). È il dato più importante: decide se la
-     cantina è tra i Vignaioli (fino a 15 ha) o tra le Grandi cantine. Cercalo con cura, anche per chi vende sfuso.
+   - ettari: ettari VITATI (non la superficie totale della tenuta). È il dato più importante: decide la
+     dimensione della cantina nell'app (piccola fino a 10 ha, media fino a 30, grande oltre). Cercalo con cura, anche per chi vende sfuso.
    - bottiglie: bottiglie l'anno, solo se dichiarate (bottiglie_stima: false). Non stimarle dagli ettari:
      molti piccoli vendono sfuso o imbottigliano poco. Contano solo quando gli ettari non si trovano.
    - gruppo: se la cantina appartiene a un gruppo o a un'altra azienda (es. "Frescobaldi", "ColleMassari").

@@ -404,8 +404,6 @@ html, body { height: 100%; }
 .cant-blocco--vino b { color: var(--gold); }
 .cant-blocco--vino .cant-btn { background: var(--gold); color: var(--plum); }
 .cant-blocco--vino .cant-btn--chiaro { background: transparent; border-color: rgba(255, 255, 255, 0.4); color: #fff; }
-.cant-segno--vignaioli { background: rgba(84, 130, 53, 0.12); color: #3f6b2a; }
-.cant-segno--grandi { background: rgba(67, 37, 67, 0.1); color: var(--plum, #432543); }
 .cant-numeri { font-size: 14px; opacity: 0.8; }
 .cant-lista-vini { list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 14.5px; }
 .cant-lista-vini small { display: block; color: var(--muted); font-size: 13px; }

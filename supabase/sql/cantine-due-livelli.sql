@@ -137,3 +137,21 @@ language sql stable security definer set search_path = public as $$
     else null end;
 $$;
 -- e nella vista attori_pubblici: public.fascia_cantina(ettari, bottiglie) AS fascia
+
+-- 26/11 sera, decisione di Ronny: niente nomi, tre dimensioni dagli ettari (piccola <= 10, media <= 30, grande oltre).
+insert into public.scanner_regole (nome, testo) values ('fasce_ettari', '10, 30'), ('fasce_bottiglie', '65000, 200000') on conflict (nome) do nothing;
+create or replace function public.fascia_cantina(ha numeric, b integer) returns text
+language sql stable security definer set search_path = public as $$
+  with s as (
+    select string_to_array(regexp_replace(coalesce((select testo from scanner_regole where nome = 'fasce_ettari'), '10,30'), '[^0-9.,]', '', 'g'), ',') e,
+           string_to_array(regexp_replace(coalesce((select testo from scanner_regole where nome = 'fasce_bottiglie'), '65000,200000'), '[^0-9,]', '', 'g'), ',') bt
+  )
+  select case
+    when ha is not null then case when ha <= e[1]::numeric then 'piccola' when ha <= e[2]::numeric then 'media' else 'grande' end
+    when b is not null then case when b <= bt[1]::numeric then 'piccola' when b <= bt[2]::numeric then 'media' else 'grande' end
+    end
+  from s;
+$$;
+create or replace function public.fascia_cantina(b integer) returns text
+language sql stable security definer set search_path = public as $$ select public.fascia_cantina(null::numeric, b); $$;
+-- (soglia_vignaioli e soglia_vignaioli_ettari in scanner_regole non servono più)

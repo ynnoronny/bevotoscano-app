@@ -1,14 +1,19 @@
-// Le due categorie di cantine, in base agli ettari vitati: molti piccoli vendono sfuso o
-// imbottigliano poco, quindi le bottiglie contano solo quando gli ettari non si trovano.
-// Le soglie stanno nel database (scanner_regole: "soglia_vignaioli_ettari", ora 15, e
-// "soglia_vignaioli" per le bottiglie, ora 100.000); qui ci sono solo i nomi che si leggono nell'app.
-// Di default l'app mostra le cantine sotto la soglia e quelle di cui non sappiamo i volumi
-// (i piccoli raramente li pubblicano); le grandi si aggiungono con un interruttore.
-export const FASCE = {
-  vignaioli: { nome: "Vignaioli", spiega: "Chi segue vigna e cantina in prima persona, con piccoli volumi" },
-  grandi: { nome: "Grandi cantine", spiega: "Cantine con volumi importanti" },
-};
-export const INCLUDI_GRANDI = "Includi anche le grandi cantine";
+// La dimensione delle cantine: piccola, media, grande, in base agli ettari vitati (molti piccoli
+// vendono sfuso o imbottigliano poco, quindi le bottiglie contano solo se gli ettari non si trovano).
+// Niente nomi "di categoria": solo la dimensione. I confini li decide il database
+// (scanner_regole: "fasce_ettari" = "10, 30", "fasce_bottiglie" = "65000, 200000") e la vista
+// attori_pubblici dà già la fascia; qui c'è solo il testo, da tenere allineato se cambiano.
+// Le cantine di cui non sappiamo gli ettari stanno con le piccole: i piccoli raramente pubblicano i numeri.
+export const DIMENSIONI = [
+  ["piccola", "Piccole", "fino a 10 ettari di vigna"],
+  ["media", "Medie", "da 10 a 30 ettari di vigna"],
+  ["grande", "Grandi", "oltre 30 ettari di vigna"],
+];
+export const DIMENSIONE_DEFAULT = "piccola";
+const CONFINI_ETTARI = [10, 30];
+// le cantine del database hanno già la fascia; quelle scritte a mano in data.js solo gli ettari
+export const dimensioneDi = (c) => c.fascia
+  || (c.ettari != null ? (c.ettari <= CONFINI_ETTARI[0] ? "piccola" : c.ettari <= CONFINI_ETTARI[1] ? "media" : "grande") : "piccola");
 
 // "40.000 bottiglie l'anno" / "circa 65.000 bottiglie l'anno (stima dagli ettari)"
 export function volumi(c) {

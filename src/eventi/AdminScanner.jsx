@@ -4,7 +4,7 @@ import { fmtData } from "./shared.js";
 import { siglaProvincia } from "../province.js";
 import Link from "../Link.jsx";
 import { cantinaPercorso } from "../seo.js";
-import { trovaCantina, FASCE } from "../fasce.js";
+import { trovaCantina, DIMENSIONI } from "../fasce.js";
 
 // Le parti del gestionale che lavorano con lo scanner automatico (vedi docs/SCANNER.md):
 // cantine ed enoteche da approvare, notizie per il blog, registro e regole dello scanner.
@@ -166,17 +166,18 @@ export function Qualificate({ onEsci }) {
   const carica = () => tuttiGliAttori().then(setLista).catch((e) => { setLista([]); errore(e, onEsci, setErr); });
   useEffect(() => { carica(); }, []);
 
-  // le soglie stanno nelle regole dello scanner (Scanner > Regole): prima gli ettari vitati,
-  // perché molti piccoli vendono sfuso o imbottigliano poco; le bottiglie solo se mancano gli ettari
-  const [soglia, setSoglia] = useState({ ettari: 15, bottiglie: 100000 });
+  // i confini stanno nelle regole dello scanner (Scanner > Regole > fasce_ettari, fasce_bottiglie):
+  // prima gli ettari vitati, perché molti piccoli vendono sfuso o imbottigliano poco
+  const [soglia, setSoglia] = useState({ ettari: [10, 30], bottiglie: [65000, 200000] });
   useEffect(() => {
-    registroScanner("scanner_regole", "nome=in.(soglia_vignaioli,soglia_vignaioli_ettari)&select=nome,testo").then((r) => {
-      const v = (n) => parseFloat(String((r || []).find((x) => x.nome === n)?.testo || "").replace(",", ".").replace(/[^0-9.]/g, ""));
-      setSoglia((s) => ({ ettari: v("soglia_vignaioli_ettari") || s.ettari, bottiglie: v("soglia_vignaioli") || s.bottiglie }));
+    registroScanner("scanner_regole", "nome=in.(fasce_ettari,fasce_bottiglie)&select=nome,testo").then((r) => {
+      const v = (n) => String((r || []).find((x) => x.nome === n)?.testo || "").split(",").map((x) => parseFloat(x.replace(/[^0-9.]/g, ""))).filter((x) => x > 0);
+      setSoglia((s) => ({ ettari: v("fasce_ettari").length === 2 ? v("fasce_ettari") : s.ettari, bottiglie: v("fasce_bottiglie").length === 2 ? v("fasce_bottiglie") : s.bottiglie }));
     }).catch(() => {});
   }, []);
-  const fasciaDi = (a) => (a.ettari != null ? (Number(a.ettari) <= soglia.ettari ? "vignaioli" : "grandi")
-    : a.bottiglie != null ? (a.bottiglie <= soglia.bottiglie ? "vignaioli" : "grandi") : "");
+  const taglia = (x, [a, b]) => (x <= a ? "piccola" : x <= b ? "media" : "grande");
+  const fasciaDi = (a) => (a.ettari != null ? taglia(Number(a.ettari), soglia.ettari) : a.bottiglie != null ? taglia(a.bottiglie, soglia.bottiglie) : "");
+  const NOME_FASCIA = { piccola: "Piccola", media: "Media", grande: "Grande" };
   const tutte = lista || [];
   const archivio = tutte.filter((a) => !a.qualifica && ["cantina", "azienda_agricola", "fattoria", "altro"].includes(a.tipo) && a.stato !== "rifiutato").length;
   const conta = (v) => tutte.filter((a) => (v === "non_producono" ? a.qualifica === "confermata" && a.produce === false : v === "confermata" ? a.qualifica === "confermata" && a.produce !== false : a.qualifica === v)).length;
@@ -210,13 +211,12 @@ export function Qualificate({ onEsci }) {
   return (
     <>
       <h1 className="page-title">Cantine qualificate</h1>
-      <p className="muted">Ogni cantina dell'archivio passa per una ricerca singola che verifica se produce, se è azienda agricola, i volumi e le etichette. Qui confermi il risultato: le cantine confermate che producono vanno nell'app. Fino a {String(soglia.ettari).replace(".", ",")} ettari di vigna sono «{FASCE.vignaioli.nome}», sopra «{FASCE.grandi.nome}» (se mancano gli ettari conta il limite di {soglia.bottiglie.toLocaleString("it-IT")} bottiglie). Nell'archivio ne restano {archivio} da qualificare.</p>
+      <p className="muted">Ogni cantina dell'archivio passa per una ricerca singola che verifica se produce, se è azienda agricola, i volumi e le etichette. Qui confermi il risultato: le cantine confermate che producono vanno nell'app. Dimensione dagli ettari di vigna: piccola fino a {soglia.ettari[0]}, media fino a {soglia.ettari[1]}, grande oltre (se mancano gli ettari contano le bottiglie dichiarate: {soglia.bottiglie[0].toLocaleString("it-IT")} e {soglia.bottiglie[1].toLocaleString("it-IT")}). Nell'archivio ne restano {archivio} da qualificare.</p>
       <Schede voci={[["proposta", "Da confermare"], ["confermata", "Confermate"], ["non_producono", "Non producono"], ["doppione", "Doppioni"]]} valore={vista} onCambia={(v) => { setVista(v); setQuante(30); }} conta={conta} />
       <div className="admin-filtri">
         <select className="input" value={fascia} onChange={(e) => setFascia(e.target.value)}>
-          <option value="">Tutte le fasce</option>
-          <option value="vignaioli">{FASCE.vignaioli.nome}</option>
-          <option value="grandi">{FASCE.grandi.nome}</option>
+          <option value="">Tutte le dimensioni</option>
+          {DIMENSIONI.map(([k, t]) => <option key={k} value={k}>{t}</option>)}
           <option value="ignoti">Volumi non trovati</option>
         </select>
       </div>
@@ -233,7 +233,7 @@ export function Qualificate({ onEsci }) {
       {lista && filtrate.length === 0 && <p className="muted">{vista === "proposta" ? "Niente da confermare: la ricerca singola non ha ancora proposto nuove schede." : "Niente qui."}</p>}
       <div className="list">
         {filtrate.slice(0, quante).map((a) => (
-          <Qualifica key={a.id} a={a} fascia={fasciaDi(a)} lavoro={lavoro} doppioneDi={a.doppione_di && nomeDi(a.doppione_di)}
+          <Qualifica key={a.id} a={a} fascia={NOME_FASCIA[fasciaDi(a)]} lavoro={lavoro} doppioneDi={a.doppione_di && nomeDi(a.doppione_di)}
             onConferma={() => conferma([a])} onRifai={() => rifai(a)} onTogli={() => togli(a)} />
         ))}
       </div>
@@ -247,7 +247,7 @@ function Qualifica({ a, fascia, lavoro, doppioneDi, onConferma, onRifai, onTogli
   return (
     <article className="card">
       <div className="admin-testa">
-        <span className="admin-origine">{fascia ? FASCE[fascia].nome : a.qualifica === "doppione" ? "Doppione" : "Volumi non trovati"}</span>
+        <span className="admin-origine">{fascia ? `Cantina ${fascia.toLowerCase()}` : a.qualifica === "doppione" ? "Doppione" : "Volumi non trovati"}</span>
         <small className="evento-data">{a.comune || "comune?"} · ricerca del {fmtData(a.qualificata_il, false)}{a.stato === "approvato" ? " · nell'app" : ""}</small>
       </div>
       <strong className="evento-titolo">{a.nome}</strong>

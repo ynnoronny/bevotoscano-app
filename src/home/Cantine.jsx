@@ -11,8 +11,8 @@ import { copiaLuogo } from "../preferiti.js";
 import { pos } from "./luoghi.js";
 import { PROVINCE_BOX, zonaDi } from "../zone.js";
 import { mappaFerma, sistemaNomi, disegnaZone, inquadra, inquadraPunti, contaZone } from "../mappaFerma.js";
-import { Filtri, Riga, Interruttore, SceltaProvincia } from "./Filtri.jsx";
-import { FASCE, INCLUDI_GRANDI, volumi } from "../fasce.js";
+import { Filtri, Riga, Interruttore, Scelta, SceltaProvincia } from "./Filtri.jsx";
+import { DIMENSIONI, DIMENSIONE_DEFAULT, dimensioneDi, volumi } from "../fasce.js";
 import { cantinaPercorso, cantinaMeta, cantinaJsonLd, briciole, applicaMeta, eventoPercorso } from "../seo.js";
 
 const SIGLA = { Pisa: "PI", Firenze: "FI", Siena: "SI", Livorno: "LI", Lucca: "LU", Arezzo: "AR", Grosseto: "GR", Pistoia: "PT", Prato: "PO", "Massa-Carrara": "MS" };
@@ -134,11 +134,9 @@ export function Foto({ c, grande }) {
 function Segni({ c }) {
   const [info, setInfo] = useState(false);
   const premi = c.premi || [];
-  const fascia = FASCE[c.fascia];
-  if (!c.intervistata && !premi.length && !fascia) return null;
+  if (!c.intervistata && !premi.length) return null;
   return (
     <div className="cant-segni">
-      {fascia && <span className={`cant-segno cant-segno--${c.fascia}`} title={fascia.spiega}>{c.fascia === "vignaioli" ? "🌱" : "🏛️"} {fascia.nome}</span>}
       {c.intervistata && (
         c.reel
           ? <a className="cant-segno cant-segno--ok" href={c.reel} target="_blank" rel="noopener" onClick={(x) => x.stopPropagation()}>🎤 Intervistata da noi</a>
@@ -243,13 +241,14 @@ function Elenco({ enoteche, luoghi }) {
   const [provincia, setProvincia] = useState("");
   const [soloIntervistate, setSoloIntervistate] = useState(false);
   const [soloPremiate, setSoloPremiate] = useState(false);
-  // di default solo vignaioli e cantine di cui non sappiamo i volumi; le grandi si aggiungono a scelta
-  const [conGrandi, setConGrandi] = useState(false);
+  // la dimensione (ettari di vigna) al posto della provincia: di default le piccole
+  const [dimensione, setDimensione] = useState(DIMENSIONE_DEFAULT);
   const [attiva, setAttiva] = useState(null);
   const [eventi, setEventi] = useState([]);
   useEffect(() => { eventiPubblici().then(setEventi).catch(() => {}); }, []);
-  const tutte = (enoteche ? luoghi.enoteche : luoghi.cantine).filter((c) => enoteche || conGrandi || c.fascia !== "grandi");
-  const grandi = enoteche ? 0 : luoghi.cantine.filter((c) => c.fascia === "grandi").length;
+  const tutte = (enoteche ? luoghi.enoteche : luoghi.cantine).filter((c) => enoteche || !dimensione || dimensioneDi(c) === dimensione);
+  const perDimensione = luoghi.cantine.reduce((o, c) => { o[dimensioneDi(c)] = (o[dimensioneDi(c)] || 0) + 1; return o; }, {});
+  const spiegaDimensione = DIMENSIONI.find(([k]) => k === dimensione)?.[2];
   const parola = enoteche ? ["enoteca", "enoteche"] : ["cantina", "cantine"];
 
   // quante ce ne sono in ogni provincia (con gli altri filtri già applicati): si legge nel menu
@@ -278,17 +277,19 @@ function Elenco({ enoteche, luoghi }) {
       <Filtri>
         <Riga etichetta="Mostra">
           {/* la provincia al posto della lunga fila delle zone (26/11): scegliendola la mappa la inquadra tutta */}
-          <SceltaProvincia valore={provincia} conta={perProvincia} onCambia={(v) => { setProvincia(v); setZona(null); setAttiva(null); }} />
+          {enoteche
+            ? <SceltaProvincia valore={provincia} conta={perProvincia} onCambia={(v) => { setProvincia(v); setZona(null); setAttiva(null); }} />
+            : <Scelta valore={dimensione} onCambia={(v) => { setDimensione(v); setAttiva(null); }}
+                opzioni={[...DIMENSIONI.map(([k, t]) => [k, `${t}${perDimensione[k] ? ` · ${perDimensione[k]}` : ""}`]), ["", "Tutte"]]} />}
           {!enoteche && <Interruttore on={soloIntervistate} onCambia={setSoloIntervistate}>🎤 Le abbiamo intervistate</Interruttore>}
           {!enoteche && <Interruttore on={soloPremiate} onCambia={setSoloPremiate}>🏅 Premi nelle guide</Interruttore>}
-          {grandi > 0 && <Interruttore on={conGrandi} onCambia={setConGrandi}>🏛️ {INCLUDI_GRANDI} ({grandi})</Interruttore>}
         </Riga>
       </Filtri>
 
       <MappaCantine cantine={lista} enoteche={enoteche} attiva={attiva} onScegli={scegli} zona={zona} provincia={provincia} conta={conta} onZona={(z) => { setZona(z); setProvincia(""); setAttiva(null); }} />
       {/* la lista qui sotto segue la mappa: zona, provincia e filtri scelti */}
       <div className="cant-conta">
-        <strong>{lista.length === 1 ? `1 ${parola[0]}` : `${lista.length} ${parola[1]}`}{zona ? ` · ${zona}` : ""}{provincia ? ` · provincia di ${provincia}` : ""}</strong>
+        <strong>{lista.length === 1 ? `1 ${parola[0]}` : `${lista.length} ${parola[1]}`}{!enoteche && spiegaDimensione ? ` · ${spiegaDimensione}` : ""}{zona ? ` · ${zona}` : ""}{provincia ? ` · provincia di ${provincia}` : ""}</strong>
         {(zona || provincia || soloIntervistate || soloPremiate)
           ? <button className="link" onClick={() => { setZona(null); setProvincia(""); setSoloIntervistate(false); setSoloPremiate(false); setAttiva(null); }}>Tutta la Toscana</button>
           : <small>Tocca una zona sulla mappa · due dita per avvicinarla</small>}
