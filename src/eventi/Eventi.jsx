@@ -4,6 +4,8 @@ import { km, fmtKm, cercaLuogo, posizioneAttuale, CITTA } from "./geo.js";
 import { ACCESSI, senzaAuto, fmtData, oraNota, conNavetta } from "./shared.js";
 import Mappa from "./Mappa.jsx";
 import CondividiEvento from "./Condividi.jsx";
+import Cuore from "../Cuore.jsx";
+import { copiaEvento } from "../preferiti.js";
 
 import { go } from "../nav.js";
 import Link from "../Link.jsx";
@@ -231,7 +233,10 @@ function Dettaglio({ e, centro }) {
       <p className="eyebrow">{e.fine && new Date(e.fine).toDateString() !== new Date(e.inizio).toDateString()
         ? `Dal ${fmtData(e.inizio, false)} al ${fmtData(e.fine, false)}`
         : oraNota(e) ? `${fmtData(e.inizio)}${e.fine ? ` → ${new Date(e.fine).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}` : ""}` : fmtData(e.inizio, false)}{e.orari ? ` · ${e.orari}` : ""}</p>
-      <h1 className="page-title">{e.titolo}</h1>
+      <div className="evento-testa">
+        <h1 className="page-title">{e.titolo}</h1>
+        <Cuore tipo="eventi" id={e.id} nome={e.titolo} copia={() => copiaEvento(e, eventoPercorso(e))} className="cuore--grande" />
+      </div>
       {/* la foto o la locandina, in grande: un tocco la apre intera */}
       {e.immagine && <a href={e.immagine} target="_blank" rel="noopener"><img className="evento-img" src={e.immagine} alt={`Foto di ${e.titolo}`} /></a>}
       <Badges e={e} />

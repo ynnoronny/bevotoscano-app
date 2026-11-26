@@ -1,16 +1,19 @@
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { mappaFerma, sistemaNomi, disegnaZone, inquadra } from "../mappaFerma.js";
+import { mappaFerma, sistemaNomi, disegnaZone, inquadra, inquadraPunti } from "../mappaFerma.js";
+import { PROVINCE_BOX } from "../zone.js";
 
-// La mappa degli eventi, ferma (il dito fa scorrere la pagina). Le zone del vino fanno da filtro:
+// La mappa degli eventi: parte già vicina agli eventi, si avvicina con due dita (vedi mappaFerma.js).
+// Le zone del vino fanno da filtro:
 // tocchi Montalcino e sotto restano solo i suoi eventi. Pallini vino = dove si tiene l'evento,
 // pallini oro = punti di raccolta della navetta.
-export default function Mappa({ eventi, conta, centro, onApri, attivo, zona, onZona }) {
+export default function Mappa({ eventi, conta = {}, centro, onApri, attivo, zona, onZona = () => {}, provincia }) {
   const box = useRef(null);
   const map = useRef(null);
   const layer = useRef(null);
   const zone = useRef(null);
+  const inquadrata = useRef("");
 
   useEffect(() => {
     map.current = mappaFerma(box.current);
@@ -23,7 +26,6 @@ export default function Mappa({ eventi, conta, centro, onApri, attivo, zona, onZ
 
   useEffect(() => {
     disegnaZone(zone.current, { conta, zona, onZona });
-    inquadra(map.current, zona);
     sistemaNomi(box.current, map.current);
   }, [zona, conta]);
 
@@ -42,7 +44,16 @@ export default function Mappa({ eventi, conta, centro, onApri, attivo, zona, onZ
       L.circleMarker([e.lat, e.lng], { radius: on ? 12 : 9, color: on ? "#F2B33D" : "#FFFDF8", fillColor: "#B3243B", fillOpacity: 1, weight: on ? 3 : 2, bubblingMouseEvents: false })
         .on("click", () => onApri(e)).addTo(g);
     });
-  }, [eventi, centro, attivo]);
+    // si reinquadra solo quando cambiano gli eventi mostrati o la zona/provincia,
+    // non quando tocchi un pallino (così resta dove l'hai avvicinata tu)
+    const chiave = `${zona}|${provincia}|${eventi.map((e) => e.id).join(",")}`;
+    if (chiave !== inquadrata.current) {
+      inquadrata.current = chiave;
+      if (zona || provincia) inquadra(map.current, zona, PROVINCE_BOX[provincia]);
+      else inquadraPunti(map.current, eventi.filter((e) => e.lat != null).map((e) => [e.lat, e.lng]));
+      sistemaNomi(box.current, map.current);
+    }
+  }, [eventi, centro, attivo, zona, provincia]);
 
   return <div ref={box} className="mappa mappa--ferma" />;
 }

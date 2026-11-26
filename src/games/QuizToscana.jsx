@@ -32,8 +32,9 @@ function primoGiro() {
   return fuori.map(prepara);
 }
 // Secondi per rispondere: meno tempo man mano che le domande si fanno difficili.
-const SECONDI = { 1: 9, 2: 8, 3: 7 };
-const secondiDi = (q) => SECONDI[q?.livello] || 9;
+// (26/11: +3 secondi a ogni livello, si leggeva a fatica)
+const SECONDI = { 1: 12, 2: 11, 3: 10 };
+const secondiDi = (q) => SECONDI[q?.livello] || 12;
 const altroGiro = () => shuffle(DOMANDE.filter((q) => q.livello > 1)).map(prepara);
 
 const GRADIENTE = "linear-gradient(170deg, #432543 0%, #6B2440 45%, #B3243B 80%, #F2B33D 100%)";
@@ -52,7 +53,7 @@ export default function QuizToscana({ onExit, iniziale = "start" }) {
   const [fase, setFase] = useState(dalGiorno ? "gioco" : iniziale); // start | gioco | fine | classifica
   const [domande, setDomande] = useState([]);
   const [i, setI] = useState(0);
-  const [tempo, setTempo] = useState(9);
+  const [tempo, setTempo] = useState(12);
   const [serie, setSerie] = useState(0); // giuste di fila verso la prossima vita: un errore la azzera
   const [scelta, setScelta] = useState(null); // risposta data, o "__tempo" / "__uscito"
   const [corrette, setCorrette] = useState(0);

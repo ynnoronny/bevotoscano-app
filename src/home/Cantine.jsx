@@ -6,10 +6,12 @@ import { eventiPubblici, attoriPubblici } from "../eventi/api.js";
 import { siglaProvincia } from "../province.js";
 import { go } from "../nav.js";
 import Link from "../Link.jsx";
+import Cuore from "../Cuore.jsx";
+import { copiaLuogo } from "../preferiti.js";
 import { pos } from "./luoghi.js";
 import { PROVINCE_BOX, zonaDi } from "../zone.js";
-import { mappaFerma, sistemaNomi, disegnaZone, inquadra, contaZone } from "../mappaFerma.js";
-import { Filtri, Riga, Interruttore, SceltaZona } from "./Filtri.jsx";
+import { mappaFerma, sistemaNomi, disegnaZone, inquadra, inquadraPunti, contaZone } from "../mappaFerma.js";
+import { Filtri, Riga, Interruttore, SceltaProvincia } from "./Filtri.jsx";
 import { cantinaPercorso, cantinaMeta, cantinaJsonLd, briciole, applicaMeta, eventoPercorso } from "../seo.js";
 
 const SIGLA = { Pisa: "PI", Firenze: "FI", Siena: "SI", Livorno: "LI", Lucca: "LU", Arezzo: "AR", Grosseto: "GR", Pistoia: "PT", Prato: "PO", "Massa-Carrara": "MS" };
@@ -41,13 +43,15 @@ function useLuoghi() {
   }), [extra]);
 }
 
-// La mappa delle cantine: ferma (il dito fa scorrere la pagina) e fa da filtro per zona.
+// La mappa delle cantine: parte già vicina alle cantine, si avvicina con due dita (mappaFerma.js)
+// e fa da filtro per zona.
 // Senza onZona (la pagina di una cantina) mostra solo il pallino, da vicino.
 function MappaCantine({ cantine, attiva, onScegli, zona, onZona, provincia, conta, enoteche }) {
   const box = useRef(null);
   const map = useRef(null);
   const layer = useRef(null);
   const zone = useRef(null);
+  const inquadrata = useRef("");
   useEffect(() => {
     map.current = mappaFerma(box.current);
     map.current.on("moveend zoomend", () => sistemaNomi(box.current, map.current));
@@ -59,8 +63,6 @@ function MappaCantine({ cantine, attiva, onScegli, zona, onZona, provincia, cont
   useEffect(() => {
     if (!onZona) return;
     disegnaZone(zone.current, { conta, zona, onZona });
-    // la zona scelta; se no la provincia scelta, inquadrata tutta; se no tutta la Toscana
-    inquadra(map.current, zona, PROVINCE_BOX[provincia]);
     sistemaNomi(box.current, map.current);
   }, [zona, conta, provincia]);
   useEffect(() => {
@@ -80,8 +82,17 @@ function MappaCantine({ cantine, attiva, onScegli, zona, onZona, provincia, cont
         .on("click", () => onScegli(c.id)).addTo(layer.current);
       punti.push(q);
     });
-    if (!onZona && punti.length) map.current.fitBounds(punti, { padding: [36, 36], maxZoom: 11 });
-  }, [cantine, attiva, enoteche]);
+    if (!onZona) { if (punti.length) map.current.fitBounds(punti, { padding: [36, 36], maxZoom: 11 }); return; }
+    // la zona scelta; se no la provincia, inquadrata tutta; se no da vicino le cantine mostrate.
+    // Solo quando cambia cosa si mostra: toccare un pallino non sposta la mappa che hai avvicinato tu.
+    const chiave = `${zona}|${provincia}|${cantine.map((c) => c.id).join(",")}`;
+    if (chiave !== inquadrata.current) {
+      inquadrata.current = chiave;
+      if (zona || provincia) inquadra(map.current, zona, PROVINCE_BOX[provincia]);
+      else inquadraPunti(map.current, punti);
+      sistemaNomi(box.current, map.current);
+    }
+  }, [cantine, attiva, enoteche, zona, provincia]);
   return <div ref={box} className={`mappa mappa--ferma ${onZona ? "mappa--bassa" : "mappa--piccola"}`} />;
 }
 
@@ -154,7 +165,10 @@ function Scheda({ c }) {
       {fotoDi(c) && <Foto c={c} grande />}
       <div className="cant-scheda-testa">
         <p className="cant-dove">{dove(c)}</p>
-        <h1 className="page-title">{c.nome}</h1>
+        <div className="evento-testa">
+          <h1 className="page-title">{c.nome}</h1>
+          <Cuore tipo="luoghi" id={c.id} nome={c.nome} copia={() => copiaLuogo(c, { dove: dove(c), percorso: cantinaPercorso(c) })} className="cuore--grande" />
+        </div>
         <Segni c={c} />
       </div>
       <section className="cant-blocco cant-blocco--vino">
@@ -201,8 +215,9 @@ function Elenco({ enoteche }) {
   const tutte = enoteche ? luoghi.enoteche : luoghi.cantine;
   const parola = enoteche ? ["enoteca", "enoteche"] : ["cantina", "cantine"];
 
-  // tutte e dieci le province: scegliendone una la mappa la inquadra tutta
-  const province = Object.keys(SIGLA);
+  // quante ce ne sono in ogni provincia (con gli altri filtri già applicati): si legge nel menu
+  const perProvincia = useMemo(() => tutte.filter((c) => (!soloIntervistate || c.intervistata) && (!soloPremiate || (c.premi || []).length))
+    .reduce((o, c) => { if (c.provincia) o[c.provincia] = (o[c.provincia] || 0) + 1; return o; }, {}), [tutte, soloIntervistate, soloPremiate]);
   // prima i filtri "di contorno" (provincia, intervistate, premi), poi la zona: così ogni zona mostra quante ne restano
   const filtrate = tutte.filter((c) => (!provincia || c.provincia === provincia) && (!soloIntervistate || c.intervistata) && (!soloPremiate || (c.premi || []).length));
   const conta = useMemo(() => contaZone(filtrate), [tutte, provincia, soloIntervistate, soloPremiate]);
@@ -225,27 +240,20 @@ function Elenco({ enoteche }) {
       </div>
       <Filtri>
         <Riga etichetta="Mostra">
-          <label className={`filtri-sel ${provincia ? "on" : ""}`}>
-            <select value={provincia} onChange={(x) => { setProvincia(x.target.value); setZona(null); setAttiva(null); }} aria-label="Provincia">
-              <option value="">Tutte le province</option>
-              {province.map((p) => <option key={p} value={p}>Provincia di {p}</option>)}
-            </select>
-          </label>
+          {/* la provincia al posto della lunga fila delle zone (26/11): scegliendola la mappa la inquadra tutta */}
+          <SceltaProvincia valore={provincia} conta={perProvincia} onCambia={(v) => { setProvincia(v); setZona(null); setAttiva(null); }} />
           {!enoteche && <Interruttore on={soloIntervistate} onCambia={setSoloIntervistate}>🎤 Le abbiamo intervistate</Interruttore>}
           {!enoteche && <Interruttore on={soloPremiate} onCambia={setSoloPremiate}>🏅 Premi nelle guide</Interruttore>}
         </Riga>
       </Filtri>
 
       <MappaCantine cantine={lista} enoteche={enoteche} attiva={attiva} onScegli={scegli} zona={zona} provincia={provincia} conta={conta} onZona={(z) => { setZona(z); setProvincia(""); setAttiva(null); }} />
-      <div className="filtri filtri--zone">
-        <Riga etichetta="Zona"><SceltaZona conta={conta} zona={zona} onZona={(z) => { setZona(z); setProvincia(""); setAttiva(null); }} totale={filtrate.length} /></Riga>
-      </div>
       {/* la lista qui sotto segue la mappa: zona, provincia e filtri scelti */}
       <div className="cant-conta">
         <strong>{lista.length === 1 ? `1 ${parola[0]}` : `${lista.length} ${parola[1]}`}{zona ? ` · ${zona}` : ""}{provincia ? ` · provincia di ${provincia}` : ""}</strong>
         {(zona || provincia || soloIntervistate || soloPremiate)
           ? <button className="link" onClick={() => { setZona(null); setProvincia(""); setSoloIntervistate(false); setSoloPremiate(false); setAttiva(null); }}>Tutta la Toscana</button>
-          : <small>Tocca una zona sulla mappa</small>}
+          : <small>Tocca una zona sulla mappa · due dita per avvicinarla</small>}
       </div>
 
       {lista.length === 0 && (enoteche && !tutte.length
@@ -258,6 +266,8 @@ function Elenco({ enoteche }) {
           const ev = eventiDi(c);
           return (
             <article key={c.id} id={`cantina-${c.id}`} className={`cant ${attiva === c.id ? "cant--on" : ""}`} onClick={() => setAttiva(c.id)}>
+              <Cuore tipo="luoghi" id={c.id} nome={c.nome} className="cuore--angolo"
+                copia={() => copiaLuogo(c, { dove: [c.tipo !== "Cantina" && c.tipo, dove(c)].filter(Boolean).join(" · "), percorso: c.db ? null : cantinaPercorso(c) })} />
               {c.db ? (
                 <div className="cant-testa">
                   <Foto c={c} />
