@@ -19,5 +19,9 @@ for (const [sigla, nomi] of Object.entries(PROVINCE)) for (const n of nomi.split
 // Qualche frazione dove capitano spesso eventi e cantine.
 Object.assign(MAPPA, { montefoscoli: "PI", ghizzano: "PI", bolgheri: "LI", "sangimignano": "SI", "castelnuovoberardenga": "SI" });
 
+// Le dieci province con il loro nome, nell'ordine in cui compaiono nei filtri.
+export const NOMI_PROVINCIA = { PI: "Pisa", FI: "Firenze", SI: "Siena", LI: "Livorno", LU: "Lucca", AR: "Arezzo", GR: "Grosseto", PT: "Pistoia", PO: "Prato", MS: "Massa-Carrara" };
+export const provinciaDi = (comune) => NOMI_PROVINCIA[siglaProvincia(comune)] || null;
+
 export const siglaProvincia = (comune) => MAPPA[norm(comune)] || null;
 export const conProvincia = (comune) => { const s = siglaProvincia(comune); return s ? `${comune} (${s})` : comune || ""; };

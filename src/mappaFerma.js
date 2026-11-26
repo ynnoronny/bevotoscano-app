@@ -1,21 +1,43 @@
 import L from "leaflet";
 import { TILE, TILE_ATTR } from "./tema.js";
-import { ZONE, TOSCANA_STRETTA } from "./zone.js";
+import { ZONE, TOSCANA, TOSCANA_STRETTA } from "./zone.js";
 
-// Le mappe di eventi e cantine sono "ferme": il dito sulla mappa fa scorrere la pagina
-// (prima trascinava la mappa e non si arrivava più alla lista). Non si sposta e non si zooma
-// a mano: si tocca una zona e la mappa ci va da sola, si tocca di nuovo e torna su tutta la Toscana.
+// Le mappe di eventi e cantine si avvicinano e si spostano, ma senza rubare lo scorrimento
+// della pagina (era il motivo per cui erano state bloccate, 23/11):
+// - sul telefono un dito fa scorrere la pagina come sempre; con due dita si avvicina e si sposta la mappa
+//   (se ci provi con un dito, compare l'avviso "usa due dita");
+// - sul computer si trascina col mouse, e ci sono i pulsanti + e −.
+// Toccare una zona continua a filtrare la lista; la mappa resta dentro la Toscana.
+const TOUCH = typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches;
 export function mappaFerma(el) {
   const m = L.map(el, {
-    dragging: false, touchZoom: false, doubleClickZoom: false, scrollWheelZoom: false,
-    boxZoom: false, keyboard: false, zoomControl: false, zoomSnap: 0.1, tap: false,
+    dragging: !TOUCH, touchZoom: TOUCH, doubleClickZoom: true, scrollWheelZoom: false,
+    boxZoom: false, keyboard: true, zoomControl: false, zoomSnap: 0.25, tap: false,
+    maxBounds: TOSCANA, maxBoundsViscosity: 0.8, minZoom: 7, maxZoom: 15,
     // niente animazioni di zoom: la mappa salta subito sulla zona, e i nomi si sistemano senza tremolii
     zoomAnimation: false, fadeAnimation: false, markerZoomAnimation: false,
   });
+  L.control.zoom({ position: "topright", zoomInTitle: "Avvicina", zoomOutTitle: "Allontana" }).addTo(m);
   // via il marchio Leaflet; il credito a OpenStreetMap resta (lo chiede la licenza), ma piccolo
   m.attributionControl.setPrefix(false);
   L.tileLayer(TILE, { className: "tile-calde", maxZoom: 16, attribution: TILE_ATTR }).addTo(m);
+  if (TOUCH) {
+    // un dito che scorre sulla mappa: la pagina scorre e, per un attimo, l'avviso delle due dita
+    let t;
+    el.addEventListener("touchmove", (x) => {
+      if (x.touches.length !== 1) return;
+      el.classList.add("mappa--avviso");
+      clearTimeout(t);
+      t = setTimeout(() => el.classList.remove("mappa--avviso"), 1400);
+    }, { passive: true });
+  }
   return m;
+}
+
+// Inquadra i punti (eventi o cantine) da vicino; senza punti, tutta la Toscana.
+export function inquadraPunti(map, punti) {
+  if (punti.length) map.fitBounds(L.latLngBounds(punti).pad(0.12), { maxZoom: 11 });
+  else map.fitBounds(TOSCANA_STRETTA);
 }
 
 // I nomi delle zone: da lontano solo quelle dove c'è qualcosa (o quella scelta), da vicino tutte.

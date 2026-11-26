@@ -2,7 +2,7 @@ import { useState } from "react";
 import { SEGNI, segnoDa } from "./oroscopoData.js";
 import ShareButton from "./ShareButton.jsx";
 import MESE from "./oroscopoMese.json";
-import { saveLead, isEmail } from "../leads.js";
+import { saveLead } from "../leads.js";
 
 const MESI = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"];
 const GIORNI_MESE = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
@@ -14,21 +14,12 @@ export default function Oroscopo({ onExit }) {
   const [giorno, setGiorno] = useState("");
   const [mese, setMese] = useState("");
   const [segno, setSegno] = useState(null);
-  const [email, setEmail] = useState("");
-  const [emailState, setEmailState] = useState("");
 
   const scopri = () => {
     const s = segnoDa(Number(mese), Number(giorno));
     if (!s) return;
     saveLead("oroscopo", { segno: s.segno, vitigno: s.vitigno });
     setSegno(s);
-  };
-
-  const iscrivi = (e) => {
-    e.preventDefault();
-    if (!isEmail(email)) return setEmailState("err");
-    saveLead("oroscopo-email", { email, segno: segno.segno, vitigno: segno.vitigno });
-    setEmailState("ok");
   };
 
   const delMese = segno && MESE.testi?.[segno.id];
@@ -89,17 +80,6 @@ export default function Oroscopo({ onExit }) {
             filename={`bevotoscano-${segno.id}`}
             card={{ gradient: segno.gradient, eyebrow: `${segno.simbolo} ${segno.segno} · il mio vitigno`, emoji: segno.emoji, title: segno.vitigno, tagline: delMese ? delMese.titolo : segno.tagline, body: delMese ? delMese.vino : segno.curiosita }}
           />
-
-          {emailState === "ok" ? (
-            <p className="result-fact">Fatto! Ti mandiamo le storie dei vini del tuo segno 🍷</p>
-          ) : (
-            <form className="glass-form" onSubmit={iscrivi}>
-              <span>Vuoi le storie dei vini del tuo segno?</span>
-              <input className="input" type="email" placeholder="La tua email" value={email} onChange={(e) => { setEmail(e.target.value); setEmailState(""); }} />
-              {emailState === "err" && <span className="error">Email non valida</span>}
-              <button className="btn btn--outline-light" type="submit">Iscrivimi</button>
-            </form>
-          )}
 
           <div className="row">
             <button className="link light" onClick={() => setSegno(null)}>Prova un'altra data</button>
