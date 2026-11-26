@@ -1,5 +1,7 @@
-// Le due categorie di cantine, in base alle bottiglie l'anno. La soglia sta nel database
-// (scanner_regole, riga "soglia_vignaioli"); qui ci sono solo i nomi che si leggono nell'app.
+// Le due categorie di cantine, in base agli ettari vitati: molti piccoli vendono sfuso o
+// imbottigliano poco, quindi le bottiglie contano solo quando gli ettari non si trovano.
+// Le soglie stanno nel database (scanner_regole: "soglia_vignaioli_ettari", ora 15, e
+// "soglia_vignaioli" per le bottiglie, ora 100.000); qui ci sono solo i nomi che si leggono nell'app.
 // Di default l'app mostra le cantine sotto la soglia e quelle di cui non sappiamo i volumi
 // (i piccoli raramente li pubblicano); le grandi si aggiungono con un interruttore.
 export const FASCE = {

@@ -123,3 +123,17 @@ end $$;
 revoke all on function public.prossime_da_qualificare(integer) from public, anon, authenticated;
 revoke all on function public.salva_qualifica(bigint, jsonb) from public, anon, authenticated;
 revoke all on function public.segnalazione_senza_qualifica() from public, anon, authenticated;
+
+-- 26/11 sera, su proposta di Ronny: la fascia si decide prima sugli ettari vitati (molti piccoli
+-- vendono sfuso o imbottigliano poco), le bottiglie contano solo se mancano gli ettari.
+insert into public.scanner_regole (nome, testo) values ('soglia_vignaioli_ettari', '15') on conflict (nome) do nothing;
+create or replace function public.fascia_cantina(ha numeric, b integer) returns text
+language sql stable security definer set search_path = public as $$
+  select case
+    when ha is not null then
+      case when ha <= coalesce((select nullif(regexp_replace(replace(testo, ',', '.'), '[^0-9.]', '', 'g'), '')::numeric from scanner_regole where nome = 'soglia_vignaioli_ettari'), 15)
+        then 'vignaioli' else 'grandi' end
+    when b is not null then public.fascia_cantina(b)
+    else null end;
+$$;
+-- e nella vista attori_pubblici: public.fascia_cantina(ettari, bottiglie) AS fascia

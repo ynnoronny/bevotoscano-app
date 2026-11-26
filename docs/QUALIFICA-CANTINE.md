@@ -14,7 +14,7 @@ scanner_attori) e ne compili la scheda verificata. Ronny conferma poi dal gestio
    passa sempre da qui). Fonti utili, in quest'ordine:
    - il sito della cantina (home, "chi siamo", "vini" / "prodotti", "azienda");
    - la scheda del consorzio (es. consorziobrunellodimontalcino.it, chianticlassico.com, consorziovinonobile.it, bolgherridoc.com);
-   - DoctorWine (doctorwine.wine/portfolio/<nome>): dichiara "Hectares of vineyard" e "Total bottles produced";
+   - DoctorWine (doctorwine.wine/portfolio/<nome>): dichiara "Hectares of vineyard" e "Total bottles produced" (se gli ettari del consorzio e di DoctorWine non coincidono, metti quelli più recenti e scrivi la differenza nelle note);
    - Falstaff, Vinous, Jancis Robinson, guide e articoli con i numeri.
    Gambero Rosso (scheda cantina) è a pagamento: non contarci.
 3. Rispondi a queste domande, SOLO con quello che leggi (null se non lo trovi, mai inventato):
@@ -22,9 +22,10 @@ scanner_attori) e ne compili la scheda verificata. Ronny conferma poi dal gestio
      négociant, cantine che comprano tutte le uve, agriturismi che vendono vino d'altri.
    - azienda_agricola: è un'impresa agricola che coltiva le sue vigne (società agricola, azienda agricola,
      coltivatore diretto)? true / false.
-   - bottiglie: bottiglie l'anno dichiarate. Se c'è solo la superficie, metti ettari e stima
-     bottiglie = ettari × 6500 con bottiglie_stima: true.
-   - ettari: ettari vitati (non la superficie totale della tenuta).
+   - ettari: ettari VITATI (non la superficie totale della tenuta). È il dato più importante: decide se la
+     cantina è tra i Vignaioli (fino a 15 ha) o tra le Grandi cantine. Cercalo con cura, anche per chi vende sfuso.
+   - bottiglie: bottiglie l'anno, solo se dichiarate (bottiglie_stima: false). Non stimarle dagli ettari:
+     molti piccoli vendono sfuso o imbottigliano poco. Contano solo quando gli ettari non si trovano.
    - gruppo: se la cantina appartiene a un gruppo o a un'altra azienda (es. "Frescobaldi", "ColleMassari").
    - tipologie: tra rosso, bianco, rosato, spumante, dolce, orange.
    - vini: le etichette, una per vino: {"nome": "...", "tipologia": "rosso", "denominazione": "Chianti Classico DOCG", "vitigni": "Sangiovese 100%"}.

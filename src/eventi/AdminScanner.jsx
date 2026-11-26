@@ -166,15 +166,22 @@ export function Qualificate({ onEsci }) {
   const carica = () => tuttiGliAttori().then(setLista).catch((e) => { setLista([]); errore(e, onEsci, setErr); });
   useEffect(() => { carica(); }, []);
 
-  // la soglia sta nelle regole dello scanner (Scanner > Regole > soglia_vignaioli)
-  const [soglia, setSoglia] = useState(100000);
-  useEffect(() => { registroScanner("scanner_regole", "nome=eq.soglia_vignaioli&select=testo").then((r) => { const n = parseInt(String(r?.[0]?.testo || "").replace(/\D/g, ""), 10); if (n) setSoglia(n); }).catch(() => {}); }, []);
-  const fasciaDi = (a) => (a.bottiglie == null ? "" : a.bottiglie <= soglia ? "vignaioli" : "grandi");
+  // le soglie stanno nelle regole dello scanner (Scanner > Regole): prima gli ettari vitati,
+  // perché molti piccoli vendono sfuso o imbottigliano poco; le bottiglie solo se mancano gli ettari
+  const [soglia, setSoglia] = useState({ ettari: 15, bottiglie: 100000 });
+  useEffect(() => {
+    registroScanner("scanner_regole", "nome=in.(soglia_vignaioli,soglia_vignaioli_ettari)&select=nome,testo").then((r) => {
+      const v = (n) => parseFloat(String((r || []).find((x) => x.nome === n)?.testo || "").replace(",", ".").replace(/[^0-9.]/g, ""));
+      setSoglia((s) => ({ ettari: v("soglia_vignaioli_ettari") || s.ettari, bottiglie: v("soglia_vignaioli") || s.bottiglie }));
+    }).catch(() => {});
+  }, []);
+  const fasciaDi = (a) => (a.ettari != null ? (Number(a.ettari) <= soglia.ettari ? "vignaioli" : "grandi")
+    : a.bottiglie != null ? (a.bottiglie <= soglia.bottiglie ? "vignaioli" : "grandi") : "");
   const tutte = lista || [];
   const archivio = tutte.filter((a) => !a.qualifica && ["cantina", "azienda_agricola", "fattoria", "altro"].includes(a.tipo) && a.stato !== "rifiutato").length;
   const conta = (v) => tutte.filter((a) => (v === "non_producono" ? a.qualifica === "confermata" && a.produce === false : v === "confermata" ? a.qualifica === "confermata" && a.produce !== false : a.qualifica === v)).length;
   const filtrate = tutte.filter((a) => (vista === "non_producono" ? a.qualifica === "confermata" && a.produce === false : vista === "confermata" ? a.qualifica === "confermata" && a.produce !== false : a.qualifica === vista))
-    .filter((a) => !fascia || (fascia === "ignoti" ? a.bottiglie == null : fasciaDi(a) === fascia))
+    .filter((a) => !fascia || (fascia === "ignoti" ? a.ettari == null && a.bottiglie == null : fasciaDi(a) === fascia))
     .sort((x, y) => String(y.qualificata_il || "").localeCompare(String(x.qualificata_il || "")));
   const nomeDi = (id) => tutte.find((a) => a.id === id)?.nome || `#${id}`;
 
@@ -203,7 +210,7 @@ export function Qualificate({ onEsci }) {
   return (
     <>
       <h1 className="page-title">Cantine qualificate</h1>
-      <p className="muted">Ogni cantina dell'archivio passa per una ricerca singola che verifica se produce, se è azienda agricola, i volumi e le etichette. Qui confermi il risultato: le cantine confermate che producono vanno nell'app. Sotto le {soglia.toLocaleString("it-IT")} bottiglie l'anno sono «{FASCE.vignaioli.nome}», sopra «{FASCE.grandi.nome}». Nell'archivio ne restano {archivio} da qualificare.</p>
+      <p className="muted">Ogni cantina dell'archivio passa per una ricerca singola che verifica se produce, se è azienda agricola, i volumi e le etichette. Qui confermi il risultato: le cantine confermate che producono vanno nell'app. Fino a {String(soglia.ettari).replace(".", ",")} ettari di vigna sono «{FASCE.vignaioli.nome}», sopra «{FASCE.grandi.nome}» (se mancano gli ettari conta il limite di {soglia.bottiglie.toLocaleString("it-IT")} bottiglie). Nell'archivio ne restano {archivio} da qualificare.</p>
       <Schede voci={[["proposta", "Da confermare"], ["confermata", "Confermate"], ["non_producono", "Non producono"], ["doppione", "Doppioni"]]} valore={vista} onCambia={(v) => { setVista(v); setQuante(30); }} conta={conta} />
       <div className="admin-filtri">
         <select className="input" value={fascia} onChange={(e) => setFascia(e.target.value)}>
