@@ -23,6 +23,10 @@ export const PAGINE = {
     title: "Piccole cantine toscane da visitare | Bevotoscano",
     description: "Piccoli produttori di vino toscani, scelti uno a uno: colline pisane, Terricciola, Valdarno. La mappa delle cantine e il loro vino più toscano.",
   },
+  enoteche: {
+    title: "Enoteche e wine bar in Toscana | Bevotoscano",
+    description: "Enoteche e wine bar toscani dove bere bene, scelti uno a uno, separati dalle cantine. Sulla mappa per zona del vino.",
+  },
   gioca: {
     title: "Giochi sul vino toscano: quiz e oroscopo | Bevotoscano",
     description: "La classifica del quiz infinito sul vino toscano: ogni 3 risposte giuste una vita, sbagli senza vite e sei fuori. Più l'oroscopo del vino con il tuo vitigno.",

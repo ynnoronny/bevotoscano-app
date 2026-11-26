@@ -20,12 +20,14 @@ import Link from "../Link.jsx";
 import Benvenuto, { segnoMio } from "./Benvenuto.jsx";
 import AggiungiCalendario, { Indicazioni } from "../eventi/Calendario.jsx";
 import CondividiEvento from "../eventi/Condividi.jsx";
-import { conProvincia } from "../province.js";
-import { Filtri, Riga, Scelta, Interruttore, SceltaZona } from "./Filtri.jsx";
+import { conProvincia, provinciaDi } from "../province.js";
+import { Filtri, Riga, Scelta, Interruttore, SceltaProvincia } from "./Filtri.jsx";
 import { contaZone } from "../mappaFerma.js";
 import { fotoDiRiserva } from "../repertorio.js";
 import { zonaDi } from "../zone.js";
 import { go } from "../nav.js";
+import Cuore from "../Cuore.jsx";
+import { usePreferiti, copiaEvento } from "../preferiti.js";
 import { eventoPercorso, FILTRI_EVENTI, cantinaPercorso } from "../seo.js";
 
 // La schermata unica di Bevotoscano: una cornice fissa, uguale su telefono e computer.
@@ -35,7 +37,7 @@ import { eventoPercorso, FILTRI_EVENTI, cantinaPercorso } from "../seo.js";
 export const PILLS = [
   { id: "home", label: "Home", to: "home" },
   { id: "eventi", label: "Eventi", to: "eventi" },
-  { id: "cantine", label: "Cantine", to: "cantine" },
+  { id: "cantine", label: "Vino", to: "cantine" }, // si chiama "Vino"; l'indirizzo resta /cantine per Google
   { id: "blog", label: "Blog", to: "blog" },
   { id: "gioca", label: "Giochi", to: "gioca" },
 ];
@@ -44,14 +46,15 @@ export const PILLS = [
 // Da una pagina interna (un evento, una cantina, un articolo…) la freccia riporta all'elenco.
 function indietroDa(section, sub) {
   if (section === "eventi" && sub && !FILTRI_EVENTI.includes(sub)) return ["eventi", "Eventi"];
-  if (section === "cantine" && sub) return ["cantine", "Cantine"];
+  if (section === "cantine" && sub) return ["cantine", "Vino"];
   if (section === "blog" && sub) return ["blog", "Blog"];
   if (["segnala", "esperienze", "cassa"].includes(section)) return ["home", "Home"];
   return null;
 }
 
 export default function Shell({ section, sub, children }) {
-  const pill = section;
+  // le enoteche stanno sotto la stessa pill delle cantine (con la scelta in cima alla pagina)
+  const pill = section === "enoteche" ? "cantine" : section;
   const area = useRef(null);
   const indietro = indietroDa(section, sub);
   // a ogni cambio di pagina si riparte dall'alto del contenuto
@@ -86,6 +89,7 @@ export default function Shell({ section, sub, children }) {
 
 function Contenuto({ section, sub }) {
   if (section === "cantine") return <div className="shell-pagina shell-pagina--larga"><Cantine apri={sub} /></div>;
+  if (section === "enoteche") return <div className="shell-pagina shell-pagina--larga"><Cantine enoteche /></div>;
   if (section === "blog") return sub ? <Articolo id={sub} /> : <Blog />;
   if (section === "gioca") return <Gioca />;
   if (section === "segnala") return <div className="page shell-pagina"><SegnalaScelta iniziale={sub} /></div>;
@@ -156,7 +160,8 @@ function FeedEventi({ filtro }) {
   const [attivo, setAttivo] = useState(null);
   // con la mappa aperta, la zona toccata fa da filtro per la lista qui sotto
   const [zona, setZona] = useState(null);
-  useEffect(() => { setAttivo(null); }, [quando, noAuto, centro, zona]);
+  const [provincia, setProvincia] = useState("");
+  useEffect(() => { setAttivo(null); }, [quando, noAuto, centro, zona, provincia]);
   const quantiSenzaAuto = (eventi || []).filter((e) => conNavetta(e) && nelQuando(e, quando)).length;
   useEffect(() => { eventiPubblici().then(setEventi).catch(() => setEventi([])); }, []);
   useEffect(() => { scrivi(POS_KEY, centro); }, [centro]);
@@ -166,11 +171,14 @@ function FeedEventi({ filtro }) {
     if (filtro === "vicino" && !centro) posizioneAttuale().then(setCentro).catch(() => {});
   }, [filtro]);
 
-  const lista = useMemo(() => (eventi || [])
-    .filter((e) => (!noAuto || conNavetta(e)) && nelQuando(e, quando))
+  // gli eventi del periodo, prima della provincia: servono a contare quanti ce ne sono in ognuna
+  const delPeriodo = useMemo(() => (eventi || []).filter((e) => (!noAuto || conNavetta(e)) && nelQuando(e, quando)), [eventi, quando, noAuto]);
+  const perProvincia = useMemo(() => delPeriodo.reduce((o, e) => { const p = provinciaDi(e.comune); if (p) o[p] = (o[p] || 0) + 1; return o; }, {}), [delPeriodo]);
+  const lista = useMemo(() => delPeriodo
+    .filter((e) => !provincia || provinciaDi(e.comune) === provincia)
     .map((e) => ({ ...e, d: km(centro, e), zona: e.lat != null ? zonaDi([e.lat, e.lng]) : null }))
     .sort((a, b) => (centro && a.d != null && b.d != null ? a.d - b.d : a.inizio.localeCompare(b.inizio))),
-  [eventi, quando, noAuto, centro]);
+  [delPeriodo, provincia, centro]);
   const conta = useMemo(() => contaZone(lista), [lista]);
   const mostrati = mappa && zona ? lista.filter((e) => e.zona === zona) : lista;
 
@@ -180,6 +188,7 @@ function FeedEventi({ filtro }) {
         <Riga etichetta="Quando"><Scelta opzioni={QUANDO} valore={quando} onCambia={setQuando} /></Riga>
         <Riga etichetta="Dove">
           <Partenza centro={centro} setCentro={setCentro} />
+          <SceltaProvincia valore={provincia} conta={perProvincia} onCambia={(v) => { setProvincia(v); setZona(null); }} />
           <Interruttore on={noAuto} onCambia={setNoAuto}>🚐 Con navetta ({quantiSenzaAuto})</Interruttore>
         </Riga>
       </Filtri>
@@ -190,20 +199,19 @@ function FeedEventi({ filtro }) {
       {/* la mappa è ferma (il dito fa scorrere la pagina) e fa da filtro: tocchi una zona e sotto restano i suoi eventi */}
       {mappa && eventi && (
         <>
-          <div className="feed-mappa"><Mappa eventi={mostrati} conta={conta} centro={centro} attivo={attivo} zona={zona} onZona={setZona} onApri={(e) => {
+          <div className="feed-mappa"><Mappa eventi={mostrati} conta={conta} centro={centro} attivo={attivo} zona={zona} provincia={provincia} onZona={setZona} onApri={(e) => {
             setAttivo(e.id);
             document.getElementById(`evento-${e.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
           }} /></div>
-          <div className="filtri filtri--zone"><Riga etichetta="Zona"><SceltaZona conta={conta} zona={zona} onZona={setZona} totale={lista.length} /></Riga></div>
           <div className="cant-conta">
-            <strong>{mostrati.length === 1 ? "1 evento" : `${mostrati.length} eventi`}{zona ? ` · ${zona}` : " in Toscana"}</strong>
-            {zona ? <button className="link" onClick={() => setZona(null)}>Tutta la Toscana</button> : <small>Tocca una zona sulla mappa</small>}
+            <strong>{mostrati.length === 1 ? "1 evento" : `${mostrati.length} eventi`}{zona ? ` · ${zona}` : provincia ? ` · provincia di ${provincia}` : " in Toscana"}</strong>
+            {zona || provincia ? <button className="link" onClick={() => { setZona(null); setProvincia(""); }}>Tutta la Toscana</button> : <small>Tocca una zona sulla mappa · due dita per avvicinarla</small>}
           </div>
           {zona && !mostrati.length && lista.length > 0 && <p className="feed-vuoto">Nessun evento in zona {zona} in questo periodo. Tocca un'altra zona, o torna a tutta la Toscana.</p>}
         </>
       )}
       {!eventi && <p className="feed-vuoto">Carico gli eventi…</p>}
-      {eventi && lista.length === 0 && <p className="feed-vuoto">{noAuto ? "Per ora nessun evento di questo periodo ha una navetta che ti passa a prendere. Togli \"Con navetta\" per vederli tutti." : "Nessun evento in questo periodo, per ora. Prova un'altra data, o segnalaci un evento con il pulsante + Segnala."}</p>}
+      {eventi && lista.length === 0 && <p className="feed-vuoto">{provincia && delPeriodo.length ? `Nessun evento in provincia di ${provincia} in questo periodo, per ora. Prova "Tutte le province".` : noAuto ? "Per ora nessun evento di questo periodo ha una navetta che ti passa a prendere. Togli \"Con navetta\" per vederli tutti." : "Nessun evento in questo periodo, per ora. Prova un'altra data, o segnalaci un evento con il pulsante + Segnala."}</p>}
       <div className="feed-griglia">
         {mostrati.map((e, i) => <SchedaEvento key={e.id} e={e} i={i} centro={centro} attivo={attivo === e.id} />)}
       </div>
@@ -235,7 +243,10 @@ function SchedaEvento({ e, i, centro, attivo }) {
     <article id={`evento-${e.id}`} className={`ev ev--${["viola", "vino", "sole"][i % 3]} ${attivo ? "ev--attivo" : ""}`}>
       <div className="ev-su">
         <span className="ev-quando"><QuandoEv e={e} /></span>
-        <Prezzo e={e} />
+        <span className="ev-su-destra">
+          <Prezzo e={e} />
+          <Cuore tipo="eventi" id={e.id} nome={e.titolo} copia={() => copiaEvento(e, eventoPercorso(e))} />
+        </span>
       </div>
       <Link to={eventoPercorso(e)} className="ev-foto" tabIndex={-1} aria-hidden="true">
         <img src={foto} alt="" loading="lazy" onError={(x) => { if (!x.currentTarget.dataset.rip) { x.currentTarget.dataset.rip = 1; x.currentTarget.src = riserva; } }} />
@@ -417,6 +428,8 @@ function Gioca() {
           <Classifica limite={50} />
         </section>
       </div>
+      {/* l'oroscopo del mese anche qui, in fondo, prima dello spazio sul vino più toscano */}
+      <Oroscopo />
       <FineFeed />
     </div>
   );
@@ -433,6 +446,7 @@ function Home() {
   const tutti = (eventi || []).length;
   return (
     <div className="feed home">
+      <Preferiti eventi={eventi} />
       <div className="home-titolo">
         <h2>Prossimi eventi</h2>
         <Link to="eventi" className="home-tutti">Tutti →</Link>
@@ -454,6 +468,57 @@ function Home() {
       <FineFeed />
     </div>
   );
+}
+
+// I tuoi preferiti (il cuore su eventi, cantine ed enoteche), salvati su questo telefono:
+// all'apertura dell'app sono la prima cosa che vedi. Gli eventi già passati spariscono da soli.
+function Preferiti({ eventi }) {
+  const p = usePreferiti();
+  const adesso = new Date();
+  const evs = Object.entries(p.eventi)
+    .map(([id, c]) => {
+      const vero = eventi?.find((e) => String(e.id) === id);
+      return vero ? { id, ...copiaEvento(vero, eventoPercorso(vero)), e: vero } : { id, ...c };
+    })
+    // se l'elenco è arrivato e l'evento non c'è più, è passato (o tolto): non lo mostriamo
+    .filter((x) => (eventi ? x.e : new Date(x.fine || x.inizio) >= adesso))
+    .sort((a, b) => String(a.inizio).localeCompare(String(b.inizio)));
+  const luoghi = Object.entries(p.luoghi).map(([id, c]) => ({ id, ...c }))
+    .sort((a, b) => String(b.salvato).localeCompare(String(a.salvato)));
+  if (!evs.length && !luoghi.length) return null;
+  return (
+    <>
+      <div className="home-titolo"><h2>I tuoi preferiti</h2></div>
+      <section className="pref" aria-label="I tuoi preferiti">
+        {evs.map((x) => (
+          <div key={`e${x.id}`} className="pref-riga">
+            <span className="pref-icona" aria-hidden="true">📅</span>
+            <PrefLink x={x}>
+              <strong>{x.titolo}</strong>
+              <small>{x.e ? quandoEv(x.e).split(" · ")[0] : new Date(x.inizio).toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" })}{x.comune ? ` · ${conProvincia(x.comune)}` : ""}</small>
+            </PrefLink>
+            <Cuore tipo="eventi" id={x.id} nome={x.titolo} copia={() => x} />
+          </div>
+        ))}
+        {luoghi.map((x) => (
+          <div key={`l${x.id}`} className="pref-riga">
+            <span className="pref-icona" aria-hidden="true">{x.enoteca ? "🍷" : "🍇"}</span>
+            <PrefLink x={x}>
+              <strong>{x.nome}</strong>
+              <small>{x.dove}</small>
+            </PrefLink>
+            <Cuore tipo="luoghi" id={x.id} nome={x.nome} copia={() => x} />
+          </div>
+        ))}
+      </section>
+    </>
+  );
+}
+
+function PrefLink({ x, children }) {
+  if (x.percorso) return <Link to={x.percorso} className="pref-testo">{children}</Link>;
+  if (x.link) return <a href={x.link} target="_blank" rel="noopener" className="pref-testo">{children}</a>;
+  return <span className="pref-testo">{children}</span>;
 }
 
 // Una cantina diversa ogni giorno, tra quelle scelte da noi.

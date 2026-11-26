@@ -3,16 +3,21 @@
 Web app mobile (si può anche "installare" sul telefono dalla home) con 5 sezioni:
 
 - **Scopri**: la home, con il format "Qual è il vino più toscano che hai?"
-- **Cantine**: le piccole cantine, filtrabili per zona
+- **Vino** (prima "Cantine"): piccole cantine ed enoteche, filtrabili per provincia, con la mappa che si avvicina e si sposta
 - **Esperienze**: Cantina Diffusa e visite, con lista d'attesa via email
 - **Cassa**: la Cassa Bevotoscano, con lista d'attesa
 - **Eventi**: gli eventi del vino in Toscana, ordinati per vicinanza, con filtri *Senza auto*, *Con guida*, date e distanza, lista o mappa, e i punti di raccolta (pickup) dei bus più vicini a chi cerca
+- **Preferiti**: il cuore su eventi, cantine ed enoteche. Si salvano sul telefono (niente account) e compaiono in cima alla Home; gli eventi passati spariscono da soli
 - **Gioca**: la parte gaming
-  - **Quanto ne sai di vino toscano?** quiz a tempo (10 domande, 15 secondi l'una, difficoltà crescente), punteggio in base a velocità e difficoltà, classifica mondiale. Se esci dall'app durante una domanda, la domanda è persa (niente ricerche su Google o sull'AI)
+  - **Quanto ne sai di vino toscano?** quiz a tempo (da 12 a 10 secondi per domanda, difficoltà crescente), punteggio in base a velocità e difficoltà, classifica mondiale. Se esci dall'app durante una domanda, la domanda è persa (niente ricerche su Google o sull'AI)
   - **L'oroscopo del vino**: data di nascita, segno, vitigno toscano corrispondente
   - Entrambi creano l'immagine 1080x1920 da condividere nelle stories
 
 Link diretti: `bevotoscano.com/#/gioca/quiz` e `bevotoscano.com/#/gioca/oroscopo`
+
+## Controllo "niente esce dallo schermo"
+
+Con `npm run dev` acceso: `node scripts/controlla-schermo.mjs`. Apre le pagine principali a 360, 390 e 768 px (con l'oroscopo aperto) e segnala ogni pagina dove qualcosa è più largo dello schermo. Da lanciare dopo ogni cambio di layout.
 
 ## Eventi: segnalazione e moderazione
 
