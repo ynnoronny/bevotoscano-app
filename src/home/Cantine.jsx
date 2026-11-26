@@ -12,6 +12,7 @@ import { pos } from "./luoghi.js";
 import { PROVINCE_BOX, zonaDi } from "../zone.js";
 import { mappaFerma, sistemaNomi, disegnaZone, inquadra, inquadraPunti, contaZone } from "../mappaFerma.js";
 import { Filtri, Riga, Interruttore, SceltaProvincia } from "./Filtri.jsx";
+import { FASCE, INCLUDI_GRANDI, volumi } from "../fasce.js";
 import { cantinaPercorso, cantinaMeta, cantinaJsonLd, briciole, applicaMeta, eventoPercorso } from "../seo.js";
 
 const SIGLA = { Pisa: "PI", Firenze: "FI", Siena: "SI", Livorno: "LI", Lucca: "LU", Arezzo: "AR", Grosseto: "GR", Pistoia: "PT", Prato: "PO", "Massa-Carrara": "MS" };
@@ -19,7 +20,8 @@ export const dove = (c) => [`${c.comune || ""}${c.provincia ? ` (${SIGLA[c.provi
 const PROVINCIA = Object.fromEntries(Object.entries(SIGLA).map(([n, s]) => [s, n]));
 
 // Le realtà approvate dal gestionale (le trova lo scanner o le segnalano gli utenti) si aggiungono
-// alle cantine scritte a mano in data.js. Non hanno ancora una scheda: portano al sito o a Google Maps.
+// alle cantine scritte a mano in data.js. Hanno anche loro una scheda: bevotoscano.com/cantine/r<id>.
+// Quelle verificate con la ricerca singola portano anche ettari, bottiglie, fascia e le etichette.
 const TIPI_DB = { cantina: "Cantina", azienda_agricola: "Azienda agricola", fattoria: "Fattoria", enoteca: "Enoteca", wine_bar: "Wine bar", ristorante: "Ristorante" };
 const daAttore = (a) => ({
   id: `r${a.id}`, db: true, nome: a.nome, comune: a.comune, tipo: TIPI_DB[a.tipo],
@@ -28,19 +30,32 @@ const daAttore = (a) => ({
   sito: a.sito ? (/^https?:\/\//.test(a.sito) ? a.sito : `https://${a.sito}`) : null, maps: a.google_maps, foto: a.foto || null,
   // la descrizione la scrivi dal gestionale; se manca, almeno le denominazioni che fa
   descrizione: a.descrizione || (a.denominazioni && a.tipo !== "enoteca" ? `Vini ${a.denominazioni}` : null),
+  qualificata: a.qualifica === "confermata", fascia: a.fascia || null, bottiglie: a.bottiglie, bottiglie_stima: a.bottiglie_stima,
+  ettari: a.ettari, vini: Array.isArray(a.vini) ? a.vini : [], tipologie: a.tipologie || [], aziendaAgricola: a.azienda_agricola,
 });
 // Cantine e enoteche stanno sempre separate: chi fa il vino da una parte, chi lo versa dall'altra.
 export const DOVE_SI_BEVE = new Set(["enoteca", "wine_bar", "ristorante"]);
-function useLuoghi() {
+// Una sola lettura per pagina, condivisa da elenco, schede e notizie.
+let attesa = null;
+const caricaAttori = () => (attesa ||= attoriPubblici().catch(() => { attesa = null; return []; }));
+export function useLuoghi() {
   const [extra, setExtra] = useState([]);
+  const [pronto, setPronto] = useState(false);
   useEffect(() => {
     const note = new Set(CANTINE.map((c) => c.nome.toLowerCase()));
-    attoriPubblici().then((l) => setExtra((l || []).filter((a) => TIPI_DB[a.tipo] && !note.has(a.nome.toLowerCase())).map((a) => ({ ...daAttore(a), enoteca: DOVE_SI_BEVE.has(a.tipo) })))).catch(() => {});
+    caricaAttori().then((l) => {
+      setExtra((l || [])
+        // chi dalla ricerca risulta non produrre non sta tra le cantine
+        .filter((a) => TIPI_DB[a.tipo] && !note.has(a.nome.toLowerCase()) && !(a.produce === false && !DOVE_SI_BEVE.has(a.tipo)))
+        .map((a) => ({ ...daAttore(a), enoteca: DOVE_SI_BEVE.has(a.tipo) })));
+      setPronto(true);
+    });
   }, []);
   return useMemo(() => ({
     cantine: [...CANTINE, ...extra.filter((x) => !x.enoteca)],
     enoteche: extra.filter((x) => x.enoteca),
-  }), [extra]);
+    pronto,
+  }), [extra, pronto]);
 }
 
 // La mappa delle cantine: parte già vicina alle cantine, si avvicina con due dita (mappaFerma.js)
@@ -119,9 +134,11 @@ export function Foto({ c, grande }) {
 function Segni({ c }) {
   const [info, setInfo] = useState(false);
   const premi = c.premi || [];
-  if (!c.intervistata && !premi.length) return null;
+  const fascia = FASCE[c.fascia];
+  if (!c.intervistata && !premi.length && !fascia) return null;
   return (
     <div className="cant-segni">
+      {fascia && <span className={`cant-segno cant-segno--${c.fascia}`} title={fascia.spiega}>{c.fascia === "vignaioli" ? "🌱" : "🏛️"} {fascia.nome}</span>}
       {c.intervistata && (
         c.reel
           ? <a className="cant-segno cant-segno--ok" href={c.reel} target="_blank" rel="noopener" onClick={(x) => x.stopPropagation()}>🎤 Intervistata da noi</a>
@@ -146,20 +163,26 @@ function Segni({ c }) {
 }
 
 export default function Cantine({ apri, enoteche }) {
-  const scheda = !enoteche && apri && CANTINE.find((c) => c.id === apri);
-  if (scheda) return <Scheda c={scheda} />;
-  return <Elenco enoteche={!!enoteche} />;
+  const luoghi = useLuoghi();
+  if (!enoteche && apri) {
+    const scheda = [...luoghi.cantine, ...luoghi.enoteche].find((c) => c.id === apri);
+    if (scheda) return <Scheda c={scheda} tutte={luoghi.cantine} />;
+    if (!luoghi.pronto) return <p className="muted">Carico…</p>;
+    return <div className="feed"><p className="feed-vuoto">Questa cantina non è (ancora) tra quelle che mostriamo. <Link className="link" to="cantine">← Tutte le cantine</Link></p></div>;
+  }
+  return <Elenco enoteche={!!enoteche} luoghi={luoghi} />;
 }
 
 // La pagina di una cantina: bevotoscano.com/cantine/fibbiano
-function Scheda({ c }) {
+function Scheda({ c, tutte }) {
   const [eventi, setEventi] = useState([]);
   useEffect(() => { eventiPubblici().then(setEventi).catch(() => {}); }, []);
   useEffect(() => {
     applicaMeta(cantinaMeta(c), [cantinaJsonLd(c, pos(c)), briciole([["Cantine", "cantine"], [c.nome, cantinaPercorso(c)]])]);
   }, [c.id]);
   const ev = eventi.filter((e) => [e.org_nome, e.luogo_nome].some((n) => (n || "").toLowerCase() === c.nome.toLowerCase()));
-  const vicine = CANTINE.filter((x) => x.id !== c.id && (x.comune === c.comune || x.zona === c.zona)).slice(0, 4);
+  const vicine = tutte.filter((x) => x.id !== c.id && (x.comune === c.comune || (c.zona && x.zona === c.zona))).slice(0, 4);
+  const numeri = volumi(c);
   return (
     <div className="cant-scheda">
       {fotoDi(c) && <Foto c={c} grande />}
@@ -173,20 +196,32 @@ function Scheda({ c }) {
       </div>
       <section className="cant-blocco cant-blocco--vino">
         {/* due righe su cosa la rende speciale; se non le abbiamo ancora, dove si trova */}
-        <p>{c.descrizione || `Una piccola cantina di ${c.comune}, in provincia di ${c.provincia}, nella zona ${c.zona}.`}</p>
+        <p>{c.descrizione || [c.enoteca ? `${c.tipo || "Enoteca"} a ${c.comune || "Toscana"}` : `Una cantina di ${c.comune || "Toscana"}`, c.provincia && `in provincia di ${c.provincia}`, c.zona && `nella zona ${c.zona}`].filter(Boolean).join(", ") + "."}</p>
+        {numeri && <p className="cant-numeri">{numeri}{c.aziendaAgricola ? " · azienda agricola" : ""}</p>}
         {c.vinoPiuToscano && <p>Il suo vino più toscano: <b>{c.vinoPiuToscano}</b></p>}
         <div className="cant-azioni">
           {c.sito && <a className="cant-btn" href={c.sito} target="_blank" rel="noopener">Sito della cantina ↗</a>}
+          {c.db && c.maps && <a className="cant-btn cant-btn--chiaro" href={c.maps} target="_blank" rel="noopener">Mappa ↗</a>}
           {c.reel && <a className="cant-btn cant-btn--chiaro" href={c.reel} target="_blank" rel="noopener">Guarda l'intervista ↗</a>}
         </div>
       </section>
+      {(c.vini || []).length > 0 && (
+        <section className="cant-blocco">
+          <strong>I vini</strong>
+          <ul className="cant-lista-vini">
+            {c.vini.map((v, i) => (
+              <li key={i}><b>{v.nome}</b>{[v.denominazione !== v.nome && v.denominazione, v.vitigni].filter(Boolean).length > 0 && <small>{[v.denominazione !== v.nome && v.denominazione, v.vitigni].filter(Boolean).join(" · ")}</small>}</li>
+            ))}
+          </ul>
+        </section>
+      )}
       {(c.premi || []).length > 0 && (
         <section className="cant-blocco">
           <strong>Premi</strong>
           <ul className="cant-lista-premi">{c.premi.map((p) => <li key={p}>🏅 {p}</li>)}</ul>
         </section>
       )}
-      <MappaCantine cantine={[c]} attiva={c.id} onScegli={() => {}} />
+      {pos(c) && <MappaCantine cantine={[c]} attiva={c.id} onScegli={() => {}} />}
       {ev.length > 0 && (
         <section className="cant-blocco">
           <strong>Eventi in arrivo</strong>
@@ -203,16 +238,18 @@ function Scheda({ c }) {
   );
 }
 
-function Elenco({ enoteche }) {
+function Elenco({ enoteche, luoghi }) {
   const [zona, setZona] = useState(null);
   const [provincia, setProvincia] = useState("");
   const [soloIntervistate, setSoloIntervistate] = useState(false);
   const [soloPremiate, setSoloPremiate] = useState(false);
+  // di default solo vignaioli e cantine di cui non sappiamo i volumi; le grandi si aggiungono a scelta
+  const [conGrandi, setConGrandi] = useState(false);
   const [attiva, setAttiva] = useState(null);
   const [eventi, setEventi] = useState([]);
   useEffect(() => { eventiPubblici().then(setEventi).catch(() => {}); }, []);
-  const luoghi = useLuoghi();
-  const tutte = enoteche ? luoghi.enoteche : luoghi.cantine;
+  const tutte = (enoteche ? luoghi.enoteche : luoghi.cantine).filter((c) => enoteche || conGrandi || c.fascia !== "grandi");
+  const grandi = enoteche ? 0 : luoghi.cantine.filter((c) => c.fascia === "grandi").length;
   const parola = enoteche ? ["enoteca", "enoteche"] : ["cantina", "cantine"];
 
   // quante ce ne sono in ogni provincia (con gli altri filtri già applicati): si legge nel menu
@@ -244,6 +281,7 @@ function Elenco({ enoteche }) {
           <SceltaProvincia valore={provincia} conta={perProvincia} onCambia={(v) => { setProvincia(v); setZona(null); setAttiva(null); }} />
           {!enoteche && <Interruttore on={soloIntervistate} onCambia={setSoloIntervistate}>🎤 Le abbiamo intervistate</Interruttore>}
           {!enoteche && <Interruttore on={soloPremiate} onCambia={setSoloPremiate}>🏅 Premi nelle guide</Interruttore>}
+          {grandi > 0 && <Interruttore on={conGrandi} onCambia={setConGrandi}>🏛️ {INCLUDI_GRANDI} ({grandi})</Interruttore>}
         </Riga>
       </Filtri>
 
@@ -267,24 +305,14 @@ function Elenco({ enoteche }) {
           return (
             <article key={c.id} id={`cantina-${c.id}`} className={`cant ${attiva === c.id ? "cant--on" : ""}`} onClick={() => setAttiva(c.id)}>
               <Cuore tipo="luoghi" id={c.id} nome={c.nome} className="cuore--angolo"
-                copia={() => copiaLuogo(c, { dove: [c.tipo !== "Cantina" && c.tipo, dove(c)].filter(Boolean).join(" · "), percorso: c.db ? null : cantinaPercorso(c) })} />
-              {c.db ? (
-                <div className="cant-testa">
-                  <Foto c={c} />
-                  <span className="cant-nome">
-                    <strong>{c.nome}</strong>
-                    <small>{[c.tipo !== "Cantina" && c.tipo, dove(c)].filter(Boolean).join(" · ")}</small>
-                  </span>
-                </div>
-              ) : (
-                <Link to={cantinaPercorso(c)} className="cant-testa" onClick={(x) => x.stopPropagation()}>
-                  <Foto c={c} />
-                  <span className="cant-nome">
-                    <strong>{c.nome}</strong>
-                    <small>{dove(c)}</small>
-                  </span>
-                </Link>
-              )}
+                copia={() => copiaLuogo(c, { dove: [c.tipo !== "Cantina" && c.tipo, dove(c)].filter(Boolean).join(" · "), percorso: cantinaPercorso(c) })} />
+              <Link to={cantinaPercorso(c)} className="cant-testa" onClick={(x) => x.stopPropagation()}>
+                <Foto c={c} />
+                <span className="cant-nome">
+                  <strong>{c.nome}</strong>
+                  <small>{c.db ? [c.tipo !== "Cantina" && c.tipo, dove(c)].filter(Boolean).join(" · ") : dove(c)}</small>
+                </span>
+              </Link>
               <Segni c={c} />
               {c.descrizione && <p className="cant-vino">{c.descrizione}</p>}
               {ev.length > 0 && (
@@ -293,9 +321,7 @@ function Elenco({ enoteche }) {
                 </button>
               )}
               <div className="cant-azioni">
-                {c.db
-                  ? c.maps && <a className="cant-btn" href={c.maps} target="_blank" rel="noopener" onClick={(x) => x.stopPropagation()}>Mappa ↗</a>
-                  : <Link className="cant-btn" to={cantinaPercorso(c)} onClick={(x) => x.stopPropagation()}>Scheda →</Link>}
+                <Link className="cant-btn" to={cantinaPercorso(c)} onClick={(x) => x.stopPropagation()}>Scheda →</Link>
                 {c.sito && <a className="cant-btn cant-btn--chiaro" href={c.sito} target="_blank" rel="noopener" onClick={(x) => x.stopPropagation()}>Sito ↗</a>}
               </div>
             </article>

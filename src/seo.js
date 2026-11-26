@@ -274,8 +274,8 @@ export const cantinaPercorso = (c) => `cantine/${c.id}`;
 export function cantinaMeta(c) {
   const vino = c.vinoPiuToscano ? ` Il suo vino più toscano: ${c.vinoPiuToscano}.` : "";
   return {
-    title: `${c.nome}, cantina a ${c.comune} (${c.zona}) | ${NOME}`,
-    description: taglia(`${c.nome} è una piccola cantina toscana a ${c.comune}, ${c.zona}. Visite, degustazioni ed eventi del vino con chi il vino lo fa.${vino}`, 160),
+    title: `${c.nome}, ${c.enoteca ? (c.tipo || "enoteca").toLowerCase() : "cantina"} a ${c.comune || "Toscana"}${c.zona ? ` (${c.zona})` : ""} | ${NOME}`,
+    description: taglia(`${c.nome} è ${c.enoteca ? ((t) => `${/^[aeiou]/.test(t) ? "un'" : "un "}${t}`)((c.tipo || "enoteca").toLowerCase()) : c.fascia === "grandi" ? "una cantina" : "una piccola cantina"} toscana a ${[c.comune, c.zona].filter(Boolean).join(", ") || "Toscana"}. Visite, degustazioni ed eventi del vino con chi il vino lo fa.${vino}`, 160),
     url: `${SITO}/${cantinaPercorso(c)}`,
   };
 }

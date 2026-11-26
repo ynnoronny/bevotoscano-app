@@ -6,7 +6,8 @@ import { senzaAuto, prezzoEv, conNavetta } from "../eventi/shared.js";
 import Eventi from "../eventi/Eventi.jsx";
 import Mappa from "../eventi/Mappa.jsx";
 import { km, fmtKm, posizioneAttuale, CITTA } from "../eventi/geo.js";
-import Cantine, { dove, fotoDi } from "./Cantine.jsx";
+import Cantine, { dove, fotoDi, useLuoghi, Foto } from "./Cantine.jsx";
+import { trovaCantina } from "../fasce.js";
 import SegnalaScelta from "./SegnalaScelta.jsx";
 import { ARTICOLI, articolo, dataArticolo } from "../blog.js";
 import { DOMANDE } from "../games/quizData.js";
@@ -382,13 +383,23 @@ function EventiDellArticolo({ id }) {
 
 function Notizia({ a }) {
   const n = a.notizia;
+  // le cantine citate che hanno una scheda da noi: dai nomi della notizia e dai suoi dettagli
+  const luoghi = useLuoghi();
+  const nomi = [...(n.aziende || []), ...(Array.isArray(n.dettagli) ? n.dettagli.map((r) => r && r.azienda) : [])].filter(Boolean);
+  const citate = [...new Map(nomi.map((x) => trovaCantina(x, luoghi.cantine)).filter(Boolean).map((c) => [c.id, c])).values()];
   useEffect(() => { document.title = `${a.titolo} · Bevotoscano`; }, [a.id]);
   return (
     <article className="page shell-pagina articolo">
       <span className="art-tag">{a.tag}{a.data ? ` · ${dataArticolo(a.data)}` : ""}</span>
       <h1 className="page-title">{a.titolo}</h1>
       {(n.sintesi || "").split(/\n+/).filter(Boolean).map((p, i) => <p key={i} className="articolo-p">{p}</p>)}
-      <Dettagli d={n.dettagli} />
+      <Dettagli d={n.dettagli} cantine={luoghi.cantine} />
+      {citate.length > 0 && (
+        <section className="cant-blocco">
+          <strong>{citate.length === 1 ? "La cantina di cui parliamo" : "Le cantine di cui parliamo"}</strong>
+          {citate.map((x) => <Link key={x.id} className="cant-vicina" to={cantinaPercorso(x)}><Foto c={x} /><span><b>{x.nome}</b><small>{dove(x)}</small></span></Link>)}
+        </section>
+      )}
       <p className="articolo-fonte">
         Fonte: <a className="link" href={n.fonte_url} target="_blank" rel="noopener">{n.fonte_nome || "leggi l'originale"} ↗</a>
         {n.fonte_url_2 && <> · <a className="link" href={n.fonte_url_2} target="_blank" rel="noopener">altra fonte ↗</a></>}
