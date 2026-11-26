@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { online, tuttiGliAttori, aggiornaAttori, tutteLeNotizie, aggiornaNotizia, registroScanner, salvaRegola } from "./api.js";
 import { fmtData } from "./shared.js";
 import { siglaProvincia } from "../province.js";
+import Link from "../Link.jsx";
+import { cantinaPercorso } from "../seo.js";
+import { trovaCantina, DIMENSIONI } from "../fasce.js";
 
 // Le parti del gestionale che lavorano con lo scanner automatico (vedi docs/SCANNER.md):
 // cantine ed enoteche da approvare, notizie per il blog, registro e regole dello scanner.
@@ -66,8 +69,8 @@ export function Attori({ onEsci }) {
 
   return (
     <>
-      <h1 className="page-title">Cantine ed enoteche</h1>
-      <p className="muted">Le trova lo scanner (elenchi dei consorzi, OpenStreetMap, ricerca web) o le segnalano gli utenti. Quelle che approvi compaiono nella sezione Cantine dell'app.</p>
+      <h1 className="page-title">Archivio cantine ed enoteche</h1>
+      <p className="muted">Tutto quello che trovano le ricerche (elenchi dei consorzi, OpenStreetMap, ricerca web) o segnalano gli utenti, rivenditori compresi. Non serve guardarlo riga per riga: le cantine passano da qui alla ricerca singola e le confermi in «Cantine qualificate». Le enoteche le approvi da qui.</p>
       <Schede voci={[["in_attesa", "Da approvare"], ["approvato", "Approvate"], ["rifiutato", "Scartate"]]} valore={stato} onCambia={(s) => { setStato(s); setQuante(40); }} conta={conta} />
       <div className="admin-filtri">
         <input className="input" placeholder="Cerca nome o comune" value={cerca} onChange={(e) => setCerca(e.target.value)} />
@@ -144,6 +147,135 @@ function Attore({ a, lavoro, onApprova, onRifiuta, onAttesa, onComune, onDescriz
   );
 }
 
+// ---------- Cantine qualificate (secondo livello) ----------
+// L'archivio qui sopra tiene tutto quello che trovano le ricerche. Una ricerca singola per ogni
+// cantina (routine "qualifica cantine", funzione salva_qualifica) propone la scheda: se produce,
+// se è azienda agricola, ettari, bottiglie, tipi di vino ed etichette, con le fonti lette.
+// Tu confermi; le cantine confermate che producono diventano pubbliche.
+
+const SI_NO = (v) => (v === true ? "sì" : v === false ? "no" : "non si sa");
+
+export function Qualificate({ onEsci }) {
+  const [lista, setLista] = useState(null);
+  const [err, setErr] = useState("");
+  const [vista, setVista] = useState("proposta");
+  const [fascia, setFascia] = useState("");
+  const [lavoro, setLavoro] = useState(false);
+  const [quante, setQuante] = useState(30);
+
+  const carica = () => tuttiGliAttori().then(setLista).catch((e) => { setLista([]); errore(e, onEsci, setErr); });
+  useEffect(() => { carica(); }, []);
+
+  // i confini stanno nelle regole dello scanner (Scanner > Regole > fasce_ettari, fasce_bottiglie):
+  // prima gli ettari vitati, perché molti piccoli vendono sfuso o imbottigliano poco
+  const [soglia, setSoglia] = useState({ ettari: [10, 30], bottiglie: [65000, 200000] });
+  useEffect(() => {
+    registroScanner("scanner_regole", "nome=in.(fasce_ettari,fasce_bottiglie)&select=nome,testo").then((r) => {
+      const v = (n) => String((r || []).find((x) => x.nome === n)?.testo || "").split(",").map((x) => parseFloat(x.replace(/[^0-9.]/g, ""))).filter((x) => x > 0);
+      setSoglia((s) => ({ ettari: v("fasce_ettari").length === 2 ? v("fasce_ettari") : s.ettari, bottiglie: v("fasce_bottiglie").length === 2 ? v("fasce_bottiglie") : s.bottiglie }));
+    }).catch(() => {});
+  }, []);
+  const taglia = (x, [a, b]) => (x <= a ? "piccola" : x <= b ? "media" : "grande");
+  const fasciaDi = (a) => (a.ettari != null ? taglia(Number(a.ettari), soglia.ettari) : a.bottiglie != null ? taglia(a.bottiglie, soglia.bottiglie) : "");
+  const NOME_FASCIA = { piccola: "Piccola", media: "Media", grande: "Grande" };
+  const tutte = lista || [];
+  const archivio = tutte.filter((a) => !a.qualifica && ["cantina", "azienda_agricola", "fattoria", "altro"].includes(a.tipo) && a.stato !== "rifiutato").length;
+  const conta = (v) => tutte.filter((a) => (v === "non_producono" ? a.qualifica === "confermata" && a.produce === false : v === "confermata" ? a.qualifica === "confermata" && a.produce !== false : a.qualifica === v)).length;
+  const filtrate = tutte.filter((a) => (vista === "non_producono" ? a.qualifica === "confermata" && a.produce === false : vista === "confermata" ? a.qualifica === "confermata" && a.produce !== false : a.qualifica === vista))
+    .filter((a) => !fascia || (fascia === "ignoti" ? a.ettari == null && a.bottiglie == null : fasciaDi(a) === fascia))
+    .sort((x, y) => String(y.qualificata_il || "").localeCompare(String(x.qualificata_il || "")));
+  const nomeDi = (id) => tutte.find((a) => a.id === id)?.nome || `#${id}`;
+
+  const cambia = async (gruppi) => {
+    setErr(""); setLavoro(true);
+    try { for (const [ids, campi] of gruppi) await aggiornaAttori(ids, campi); await carica(); } catch (e) { errore(e, onEsci, setErr); }
+    setLavoro(false);
+  };
+  // confermare: chi produce va online (se non lo era), chi non produce resta fuori dall'app
+  const conferma = (righe) => {
+    const ora = new Date().toISOString();
+    const producono = righe.filter((a) => a.produce !== false).map((a) => a.id);
+    const no = righe.filter((a) => a.produce === false).map((a) => a.id);
+    return cambia([
+      [producono, { qualifica: "confermata", confermata_il: ora, stato: "approvato", approvato: ora }],
+      [no, { qualifica: "confermata", confermata_il: ora, stato: "in_attesa", approvato: null }],
+    ]);
+  };
+  const rifai = (a) => {
+    const nota = prompt("Cosa deve ricontrollare la ricerca? (facoltativo)", "");
+    if (nota === null) return;
+    cambia([[[a.id], { qualifica: null, qualifica_tentata: null, confermata_il: null, note_admin: nota ? `Da rifare: ${nota}` : a.note_admin }]]);
+  };
+  const togli = (a) => confirm(`Togliere ${a.nome} dall'app? Resta nell'archivio e tra le qualificate.`) && cambia([[[a.id], { stato: "in_attesa", approvato: null }]]);
+
+  return (
+    <>
+      <h1 className="page-title">Cantine qualificate</h1>
+      <p className="muted">Ogni cantina dell'archivio passa per una ricerca singola che verifica se produce, se è azienda agricola, i volumi e le etichette. Qui confermi il risultato: le cantine confermate che producono vanno nell'app. Dimensione dagli ettari di vigna: piccola fino a {soglia.ettari[0]}, media fino a {soglia.ettari[1]}, grande oltre (se mancano gli ettari contano le bottiglie dichiarate: {soglia.bottiglie[0].toLocaleString("it-IT")} e {soglia.bottiglie[1].toLocaleString("it-IT")}). Nell'archivio ne restano {archivio} da qualificare.</p>
+      <Schede voci={[["proposta", "Da confermare"], ["confermata", "Confermate"], ["non_producono", "Non producono"], ["doppione", "Doppioni"]]} valore={vista} onCambia={(v) => { setVista(v); setQuante(30); }} conta={conta} />
+      <div className="admin-filtri">
+        <select className="input" value={fascia} onChange={(e) => setFascia(e.target.value)}>
+          <option value="">Tutte le dimensioni</option>
+          {DIMENSIONI.map(([k, t]) => <option key={k} value={k}>{t}</option>)}
+          <option value="ignoti">Volumi non trovati</option>
+        </select>
+      </div>
+      {err && <p className="error">{err}</p>}
+      {!lista && <p className="muted">Carico…</p>}
+      {lista && vista === "proposta" && filtrate.length > 1 && (
+        <div className="row between">
+          <small className="muted">{filtrate.length} da confermare</small>
+          <button className="btn btn--outline" disabled={lavoro} onClick={() => confirm(`Confermare tutte le ${filtrate.length}? Quelle che producono compariranno nell'app.`) && conferma(filtrate)}>
+            {lavoro ? "Confermo…" : `Conferma tutte le ${filtrate.length}`}
+          </button>
+        </div>
+      )}
+      {lista && filtrate.length === 0 && <p className="muted">{vista === "proposta" ? "Niente da confermare: la ricerca singola non ha ancora proposto nuove schede." : "Niente qui."}</p>}
+      <div className="list">
+        {filtrate.slice(0, quante).map((a) => (
+          <Qualifica key={a.id} a={a} fascia={NOME_FASCIA[fasciaDi(a)]} lavoro={lavoro} doppioneDi={a.doppione_di && nomeDi(a.doppione_di)}
+            onConferma={() => conferma([a])} onRifai={() => rifai(a)} onTogli={() => togli(a)} />
+        ))}
+      </div>
+      {filtrate.length > quante && <button className="btn btn--outline" onClick={() => setQuante((n) => n + 30)}>Mostra altre {Math.min(30, filtrate.length - quante)}</button>}
+    </>
+  );
+}
+
+function Qualifica({ a, fascia, lavoro, doppioneDi, onConferma, onRifai, onTogli }) {
+  const vini = Array.isArray(a.vini) ? a.vini : [];
+  return (
+    <article className="card">
+      <div className="admin-testa">
+        <span className="admin-origine">{fascia ? `Cantina ${fascia.toLowerCase()}` : a.qualifica === "doppione" ? "Doppione" : "Volumi non trovati"}</span>
+        <small className="evento-data">{a.comune || "comune?"} · ricerca del {fmtData(a.qualificata_il, false)}{a.stato === "approvato" ? " · nell'app" : ""}</small>
+      </div>
+      <strong className="evento-titolo">{a.nome}</strong>
+      {a.qualifica === "doppione" ? (
+        <small>È la stessa realtà di <b>{doppioneDi}</b>. Nell'app compare solo quella.</small>
+      ) : (
+        <dl className="admin-qualifica">
+          <dt>Produce</dt><dd>{a.produce === false ? "❌ no" : a.produce ? "✅ sì" : "❔ non si sa"}</dd>
+          <dt>Azienda agricola</dt><dd>{SI_NO(a.azienda_agricola)}</dd>
+          <dt>Volumi</dt><dd>{[a.ettari && `${a.ettari} ha`, a.bottiglie && `${a.bottiglie.toLocaleString("it-IT")} bottiglie${a.bottiglie_stima ? " (stima)" : ""}`].filter(Boolean).join(" · ") || "non trovati"}</dd>
+          {a.gruppo && <><dt>Gruppo</dt><dd>{a.gruppo}</dd></>}
+          {(a.tipologie || []).length > 0 && <><dt>Tipi</dt><dd>{a.tipologie.join(", ")}</dd></>}
+          {vini.length > 0 && <><dt>Etichette</dt><dd>{vini.map((v) => v.nome).join(" · ")}</dd></>}
+        </dl>
+      )}
+      {a.qualifica_note && <p className="muted">{a.qualifica_note}</p>}
+      {(a.qualifica_fonti || []).length > 0 && (
+        <small className="admin-link">{a.qualifica_fonti.map((u, i) => <a key={u} className="link" href={u} target="_blank" rel="noopener">Fonte {i + 1} ↗</a>)}{a.sito && <a className="link" href={url(a.sito)} target="_blank" rel="noopener">Sito ↗</a>}</small>
+      )}
+      <div className="row">
+        {a.qualifica === "proposta" && <button className="btn btn--primary" disabled={lavoro} onClick={onConferma}>Conferma</button>}
+        {a.qualifica === "confermata" && a.stato === "approvato" && <button className="btn btn--outline" disabled={lavoro} onClick={onTogli}>Togli dall'app</button>}
+        <button className="link" disabled={lavoro} onClick={onRifai}>Rifai la ricerca</button>
+      </div>
+    </article>
+  );
+}
+
 // ---------- Notizie per il blog ----------
 
 export function Notizie({ onEsci }) {
@@ -212,14 +344,15 @@ export function Notizie({ onEsci }) {
 }
 
 // I dettagli strutturati della notizia (vini, aziende, punteggi). Si usa anche nel blog.
-export function Dettagli({ d }) {
+// Con "cantine" (nel blog) l'azienda diventa il link alla sua scheda, se la mostriamo.
+export function Dettagli({ d, cantine }) {
   const righe = Array.isArray(d) ? d.filter((r) => r && (r.vino || r.azienda)) : [];
   if (!righe.length) return null;
   return (
     <ul className="notizia-dettagli">
       {righe.map((r, i) => (
         <li key={i}>
-          <b>{[r.vino, r.azienda].filter(Boolean).join(" · ")}</b>
+          <b>{r.vino}{r.vino && r.azienda && " · "}<NomeAzienda nome={r.azienda} cantine={cantine} /></b>
           {(r.comune || r.punteggio != null || r.riconoscimento) && (
             <span>{[r.comune, r.punteggio != null && `${r.punteggio} punti`, r.riconoscimento].filter(Boolean).join(" · ")}</span>
           )}
@@ -227,6 +360,12 @@ export function Dettagli({ d }) {
       ))}
     </ul>
   );
+}
+
+function NomeAzienda({ nome, cantine }) {
+  const c = nome && cantine && trovaCantina(nome, cantine);
+  if (!c) return nome || null;
+  return <Link className="link" to={cantinaPercorso(c)}>{nome}</Link>;
 }
 
 // ---------- Registro dello scanner (sola lettura) e regole ----------

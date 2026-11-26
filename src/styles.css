@@ -404,6 +404,14 @@ html, body { height: 100%; }
 .cant-blocco--vino b { color: var(--gold); }
 .cant-blocco--vino .cant-btn { background: var(--gold); color: var(--plum); }
 .cant-blocco--vino .cant-btn--chiaro { background: transparent; border-color: rgba(255, 255, 255, 0.4); color: #fff; }
+.cant-numeri { font-size: 14px; opacity: 0.8; }
+.cant-lista-vini { list-style: none; display: flex; flex-direction: column; gap: 8px; font-size: 14.5px; }
+.cant-lista-vini small { display: block; color: var(--muted); font-size: 13px; }
+.notizia-dettagli a.link { font-weight: 700; }
+.notizia-cantine { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 14px; }
+.admin-qualifica { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; font-size: 14px; }
+.admin-qualifica dt { color: var(--muted); }
+.admin-qualifica dd { margin: 0; }
 .cant-lista-premi { list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 14.5px; }
 .cant-vicina { display: flex; gap: 12px; align-items: center; padding: 6px 0; color: inherit; }
 .cant-vicina .cant-foto { width: 48px; height: 48px; border-radius: 12px; }

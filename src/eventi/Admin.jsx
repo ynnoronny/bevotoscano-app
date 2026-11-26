@@ -5,7 +5,7 @@ import { TIPI_ORG, fmtData, oraNota, senzaAuto } from "./shared.js";
 import { CampiEvento, Campo } from "./Segnala.jsx";
 import Posta from "./Posta.jsx";
 import { ARTICOLI } from "../blog.js";
-import { Attori, Notizie, Registro, CATEGORIE } from "./AdminScanner.jsx";
+import { Attori, Qualificate, Notizie, Registro, CATEGORIE } from "./AdminScanner.jsx";
 
 // Backend di moderazione: bevotoscano.com/admin (non è nel menu).
 const toInput = (iso) => {
@@ -31,11 +31,12 @@ export default function Admin() {
     <>
       <div className="chips">
         <button className={`chip ${area === "eventi" ? "chip--on" : ""}`} onClick={() => setArea("eventi")}>Eventi</button>
-        {[["attori", "Cantine ed enoteche"], ["notizie", "Notizie"], ["scanner", "Scanner"], ["posta", "Posta info@"]].map(([k, l]) => (
+        {[["qualificate", "Cantine qualificate"], ["attori", "Archivio"], ["notizie", "Notizie"], ["scanner", "Scanner"], ["posta", "Posta info@"]].map(([k, l]) => (
           <button key={k} className={`chip ${area === k ? "chip--on" : ""}`} onClick={() => setArea(k)}>{l}</button>
         ))}
       </div>
       {area === "eventi" && <Moderazione email={s?.email} onEsci={fuori} />}
+      {area === "qualificate" && <Qualificate onEsci={fuori} />}
       {area === "attori" && <Attori onEsci={fuori} />}
       {area === "notizie" && <Notizie onEsci={fuori} />}
       {area === "scanner" && <Registro onEsci={fuori} />}
