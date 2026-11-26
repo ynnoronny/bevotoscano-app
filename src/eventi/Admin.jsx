@@ -228,10 +228,14 @@ function Trova({ testo, onTrovato, label = "Trova coordinate" }) {
           if (diretta) { onTrovato(diretta); setRis(null); setMsg("✓ Coordinate prese da quello che hai incollato"); return; }
           let r = [];
           for (const t of [].concat(testo).filter(Boolean)) { r = await cercaLuogo(t); if (r.length) break; }
-          setRis(r); setMsg(r.length ? "" : "Nessun risultato: prova a scrivere meglio indirizzo o comune");
+          // il primo risultato viene preso subito (prima bisognava cliccarlo e non era chiaro);
+          // gli altri restano sotto per cambiare se non è il posto giusto
+          if (r.length) { onTrovato(r[0]); setRis(r.slice(1)); setMsg(`✓ Coordinate prese: ${r[0].nome}`); }
+          else { setRis(null); setMsg("Nessun risultato: scrivi l'indirizzo completo nella riga «Indirizzo per la mappa»"); }
         } catch (e) { setMsg(e.message); }
       }}>{label}</button>
-      {ris && ris.map((r) => <button type="button" key={`${r.lat},${r.lng}`} className="link" onClick={() => { onTrovato(r); setRis(null); }}>{r.nome}</button>)}
+      {ris && ris.length > 0 && <small>Non è il posto giusto? Scegli un altro risultato:</small>}
+      {ris && ris.map((r) => <button type="button" key={`${r.lat},${r.lng}`} className="link" onClick={() => { onTrovato(r); setRis(null); setMsg(`✓ Coordinate prese: ${r.nome}`); }}>{r.nome}</button>)}
       {msg && <small>{msg}</small>}
     </div>
   );
