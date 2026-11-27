@@ -537,7 +537,8 @@ function eventiPreferiti(lista, eventi) {
 }
 const recenti = (l) => [...l].sort((a, b) => String(b.salvato).localeCompare(String(a.salvato)));
 
-// Il lunario, in cima alla Home: la data di oggi, la luna e un proverbio contadino (lunario.js).
+// Il lunario, in cima alla Home, alla maniera del Sesto Caio Baccelli: data e santo, luna,
+// lavori del mese e un proverbio (lunario.js).
 // Una striscia sottile, per non rubare spazio a eventi e preferiti.
 function Lunario() {
   const l = useMemo(() => lunario(), []);
@@ -545,8 +546,9 @@ function Lunario() {
     <section className="lunario" aria-label="Il lunario di oggi">
       <p className="lunario-su">
         <b>{l.data.charAt(0).toUpperCase() + l.data.slice(1)}</b>
-        <span><span aria-hidden="true">{l.luna.simbolo}</span> {l.luna.nome}, {l.luna.consiglio}</span>
+        {l.santo && <span>{l.santo}</span>}
       </p>
+      <p className="lunario-riga"><span aria-hidden="true">{l.luna.simbolo}</span> {l.luna.nome}, {l.luna.consiglio} <br />Lavori del mese: {l.lavori}</p>
       <p className="lunario-detto">«{l.proverbio}»</p>
     </section>
   );

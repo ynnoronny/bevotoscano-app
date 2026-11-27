@@ -1,6 +1,8 @@
-// Il lunario di casa: la data di oggi, la luna e un proverbio contadino, come negli almanacchi
-// di una volta (Frate Indovino, Barbanera, Sesto Caio Baccelli). I proverbi sono quelli
-// popolari, di tradizione orale: non sono presi da nessun almanacco.
+// Il lunario di casa, sul modello del Sesto Caio Baccelli (il lunario toscano, il riferimento
+// principale per Ronny), poi Frate Indovino e Barbanera: la data col santo del giorno, la luna,
+// i lavori del mese in vigna e in cantina, e un proverbio toscano/contadino.
+// Proverbi e santi sono di tradizione popolare; i lavori del mese sono scritti da noi:
+// nessun testo è copiato da un almanacco.
 // Per aggiungerne uno: mettilo nel suo mese, o in DEL_GIORNO se è legato a un santo.
 
 // I proverbi legati a un giorno preciso: "m-g" → proverbio. Quel giorno vince su tutti.
@@ -13,6 +15,35 @@ const DEL_GIORNO = {
   "11-25": "Per Santa Caterina o neve o brina.",
   "12-13": "Santa Lucia, il giorno più corto che ci sia.",
 };
+
+// I santi e le feste a data fissa che contano nel calendario di campagna (non tutti i giorni ne hanno uno).
+const SANTI = {
+  "1-1": "Maria Madre di Dio", "1-6": "Epifania", "1-17": "Sant'Antonio abate", "1-20": "San Sebastiano",
+  "1-22": "San Vincenzo, patrono dei vignaioli", "2-2": "Candelora", "2-3": "San Biagio", "2-14": "San Valentino",
+  "3-19": "San Giuseppe", "4-23": "San Giorgio", "4-25": "San Marco", "5-1": "San Giuseppe lavoratore",
+  "6-11": "San Barnaba", "6-13": "Sant'Antonio di Padova", "6-24": "San Giovanni Battista, patrono di Firenze",
+  "6-29": "Santi Pietro e Paolo", "7-22": "Santa Maria Maddalena", "7-25": "San Giacomo", "7-26": "Sant'Anna",
+  "8-10": "San Lorenzo", "8-15": "Assunta", "9-8": "Natività di Maria", "9-29": "San Michele",
+  "10-4": "San Francesco", "10-18": "San Luca", "11-1": "Ognissanti", "11-2": "Commemorazione dei defunti",
+  "11-11": "San Martino", "11-25": "Santa Caterina", "11-30": "Sant'Andrea", "12-6": "San Nicola",
+  "12-8": "Immacolata", "12-13": "Santa Lucia", "12-25": "Natale", "12-26": "Santo Stefano", "12-31": "San Silvestro",
+};
+
+// I lavori del mese, in vigna e in cantina.
+const LAVORI = [
+  "si pota la vigna a secco; in cantina si colmano le botti",
+  "si finisce di potare e si legano i tralci",
+  "la vite \"piange\": si lavora la terra tra i filari",
+  "germogliano le viti: occhio alle gelate",
+  "si tolgono i germogli doppi",
+  "fiorisce la vite e si allegano i grappoli",
+  "si cimano i tralci e si diradano i grappoli",
+  "l'uva invaia e cambia colore",
+  "si vendemmia",
+  "si finisce di vendemmiare e si svina",
+  "si colmano le botti e si assaggia il vino nuovo",
+  "la vigna riposa; in cantina si colmano le botti",
+];
 
 const DEL_MESE = [
   ["Gennaio secco, massaio ricco.", "Gennaio polveraio, empie il granaio.", "Gennaio fa i ponti, febbraio li rompe.", "Sotto la neve pane, sotto l'acqua fame.", "Anno nevoso, anno fruttuoso."],
@@ -32,6 +63,8 @@ const DEL_MESE = [
 // Quelli buoni tutto l'anno, per non ripetere sempre gli stessi nei mesi con pochi proverbi.
 const SEMPRE = [
   "Nella botte piccola c'è il vino buono.",
+  "Pane d'un giorno e vino d'un anno.",
+  "Al contadino non far sapere quanto è buono il formaggio con le pere.",
   "Buon vino fa buon sangue.",
   "Il vino è il latte dei vecchi.",
   "Rosso di sera, bel tempo si spera.",
@@ -62,6 +95,8 @@ export function lunario(d = new Date()) {
   const scelta = [...DEL_MESE[m], ...SEMPRE];
   return {
     data: `${GIORNI[d.getDay()]} ${g} ${MESI[m]}`,
+    santo: SANTI[`${m + 1}-${g}`] || null,
+    lavori: LAVORI[m],
     luna: luna(d),
     proverbio: DEL_GIORNO[`${m + 1}-${g}`] || scelta[n % scelta.length],
   };
