@@ -26,6 +26,7 @@ import { Filtri, Riga, Scelta, Interruttore, SceltaProvincia } from "./Filtri.js
 import { contaZone } from "../mappaFerma.js";
 import { fotoDiRiserva } from "../repertorio.js";
 import { zonaDi } from "../zone.js";
+import { lunario } from "../lunario.js";
 import { go, ritorno, paginaPrima, useStatoPagina } from "../nav.js";
 import Cuore from "../Cuore.jsx";
 import { usePreferiti, copiaEvento, copiaArticolo, perTipo, TIPI_PREFERITI } from "../preferiti.js";
@@ -500,6 +501,7 @@ function Home() {
   const tutti = (eventi || []).length;
   return (
     <div className="feed home">
+      <Lunario />
       <Preferiti eventi={eventi} />
       <div className="home-titolo">
         <h2>Prossimi eventi</h2>
@@ -535,28 +537,37 @@ function eventiPreferiti(lista, eventi) {
 }
 const recenti = (l) => [...l].sort((a, b) => String(b.salvato).localeCompare(String(a.salvato)));
 
-// In Home, i preferiti sono un riassunto: una tessera per tipo (eventi, cantine, enoteche, articoli)
-// con quanti sono e il primo da guardare. Toccandola si apre la pagina di quel tipo.
+// Il lunario, in cima alla Home: la data di oggi, la luna e un proverbio contadino (lunario.js).
+// Una striscia sottile, per non rubare spazio a eventi e preferiti.
+function Lunario() {
+  const l = useMemo(() => lunario(), []);
+  return (
+    <section className="lunario" aria-label="Il lunario di oggi">
+      <p className="lunario-su">
+        <b>{l.data.charAt(0).toUpperCase() + l.data.slice(1)}</b>
+        <span><span aria-hidden="true">{l.luna.simbolo}</span> {l.luna.nome}, {l.luna.consiglio}</span>
+      </p>
+      <p className="lunario-detto">«{l.proverbio}»</p>
+    </section>
+  );
+}
+
+// In Home, i preferiti sono un riassunto: una tessera bassa per tipo (eventi, cantine, enoteche,
+// articoli), con nome e numero sulla stessa riga; grigia se è vuota. Toccandola si apre la pagina di quel tipo.
 // (27/11: l'elenco unico di tutto, in Home, diventava illeggibile.)
 function Preferiti({ eventi }) {
   const t = perTipo(usePreferiti());
   const liste = { ...t, eventi: eventiPreferiti(t.eventi, eventi), cantine: recenti(t.cantine), enoteche: recenti(t.enoteche), articoli: recenti(t.articoli) };
   if (!TIPI_PREFERITI.some((x) => liste[x.id].length)) return null;
-  const primo = (id) => {
-    const x = liste[id][0];
-    if (!x) return "Nessuno, per ora";
-    if (id === "eventi") return `Prossimo: ${x.titolo}`;
-    return x.titolo || x.nome;
-  };
   return (
     <>
       <div className="home-titolo"><h2>I tuoi preferiti</h2><Link to="preferiti" className="home-tutti">Tutti →</Link></div>
       <div className="pref-tessere">
         {TIPI_PREFERITI.map((x) => (
           <Link key={x.id} to={`preferiti/${x.id}`} className={`pref-tessera ${liste[x.id].length ? "" : "pref-tessera--vuota"}`}>
-            <span className="pref-tessera-su"><span aria-hidden="true">{x.icona}</span><b>{liste[x.id].length}</b></span>
+            <span aria-hidden="true">{x.icona}</span>
             <strong>{x.nome}</strong>
-            <small>{primo(x.id)}</small>
+            <b>{liste[x.id].length}</b>
           </Link>
         ))}
       </div>
