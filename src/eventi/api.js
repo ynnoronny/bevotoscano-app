@@ -196,7 +196,17 @@ export async function proponi({ tipo, nome, comune, sito, ruolo, referente, emai
   salvaAttoriLocali([...attoriLocali(), { ...riga, id: Date.now(), creato: new Date().toISOString(), attivo: true }]);
 }
 export async function tuttiGliAttori() {
-  if (online()) return rest("scanner_attori?select=*&order=creato.desc&limit=5000", { token: await token() });
+  if (online()) {
+    // Supabase restituisce al massimo 1000 righe per chiamata: si leggono a pagine finché finiscono
+    // (prima le più vecchie restavano fuori, e con loro le cantine qualificate da confermare)
+    const t = await token();
+    const tutte = [];
+    for (let da = 0; ; da += 1000) {
+      const pagina = await rest(`scanner_attori?select=*&order=creato.desc,id.desc&limit=1000&offset=${da}`, { token: t });
+      tutte.push(...(pagina || []));
+      if (!pagina || pagina.length < 1000) return tutte;
+    }
+  }
   return attoriLocali().reverse();
 }
 // Aggiorna una o più righe insieme (per approvare in blocco).
