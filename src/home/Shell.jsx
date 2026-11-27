@@ -104,6 +104,7 @@ export default function Shell({ section, sub, children }) {
           </nav>
         </header>
         <main className="shell-area" ref={area}>
+          {section === "home" && !children && <Lunario />}
           <div className="shell-dentro fade" key={`${section}/${sub || ""}`}>{children || <Contenuto section={section} sub={sub} />}</div>
         </main>
       </div>
@@ -501,7 +502,6 @@ function Home() {
   const tutti = (eventi || []).length;
   return (
     <div className="feed home">
-      <Lunario />
       <Preferiti eventi={eventi} />
       <div className="home-titolo">
         <h2>Prossimi eventi</h2>
@@ -537,17 +537,31 @@ function eventiPreferiti(lista, eventi) {
 }
 const recenti = (l) => [...l].sort((a, b) => String(b.salvato).localeCompare(String(a.salvato)));
 
-// Il lunario, in cima alla Home: la data di oggi, la luna e un proverbio contadino (lunario.js).
-// Una striscia sottile, per non rubare spazio a eventi e preferiti.
+// Il lunario: una fascia a tutta larghezza sotto il menù, solo in Home, alla maniera del
+// Sesto Caio Baccelli (data e santo, proverbio, luna e lavori del mese). Toccando "Cosa vuol dire?"
+// si aprono le spiegazioni in parole d'oggi (lunario.js).
 function Lunario() {
   const l = useMemo(() => lunario(), []);
+  const [aperto, setAperto] = useState(false);
   return (
     <section className="lunario" aria-label="Il lunario di oggi">
-      <p className="lunario-su">
-        <b>{l.data.charAt(0).toUpperCase() + l.data.slice(1)}</b>
-        <span><span aria-hidden="true">{l.luna.simbolo}</span> {l.luna.nome}, {l.luna.consiglio}</span>
-      </p>
-      <p className="lunario-detto">«{l.proverbio}»</p>
+      <div className="lunario-dentro">
+        <p className="lunario-su">
+          <b>{l.data.charAt(0).toUpperCase() + l.data.slice(1)}</b>
+          {l.santo && <span>{l.santo}</span>}
+        </p>
+        <p className="lunario-detto">«{l.proverbio}»</p>
+        <button className="lunario-riga" aria-expanded={aperto} onClick={() => setAperto((v) => !v)}>
+          <span aria-hidden="true">{l.luna.simbolo}</span> {l.luna.nome}, {l.luna.consiglio} · {l.lavori.cosa}
+          <u>{aperto ? "Chiudi" : "Cosa vuol dire?"}</u>
+        </button>
+        {aperto && (
+          <div className="lunario-spiega fade">
+            <p><b>{l.luna.nome}.</b> {l.luna.spiega}</p>
+            <p><b>In vigna e in cantina.</b> {l.lavori.spiega}</p>
+          </div>
+        )}
+      </div>
     </section>
   );
 }
