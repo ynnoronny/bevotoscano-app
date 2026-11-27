@@ -4,11 +4,12 @@ import "leaflet/dist/leaflet.css";
 import { CANTINE } from "../data.js";
 import { eventiPubblici, attoriPubblici } from "../eventi/api.js";
 import { siglaProvincia } from "../province.js";
-import { go } from "../nav.js";
+import { go, useStatoPagina } from "../nav.js";
 import Link from "../Link.jsx";
 import Cuore from "../Cuore.jsx";
 import { copiaLuogo } from "../preferiti.js";
 import { pos } from "./luoghi.js";
+import { centroComune } from "../comuni.js";
 import { PROVINCE_BOX, zonaDi } from "../zone.js";
 import { mappaFerma, sistemaNomi, disegnaZone, inquadra, inquadraPunti, contaZone } from "../mappaFerma.js";
 import { Filtri, Riga, Interruttore, Scelta, SceltaProvincia } from "./Filtri.jsx";
@@ -26,7 +27,7 @@ const TIPI_DB = { cantina: "Cantina", azienda_agricola: "Azienda agricola", fatt
 const daAttore = (a) => ({
   id: `r${a.id}`, db: true, nome: a.nome, comune: a.comune, tipo: TIPI_DB[a.tipo],
   provincia: PROVINCIA[siglaProvincia(a.comune)] || null,
-  zona: zonaDi(a.lat != null ? [a.lat, a.lng] : null), lat: a.lat, lng: a.lng,
+  zona: zonaDi(a.lat != null ? [a.lat, a.lng] : centroComune(a.comune)), lat: a.lat, lng: a.lng,
   sito: a.sito ? (/^https?:\/\//.test(a.sito) ? a.sito : `https://${a.sito}`) : null, maps: a.google_maps, foto: a.foto || null,
   // la descrizione la scrivi dal gestionale; se manca, almeno le denominazioni che fa
   descrizione: a.descrizione || (a.denominazioni && a.tipo !== "enoteca" ? `Vini ${a.denominazioni}` : null),
@@ -58,7 +59,7 @@ export function useLuoghi() {
   }), [extra, pronto]);
 }
 
-// La mappa delle cantine: parte già vicina alle cantine, si avvicina con due dita (mappaFerma.js)
+// La mappa delle cantine: parte già vicina alle cantine, con un tocco si accende e si sposta con un dito (mappaFerma.js)
 // e fa da filtro per zona.
 // Senza onZona (la pagina di una cantina) mostra solo il pallino, da vicino.
 function MappaCantine({ cantine, attiva, onScegli, zona, onZona, provincia, conta, enoteche }) {
@@ -93,7 +94,7 @@ function MappaCantine({ cantine, attiva, onScegli, zona, onZona, provincia, cont
       const stile = c.enoteca
         ? { radius: on ? 11 : 8, color: "#432543", weight: 2.5, fillColor: "#F2B33D", fillOpacity: 1 }
         : { radius: on ? 11 : 8, color: "#FFFDF8", weight: 2, fillColor: on ? "#B3243B" : c.intervistata ? "#B3243B" : "#432543", fillOpacity: 1 };
-      L.circleMarker(q, { ...stile, bubblingMouseEvents: false })
+      L.circleMarker(q, { ...stile, bubblingMouseEvents: false, pane: "pallini" })
         .on("click", () => onScegli(c.id)).addTo(layer.current);
       punti.push(q);
     });
@@ -237,12 +238,14 @@ function Scheda({ c, tutte }) {
 }
 
 function Elenco({ enoteche, luoghi }) {
-  const [zona, setZona] = useState(null);
-  const [provincia, setProvincia] = useState("");
-  const [soloIntervistate, setSoloIntervistate] = useState(false);
-  const [soloPremiate, setSoloPremiate] = useState(false);
+  // i filtri restano tornando da una scheda (finché la scheda del browser è aperta)
+  const k = enoteche ? "enoteche" : "cantine";
+  const [zona, setZona] = useStatoPagina(`${k}-zona`, null);
+  const [provincia, setProvincia] = useStatoPagina(`${k}-provincia`, "");
+  const [soloIntervistate, setSoloIntervistate] = useStatoPagina(`${k}-intervistate`, false);
+  const [soloPremiate, setSoloPremiate] = useStatoPagina(`${k}-premi`, false);
   // la dimensione (ettari di vigna) al posto della provincia: di default le piccole
-  const [dimensione, setDimensione] = useState(DIMENSIONE_DEFAULT);
+  const [dimensione, setDimensione] = useStatoPagina(`${k}-dimensione`, DIMENSIONE_DEFAULT);
   const [attiva, setAttiva] = useState(null);
   const [eventi, setEventi] = useState([]);
   useEffect(() => { eventiPubblici().then(setEventi).catch(() => {}); }, []);
@@ -292,7 +295,7 @@ function Elenco({ enoteche, luoghi }) {
         <strong>{lista.length === 1 ? `1 ${parola[0]}` : `${lista.length} ${parola[1]}`}{!enoteche && spiegaDimensione ? ` · ${spiegaDimensione}` : ""}{zona ? ` · ${zona}` : ""}{provincia ? ` · provincia di ${provincia}` : ""}</strong>
         {(zona || provincia || soloIntervistate || soloPremiate)
           ? <button className="link" onClick={() => { setZona(null); setProvincia(""); setSoloIntervistate(false); setSoloPremiate(false); setAttiva(null); }}>Tutta la Toscana</button>
-          : <small>Tocca una zona sulla mappa · due dita per avvicinarla</small>}
+          : <small>Tocca la mappa per spostarla, una zona per filtrare</small>}
       </div>
 
       {lista.length === 0 && (enoteche && !tutte.length
