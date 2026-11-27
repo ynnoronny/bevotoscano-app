@@ -4,7 +4,7 @@ import "leaflet/dist/leaflet.css";
 import { mappaFerma, sistemaNomi, disegnaZone, inquadra, inquadraPunti } from "../mappaFerma.js";
 import { PROVINCE_BOX } from "../zone.js";
 
-// La mappa degli eventi: parte già vicina agli eventi, si avvicina con due dita (vedi mappaFerma.js).
+// La mappa degli eventi: parte già vicina agli eventi, con un tocco si accende e si sposta con un dito (vedi mappaFerma.js).
 // Le zone del vino fanno da filtro:
 // tocchi Montalcino e sotto restano solo i suoi eventi. Pallini vino = dove si tiene l'evento,
 // pallini oro = punti di raccolta della navetta.
@@ -41,7 +41,7 @@ export default function Mappa({ eventi, conta = {}, centro, onApri, attivo, zona
       });
       if (e.lat == null) return;
       const on = e.id === attivo;
-      L.circleMarker([e.lat, e.lng], { radius: on ? 12 : 9, color: on ? "#F2B33D" : "#FFFDF8", fillColor: "#B3243B", fillOpacity: 1, weight: on ? 3 : 2, bubblingMouseEvents: false })
+      L.circleMarker([e.lat, e.lng], { radius: on ? 12 : 9, color: on ? "#F2B33D" : "#FFFDF8", fillColor: "#B3243B", fillOpacity: 1, weight: on ? 3 : 2, bubblingMouseEvents: false, pane: "pallini" })
         .on("click", () => onApri(e)).addTo(g);
     });
     // si reinquadra solo quando cambiano gli eventi mostrati o la zona/provincia,

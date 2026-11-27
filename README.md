@@ -7,7 +7,7 @@ Web app mobile (si può anche "installare" sul telefono dalla home) con 5 sezion
 - **Esperienze**: Cantina Diffusa e visite, con lista d'attesa via email
 - **Cassa**: la Cassa Bevotoscano, con lista d'attesa
 - **Eventi**: gli eventi del vino in Toscana, ordinati per vicinanza, con filtri *Senza auto*, *Con guida*, date e distanza, lista o mappa, e i punti di raccolta (pickup) dei bus più vicini a chi cerca
-- **Preferiti**: il cuore su eventi, cantine ed enoteche. Si salvano sul telefono (niente account) e compaiono in cima alla Home; gli eventi passati spariscono da soli
+- **Preferiti**: il cuore su eventi, cantine, enoteche e articoli. Si salvano sul telefono (niente account). In Home una tessera per tipo; ogni tipo ha la sua pagina (`/preferiti/eventi`, `/preferiti/cantine`, `/preferiti/enoteche`, `/preferiti/articoli`). Gli eventi passati spariscono da soli
 - **Gioca**: la parte gaming
   - **Quanto ne sai di vino toscano?** quiz a tempo (da 12 a 10 secondi per domanda, difficoltà crescente), punteggio in base a velocità e difficoltà, classifica mondiale. Se esci dall'app durante una domanda, la domanda è persa (niente ricerche su Google o sull'AI)
   - **L'oroscopo del vino**: data di nascita, segno, vitigno toscano corrispondente

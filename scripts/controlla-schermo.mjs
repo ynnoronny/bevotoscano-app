@@ -8,7 +8,7 @@ import { createRequire } from "node:module";
 const { chromium } = createRequire(import.meta.url)("playwright");
 
 const BASE = process.argv[2] || "http://127.0.0.1:5173";
-const PAGINE = ["/", "/eventi", "/cantine", "/enoteche", "/blog", "/gioca"];
+const PAGINE = ["/", "/eventi", "/cantine", "/enoteche", "/blog", "/gioca", "/preferiti"];
 const LARGHEZZE = [360, 390, 768];
 
 const b = await chromium.launch();

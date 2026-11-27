@@ -4,14 +4,15 @@ import { ZONE, TOSCANA, TOSCANA_STRETTA } from "./zone.js";
 
 // Le mappe di eventi e cantine si avvicinano e si spostano, ma senza rubare lo scorrimento
 // della pagina (era il motivo per cui erano state bloccate, 23/11):
-// - sul telefono un dito fa scorrere la pagina come sempre; con due dita si avvicina e si sposta la mappa
-//   (se ci provi con un dito, compare l'avviso "usa due dita");
+// - sul telefono, finché non la tocchi, un dito fa scorrere la pagina (e con due dita la avvicini).
+//   Un tocco la "accende": da lì si sposta con un dito, finché non tocchi fuori dalla mappa
+//   o premi "Fatto" (27/11: Ronny la voleva spostabile con un dito);
 // - sul computer si trascina col mouse, e ci sono i pulsanti + e −.
-// Toccare una zona continua a filtrare la lista; la mappa resta dentro la Toscana.
+// Toccare una zona o un pallino continua a funzionare come prima; la mappa resta dentro la Toscana.
 const TOUCH = typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches;
 export function mappaFerma(el) {
   const m = L.map(el, {
-    dragging: !TOUCH, touchZoom: TOUCH, doubleClickZoom: true, scrollWheelZoom: false,
+    dragging: true, touchZoom: TOUCH, doubleClickZoom: true, scrollWheelZoom: false,
     boxZoom: false, keyboard: true, zoomControl: false, zoomSnap: 0.25, tap: false,
     maxBounds: TOSCANA, maxBoundsViscosity: 0.8, minZoom: 7, maxZoom: 15,
     // niente animazioni di zoom: la mappa salta subito sulla zona, e i nomi si sistemano senza tremolii
@@ -21,17 +22,55 @@ export function mappaFerma(el) {
   // via il marchio Leaflet; il credito a OpenStreetMap resta (lo chiede la licenza), ma piccolo
   m.attributionControl.setPrefix(false);
   L.tileLayer(TILE, { className: "tile-calde", maxZoom: 16, attribution: TILE_ATTR }).addTo(m);
-  if (TOUCH) {
-    // un dito che scorre sulla mappa: la pagina scorre e, per un attimo, l'avviso delle due dita
-    let t;
-    el.addEventListener("touchmove", (x) => {
-      if (x.touches.length !== 1) return;
-      el.classList.add("mappa--avviso");
-      clearTimeout(t);
-      t = setTimeout(() => el.classList.remove("mappa--avviso"), 1400);
-    }, { passive: true });
-  }
+  // i pallini (cantine, eventi) stanno sopra ai nomi delle zone: prima i nomi li coprivano (27/11)
+  m.createPane("pallini").style.zIndex = 660;
+  if (TOUCH) accendiConUnTocco(el, m);
   return m;
+}
+
+function accendiConUnTocco(el, m) {
+  m.dragging.disable();
+  const fatto = document.createElement("button");
+  fatto.type = "button";
+  fatto.className = "mappa-fatto";
+  fatto.textContent = "Fatto";
+  el.appendChild(fatto);
+  let accesa = false, t, da = null;
+  const accendi = () => { if (accesa) return; accesa = true; m.dragging.enable(); el.classList.add("mappa--accesa"); el.classList.remove("mappa--avviso"); };
+  const spegni = () => { if (!accesa) return; accesa = false; m.dragging.disable(); el.classList.remove("mappa--accesa"); };
+  fatto.addEventListener("click", (x) => { x.stopPropagation(); spegni(); });
+  L.DomEvent.disableClickPropagation(fatto);
+  const giu = (x) => { da = x.touches.length === 1 ? [x.touches[0].clientX, x.touches[0].clientY] : null; };
+  const muovi = (x) => {
+    // spenta, un dito fa scorrere la pagina: per un attimo, l'avviso di come accenderla
+    if (accesa || x.touches.length !== 1) return;
+    el.classList.add("mappa--avviso");
+    clearTimeout(t);
+    t = setTimeout(() => el.classList.remove("mappa--avviso"), 1400);
+  };
+  const su = (x) => {
+    // un tocco fermo (non uno scorrimento) accende la mappa
+    const p = x.changedTouches[0];
+    if (da && p && Math.hypot(p.clientX - da[0], p.clientY - da[1]) < 10 && !fatto.contains(x.target)) accendi();
+    da = null;
+  };
+  // un tocco fuori dalla mappa la spegne, e la pagina torna a scorrere col dito
+  const fuori = (x) => { if (!el.contains(x.target)) spegni(); };
+  const opz = { passive: true };
+  el.addEventListener("touchstart", giu, opz);
+  el.addEventListener("touchmove", muovi, opz);
+  el.addEventListener("touchend", su, opz);
+  document.addEventListener("touchstart", fuori, { passive: true, capture: true });
+  // quando la mappa si chiude (cambio pagina) si tolgono anche i suoi ascoltatori e il pulsante
+  m.on("unload", () => {
+    clearTimeout(t);
+    el.removeEventListener("touchstart", giu, opz);
+    el.removeEventListener("touchmove", muovi, opz);
+    el.removeEventListener("touchend", su, opz);
+    document.removeEventListener("touchstart", fuori, { capture: true });
+    fatto.remove();
+    el.classList.remove("mappa--accesa", "mappa--avviso");
+  });
 }
 
 // Inquadra i punti (eventi o cantine) da vicino; senza punti, tutta la Toscana.

@@ -26,9 +26,9 @@ import { Filtri, Riga, Scelta, Interruttore, SceltaProvincia } from "./Filtri.js
 import { contaZone } from "../mappaFerma.js";
 import { fotoDiRiserva } from "../repertorio.js";
 import { zonaDi } from "../zone.js";
-import { go } from "../nav.js";
+import { go, ritorno, paginaPrima, useStatoPagina } from "../nav.js";
 import Cuore from "../Cuore.jsx";
-import { usePreferiti, copiaEvento } from "../preferiti.js";
+import { usePreferiti, copiaEvento, copiaArticolo, perTipo, TIPI_PREFERITI } from "../preferiti.js";
 import { eventoPercorso, FILTRI_EVENTI, cantinaPercorso } from "../seo.js";
 
 // La schermata unica di Bevotoscano: una cornice fissa, uguale su telefono e computer.
@@ -49,17 +49,34 @@ function indietroDa(section, sub) {
   if (section === "eventi" && sub && !FILTRI_EVENTI.includes(sub)) return ["eventi", "Eventi"];
   if (section === "cantine" && sub) return ["cantine", "Vino"];
   if (section === "blog" && sub) return ["blog", "Blog"];
-  if (["segnala", "esperienze", "cassa"].includes(section)) return ["home", "Home"];
+  if (["segnala", "esperienze", "cassa", "preferiti"].includes(section)) return ["home", "Home"];
   return null;
 }
+
+const POSIZIONI = new Map(); // percorso → quanto era scorsa la pagina
 
 export default function Shell({ section, sub, children }) {
   // le enoteche stanno sotto la stessa pill delle cantine (con la scelta in cima alla pagina)
   const pill = section === "enoteche" ? "cantine" : section;
   const area = useRef(null);
   const indietro = indietroDa(section, sub);
-  // a ogni cambio di pagina si riparte dall'alto del contenuto
-  useEffect(() => { area.current?.scrollTo(0, 0); }, [section, sub]);
+  // A ogni pagina nuova si parte dall'alto; tornando indietro (freccia o tasto del telefono)
+  // si ritrova il punto dove eri, anche se l'elenco ci mette un attimo ad arrivare.
+  const percorso = [section, sub].filter(Boolean).join("/");
+  useEffect(() => {
+    const el = area.current;
+    if (!el) return;
+    const dove = ritorno ? POSIZIONI.get(percorso) || 0 : 0;
+    let prove = 0, t;
+    const metti = () => {
+      el.scrollTo({ top: dove, behavior: "instant" });
+      if (Math.abs(el.scrollTop - dove) > 4 && prove++ < 20) t = setTimeout(metti, 100);
+    };
+    metti();
+    const salva = () => POSIZIONI.set(percorso, el.scrollTop);
+    el.addEventListener("scroll", salva, { passive: true });
+    return () => { clearTimeout(t); el.removeEventListener("scroll", salva); };
+  }, [percorso]);
 
   return (
     <Benvenuto>
@@ -67,7 +84,12 @@ export default function Shell({ section, sub, children }) {
         <header className="shell-testa">
           <div className="shell-riga">
             {indietro && (
-              <Link to={indietro[0]} className="shell-indietro" aria-label={`Torna a ${indietro[1]}`}>
+              <Link to={indietro[0]} className="shell-indietro" aria-label={`Torna a ${indietro[1]}`}
+                onClick={(x) => {
+                  // se si arriva proprio da lì, è un vero "indietro": filtri e punto della pagina restano
+                  const prima = paginaPrima();
+                  if (prima && prima.split("/")[0] === indietro[0]) { x.preventDefault(); window.history.back(); }
+                }}>
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
               </Link>
             )}
@@ -93,6 +115,7 @@ function Contenuto({ section, sub }) {
   if (section === "enoteche") return <div className="shell-pagina shell-pagina--larga"><Cantine enoteche /></div>;
   if (section === "blog") return sub ? <Articolo id={sub} /> : <Blog />;
   if (section === "gioca") return <Gioca />;
+  if (section === "preferiti") return <PaginaPreferiti tipo={sub} />;
   if (section === "segnala") return <div className="page shell-pagina"><SegnalaScelta iniziale={sub} /></div>;
   if (section === "eventi" && sub && !FILTRI_EVENTI.includes(sub)) {
     return <div className="page shell-pagina"><Eventi apri={sub} /></div>;
@@ -155,13 +178,14 @@ function nelQuando(e, q) {
 function FeedEventi({ filtro }) {
   const [eventi, setEventi] = useState(null);
   const [centro, setCentro] = useState(() => leggi(POS_KEY, null));
-  const [quando, setQuando] = useState(filtro === "weekend" ? "weekend" : "tutte");
-  const [noAuto, setNoAuto] = useState(filtro === "senza-auto");
-  const [mappa, setMappa] = useState(false);
+  // i filtri restano tornando da un evento (finché la scheda del browser è aperta)
+  const [quando, setQuando] = useStatoPagina("eventi-quando", "tutte");
+  const [noAuto, setNoAuto] = useStatoPagina("eventi-navetta", false);
+  const [mappa, setMappa] = useStatoPagina("eventi-mappa", false);
   const [attivo, setAttivo] = useState(null);
   // con la mappa aperta, la zona toccata fa da filtro per la lista qui sotto
-  const [zona, setZona] = useState(null);
-  const [provincia, setProvincia] = useState("");
+  const [zona, setZona] = useStatoPagina("eventi-zona", null);
+  const [provincia, setProvincia] = useStatoPagina("eventi-provincia", "");
   useEffect(() => { setAttivo(null); }, [quando, noAuto, centro, zona, provincia]);
   const quantiSenzaAuto = (eventi || []).filter((e) => conNavetta(e) && nelQuando(e, quando)).length;
   useEffect(() => { eventiPubblici().then(setEventi).catch(() => setEventi([])); }, []);
@@ -206,7 +230,7 @@ function FeedEventi({ filtro }) {
           }} /></div>
           <div className="cant-conta">
             <strong>{mostrati.length === 1 ? "1 evento" : `${mostrati.length} eventi`}{zona ? ` · ${zona}` : provincia ? ` · provincia di ${provincia}` : " in Toscana"}</strong>
-            {zona || provincia ? <button className="link" onClick={() => { setZona(null); setProvincia(""); }}>Tutta la Toscana</button> : <small>Tocca una zona sulla mappa · due dita per avvicinarla</small>}
+            {zona || provincia ? <button className="link" onClick={() => { setZona(null); setProvincia(""); }}>Tutta la Toscana</button> : <small>Tocca la mappa per spostarla, una zona per filtrare</small>}
           </div>
           {zona && !mostrati.length && lista.length > 0 && <p className="feed-vuoto">Nessun evento in zona {zona} in questo periodo. Tocca un'altra zona, o torna a tutta la Toscana.</p>}
         </>
@@ -334,16 +358,35 @@ function Blog() {
       {lista.length === 0 && <p className="feed-vuoto">Nessun articolo su questo tema, per ora. Arrivano presto.</p>}
       <div className="feed-griglia feed-griglia--blog">
         {lista.map((a) => (
-          <Link key={a.id} to={`blog/${a.id}`} className={`art ${a.notizia ? "art--notizia" : ""}`}>
-            {a.immagine && <img className="art-img" src={a.immagine} alt="" loading="lazy" />}
-            <span className="art-tag">{a.tag}{a.data ? ` · ${dataArticolo(a.data)}` : ""}</span>
-            <strong>{a.titolo}</strong>
-            <span className="art-sotto">{a.sottotitolo}</span>
-            <span className="art-leggi">Leggi</span>
-          </Link>
+          <SchedaArticolo key={a.id} a={a} />
         ))}
       </div>
       <FineFeed />
+    </div>
+  );
+}
+
+// La scheda di un articolo nell'elenco, col cuore in alto a destra.
+function SchedaArticolo({ a }) {
+  return (
+    <div className="art-box">
+      <Link to={`blog/${a.id}`} className={`art ${a.notizia ? "art--notizia" : ""}`}>
+        {a.immagine && <img className="art-img" src={a.immagine} alt="" loading="lazy" />}
+        <span className="art-tag">{a.tag}{a.data ? ` · ${dataArticolo(a.data)}` : ""}</span>
+        <strong>{a.titolo}</strong>
+        <span className="art-sotto">{a.sottotitolo}</span>
+        <span className="art-leggi">Leggi</span>
+      </Link>
+      <Cuore tipo="articoli" id={a.id} nome={a.titolo} copia={() => copiaArticolo(a)} className="cuore--angolo" />
+    </div>
+  );
+}
+
+function TitoloArticolo({ a }) {
+  return (
+    <div className="evento-testa">
+      <h1 className="page-title">{a.titolo}</h1>
+      <Cuore tipo="articoli" id={a.id} nome={a.titolo} copia={() => copiaArticolo(a)} className="cuore--grande" />
     </div>
   );
 }
@@ -358,7 +401,7 @@ function Articolo({ id }) {
   return (
     <article className="page shell-pagina articolo">
       <span className="art-tag">{a.tag} · {dataArticolo(a.data)}</span>
-      <h1 className="page-title">{a.titolo}</h1>
+      <TitoloArticolo a={a} />
       {a.immagine && <img className="articolo-img" src={a.immagine} alt={a.alt || ""} />}
       <p className="articolo-sotto">{a.sottotitolo}</p>
       {a.paragrafi.map((p, i) => <p key={i} className="articolo-p">{p}</p>)}
@@ -391,7 +434,7 @@ function Notizia({ a }) {
   return (
     <article className="page shell-pagina articolo">
       <span className="art-tag">{a.tag}{a.data ? ` · ${dataArticolo(a.data)}` : ""}</span>
-      <h1 className="page-title">{a.titolo}</h1>
+      <TitoloArticolo a={a} />
       {(n.sintesi || "").split(/\n+/).filter(Boolean).map((p, i) => <p key={i} className="articolo-p">{p}</p>)}
       <Dettagli d={n.dettagli} cantine={luoghi.cantine} />
       {citate.length > 0 && (
@@ -481,48 +524,109 @@ function Home() {
   );
 }
 
-// I tuoi preferiti (il cuore su eventi, cantine ed enoteche), salvati su questo telefono:
-// all'apertura dell'app sono la prima cosa che vedi. Gli eventi già passati spariscono da soli.
-function Preferiti({ eventi }) {
-  const p = usePreferiti();
+// Gli eventi preferiti ancora da venire: se l'elenco è arrivato, solo quelli che ci sono ancora
+// (un evento passato o tolto sparisce da solo); se no, dalla copia salvata.
+function eventiPreferiti(lista, eventi) {
   const adesso = new Date();
-  const evs = Object.entries(p.eventi)
-    .map(([id, c]) => {
-      const vero = eventi?.find((e) => String(e.id) === id);
-      return vero ? { id, ...copiaEvento(vero, eventoPercorso(vero)), e: vero } : { id, ...c };
-    })
-    // se l'elenco è arrivato e l'evento non c'è più, è passato (o tolto): non lo mostriamo
+  return lista
+    .map((x) => { const e = eventi?.find((v) => String(v.id) === x.id); return e ? { ...x, e } : x; })
     .filter((x) => (eventi ? x.e : new Date(x.fine || x.inizio) >= adesso))
-    .sort((a, b) => String(a.inizio).localeCompare(String(b.inizio)));
-  const luoghi = Object.entries(p.luoghi).map(([id, c]) => ({ id, ...c }))
-    .sort((a, b) => String(b.salvato).localeCompare(String(a.salvato)));
-  if (!evs.length && !luoghi.length) return null;
+    .sort((a, b) => String(a.e?.inizio || a.inizio).localeCompare(String(b.e?.inizio || b.inizio)));
+}
+const recenti = (l) => [...l].sort((a, b) => String(b.salvato).localeCompare(String(a.salvato)));
+
+// In Home, i preferiti sono un riassunto: una tessera per tipo (eventi, cantine, enoteche, articoli)
+// con quanti sono e il primo da guardare. Toccandola si apre la pagina di quel tipo.
+// (27/11: l'elenco unico di tutto, in Home, diventava illeggibile.)
+function Preferiti({ eventi }) {
+  const t = perTipo(usePreferiti());
+  const liste = { ...t, eventi: eventiPreferiti(t.eventi, eventi), cantine: recenti(t.cantine), enoteche: recenti(t.enoteche), articoli: recenti(t.articoli) };
+  if (!TIPI_PREFERITI.some((x) => liste[x.id].length)) return null;
+  const primo = (id) => {
+    const x = liste[id][0];
+    if (!x) return "Nessuno, per ora";
+    if (id === "eventi") return `Prossimo: ${x.titolo}`;
+    return x.titolo || x.nome;
+  };
   return (
     <>
-      <div className="home-titolo"><h2>I tuoi preferiti</h2></div>
-      <section className="pref" aria-label="I tuoi preferiti">
-        {evs.map((x) => (
-          <div key={`e${x.id}`} className="pref-riga">
-            <span className="pref-icona" aria-hidden="true">📅</span>
-            <PrefLink x={x}>
-              <strong>{x.titolo}</strong>
-              <small>{x.e ? quandoEv(x.e).split(" · ")[0] : new Date(x.inizio).toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" })}{x.comune ? ` · ${conProvincia(x.comune)}` : ""}</small>
-            </PrefLink>
-            <Cuore tipo="eventi" id={x.id} nome={x.titolo} copia={() => x} />
-          </div>
+      <div className="home-titolo"><h2>I tuoi preferiti</h2><Link to="preferiti" className="home-tutti">Tutti →</Link></div>
+      <div className="pref-tessere">
+        {TIPI_PREFERITI.map((x) => (
+          <Link key={x.id} to={`preferiti/${x.id}`} className={`pref-tessera ${liste[x.id].length ? "" : "pref-tessera--vuota"}`}>
+            <span className="pref-tessera-su"><span aria-hidden="true">{x.icona}</span><b>{liste[x.id].length}</b></span>
+            <strong>{x.nome}</strong>
+            <small>{primo(x.id)}</small>
+          </Link>
         ))}
-        {luoghi.map((x) => (
-          <div key={`l${x.id}`} className="pref-riga">
-            <span className="pref-icona" aria-hidden="true">{x.enoteca ? "🍷" : "🍇"}</span>
-            <PrefLink x={x}>
-              <strong>{x.nome}</strong>
-              <small>{x.dove}</small>
-            </PrefLink>
-            <Cuore tipo="luoghi" id={x.id} nome={x.nome} copia={() => x} />
-          </div>
-        ))}
-      </section>
+      </div>
     </>
+  );
+}
+
+// La pagina dei preferiti: bevotoscano.com/preferiti/eventi (o cantine, enoteche, articoli).
+function PaginaPreferiti({ tipo }) {
+  const t = perTipo(usePreferiti());
+  const [eventi, setEventi] = useState(null);
+  useEffect(() => { eventiPubblici().then(setEventi).catch(() => setEventi([])); }, []);
+  const luoghi = useLuoghi();
+  const notizie = useNotizie();
+  const liste = { ...t, eventi: eventiPreferiti(t.eventi, eventi), cantine: recenti(t.cantine), enoteche: recenti(t.enoteche), articoli: recenti(t.articoli) };
+  // senza tipo nell'indirizzo, il primo che ha qualcosa
+  const scelto = TIPI_PREFERITI.find((x) => x.id === tipo) || TIPI_PREFERITI.find((x) => liste[x.id].length) || TIPI_PREFERITI[0];
+  const lista = liste[scelto.id];
+  const tutti = [...luoghi.cantine, ...luoghi.enoteche];
+  return (
+    <div className="feed">
+      <div className="home-titolo home-titolo--pagina"><h1>I tuoi preferiti</h1></div>
+      <Filtri>
+        <Riga etichetta="Mostra">
+          <Scelta valore={scelto.id} onCambia={(v) => go(`preferiti/${v}`)}
+            opzioni={TIPI_PREFERITI.map((x) => [x.id, `${x.icona} ${x.nome}${liste[x.id].length ? ` · ${liste[x.id].length}` : ""}`])} />
+        </Riga>
+      </Filtri>
+      {!lista.length && <p className="feed-vuoto">{scelto.vuoto}</p>}
+      {scelto.id === "eventi" && (
+        <div className="feed-griglia">
+          {lista.map((x, i) => (x.e
+            ? <SchedaEvento key={x.id} e={x.e} i={i} />
+            : <RigaPreferito key={x.id} x={x} tipo="eventi" icona="📅" titolo={x.titolo} sotto={x.comune ? conProvincia(x.comune) : ""} />))}
+        </div>
+      )}
+      {(scelto.id === "cantine" || scelto.id === "enoteche") && (
+        <div className="feed-griglia">
+          {lista.map((x) => {
+            const c = tutti.find((y) => String(y.id) === x.id);
+            return c ? (
+              <div key={x.id} className="pref-luogo">
+                <Link className="cant-vicina" to={cantinaPercorso(c)}><Foto c={c} /><span><b>{c.nome}</b><small>{dove(c)}</small></span></Link>
+                <Cuore tipo="luoghi" id={x.id} nome={x.nome} copia={() => x} />
+              </div>
+            ) : <RigaPreferito key={x.id} x={x} tipo="luoghi" icona={x.enoteca ? "🍷" : "🍇"} titolo={x.nome} sotto={x.dove} />;
+          })}
+        </div>
+      )}
+      {scelto.id === "articoli" && (
+        <div className="feed-griglia feed-griglia--blog">
+          {lista.map((x) => {
+            const a = articolo(x.id) || notizie.find((n) => n.id === x.id);
+            return a ? <SchedaArticolo key={x.id} a={a} /> : <RigaPreferito key={x.id} x={x} tipo="articoli" icona="📰" titolo={x.titolo} sotto={x.tag} />;
+          })}
+        </div>
+      )}
+      <p className="pref-nota">I preferiti restano salvati su questo telefono: niente account, niente dati inviati.</p>
+    </div>
+  );
+}
+
+// Un preferito di cui abbiamo solo la copia salvata (dati non ancora arrivati, o tolto dall'app)
+function RigaPreferito({ x, tipo, icona, titolo, sotto }) {
+  return (
+    <div className="pref-riga pref-riga--sola">
+      <span className="pref-icona" aria-hidden="true">{icona}</span>
+      <PrefLink x={x}><strong>{titolo}</strong>{sotto && <small>{sotto}</small>}</PrefLink>
+      <Cuore tipo={tipo} id={x.id} nome={titolo} copia={() => x} />
+    </div>
   );
 }
 
@@ -591,6 +695,17 @@ function Oroscopo({ compatto }) {
   const [id, setId] = useState(corrente.id);
   const [altri, setAltri] = useState(false);
   const [tutto, setTutto] = useState(!compatto);
+  const box = useRef(null);
+  // cambiando segno si torna all'inizio della scheda, così si legge dal titolo (27/11)
+  const vai = (nuovo) => {
+    setId(nuovo);
+    requestAnimationFrame(() => {
+      const el = box.current, area = el?.closest(".shell-area");
+      if (!el || !area) return;
+      const su = el.getBoundingClientRect().top - area.getBoundingClientRect().top;
+      if (su < 0 || su > area.clientHeight * 0.4) area.scrollBy({ top: su - 12, behavior: "smooth" });
+    });
+  };
   const s = SEGNI.find((x) => x.id === id);
   const t = MESE.testi?.[id];
   const suo = id === mio?.id;
@@ -600,7 +715,7 @@ function Oroscopo({ compatto }) {
     const x = r && SEGNI.find((y) => y.id === r.segno);
     if (!x) return null;
     return (
-      <button className={`oro-rap oro-rap--${tipo}`} onClick={() => setId(x.id)}>
+      <button className={`oro-rap oro-rap--${tipo}`} onClick={() => vai(x.id)}>
         <small>{tipo === "affine" ? "Segno affine del mese" : "Antagonista del mese"}</small>
         <b><span aria-hidden="true">{x.simbolo}︎</span> {x.segno} · {r.nome}</b>
         <span>{r.testo}</span>
@@ -608,12 +723,12 @@ function Oroscopo({ compatto }) {
     );
   };
   return (
-    <section className="gioco-oro">
+    <section className="gioco-oro" ref={box}>
       <small>{suo ? "IL TUO OROSCOPO DEL VINO" : "OROSCOPO DEL VINO"} · fino al {dataBreve(MESE.al)}</small>
       <div className="oro-segno" key={id}>
         <span className="oro-simbolo" aria-hidden="true">{s.simbolo}︎</span>
         <span><b>{s.segno}</b><em>{s.vitigno}</em></span>
-        {mio && !suo && <button className="oro-torna" onClick={() => setId(mio.id)}>Torna al tuo</button>}
+        {mio && !suo && <button className="oro-torna" onClick={() => vai(mio.id)}>Torna al tuo</button>}
       </div>
       {t && (
         <div className="oro-corpo fade" key={`t-${id}`}>
@@ -632,7 +747,7 @@ function Oroscopo({ compatto }) {
       {tutto && <button className="oro-altri" aria-expanded={altri} onClick={() => setAltri((v) => !v)}>{altri ? "Chiudi gli altri segni" : "Guarda anche gli altri segni"}</button>}
       {altri && (
         <div className="gioco-segni fade">
-          {ordine.map((x) => <button key={x.id} className={x.id === id ? "on" : ""} onClick={() => setId(x.id)}>{x.simbolo}︎ {x.segno}{x.id === mio?.id ? " ★" : ""}</button>)}
+          {ordine.map((x) => <button key={x.id} className={x.id === id ? "on" : ""} onClick={() => vai(x.id)}>{x.simbolo}︎ {x.segno}{x.id === mio?.id ? " ★" : ""}</button>)}
         </div>
       )}
       {!compatto && <Link to="gioca/oroscopo" className="gioco-via gioco-via--chiaro">Il tuo vitigno, da condividere</Link>}
